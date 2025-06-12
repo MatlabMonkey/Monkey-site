@@ -1,4 +1,5 @@
 import Card from "../components/Card";
+import PinGate from "../components/PinGate";
 
 type DashboardCard = {
   title: string;
@@ -39,16 +40,18 @@ const cards: DashboardCard[] = [
 
 export default function Dashboard() {
   return (
-    <main className="p-6">
-      <h1 className="mb-6 text-3xl font-bold">Dashboard</h1>
-
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {cards.map((card, index) => (
-          <Card key={index} title={card.title}>
-            {card.content}
-          </Card>
-        ))}
-      </div>
-    </main>
+    <PinGate>
+      <main className="p-6">
+        <h1 className="mb-6 text-3xl font-bold">Dashboard</h1>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {cards.map((card, index) => (
+            <Card key={index} title={card.title}>
+              {card.content}
+            </Card>
+          ))}
+        </div>
+      </main>
+    </PinGate>
   );
 }
+
