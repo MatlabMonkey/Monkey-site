@@ -8,8 +8,15 @@ export default function Home() {
           href="/dashboard"
           className="inline-block mt-4 px-6 py-2 bg-white text-black rounded hover:bg-gray-200"
         >
-          Enter Dashboard
+          Dashboard
         </a>
+        <a
+          href="/about"
+          className="inline-block mt-2 px-4 py-1 text-sm text-gray-400 underline hover:text-white"
+        >
+          About
+        </a>
+
       </div>
     </main>
   );
