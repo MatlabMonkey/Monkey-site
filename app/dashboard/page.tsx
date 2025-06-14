@@ -30,6 +30,20 @@ function gaussianSmooth(data: number[], sigma: number = 2): number[] {
   });
 }
 
+function formatTick(dateStr: string, index: number, full: boolean) {
+  const [y, m, d] = dateStr.split('-');
+  if (full) return `${m}/${d}`;
+  return d === '01' ? new Date(dateStr).toLocaleString('default', { month: 'short' }) : (d === '15' ? '15' : '');
+}
+
+function formatTooltipLabel(value: string) {
+  return new Date(value).toISOString().split('T')[0];
+}
+
+function formatTooltipValue(value: number, name: string) {
+  return [`${value.toFixed(1)}`, name];
+}
+
 type Entry = {
   date: string;
   how_good: number;
@@ -112,29 +126,6 @@ export default function Dashboard() {
       <main className="p-6 space-y-6 bg-gray-50 min-h-screen">
         <h1 className="text-4xl font-bold text-gray-900 mb-4">Dashboard</h1>
 
-        <div className="w-full bg-white rounded-xl p-4 shadow">
-          <div className="flex justify-between items-center mb-2">
-            <h2 className="text-xl font-semibold">Yearly Trends</h2>
-            <button
-              onClick={() => setTimeRange(timeRange === 'year' ? '30days' : 'year')}
-              className="text-blue-600 underline"
-            >
-              View: {timeRange === 'year' ? 'Last 30 Days' : 'Full Year'}
-            </button>
-          </div>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={stats.chartData.slice(timeRange === 'year' ? 0 : -30)}>
-              <XAxis dataKey="date" tickFormatter={d => d.split('-')[1]} />
-              <YAxis domain={[0, 10]} />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="how_good" stroke="#facc15" name="How Good" dot={false} />
-              <Line type="monotone" dataKey="productivity" stroke="#3b82f6" name="Productivity" dot={false} />
-              <Line type="monotone" dataKey="drinks" stroke="#ef4444" name="Drinks" dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
 
           <Card title="Daily Averages (Last 7 Days)">
@@ -162,6 +153,44 @@ export default function Dashboard() {
             <p><strong>💭 Thought:</strong> {stats.thought}</p>
           </Card>
 
+        </div>
+
+        <div className="w-full bg-white rounded-xl p-4 shadow">
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="text-xl font-bold text-gray-800">Yearly Trends</h2>
+            <button
+              onClick={() => setTimeRange(timeRange === 'year' ? '30days' : 'year')}
+              className="text-blue-600 underline"
+            >
+              View: {timeRange === 'year' ? 'Last 30 Days' : 'Full Year'}
+            </button>
+          </div>
+          <ResponsiveContainer width="100%" height={300}>
+            <LineChart data={stats.chartData.slice(timeRange === 'year' ? 0 : -30)}>
+              <XAxis
+                dataKey="date"
+                tickFormatter={(d) =>
+                  timeRange === 'year'
+                    ? formatTick(d, 0, false)
+                    : formatTick(d, 0, true)
+                }
+              />
+              <YAxis domain={[0, 10]} />
+              <Tooltip
+                labelFormatter={formatTooltipLabel}
+                formatter={formatTooltipValue}
+                contentStyle={{ color: '#111', fontWeight: 500 }}
+                labelStyle={{ color: '#111', fontWeight: 700 }}
+              />
+              <Legend
+                wrapperStyle={{ fontSize: '1rem' }}
+                iconType="plainline"
+              />
+              <Line type="monotone" dataKey="how_good" stroke="#facc15" name="How Good" dot={false} />
+              <Line type="monotone" dataKey="productivity" stroke="#3b82f6" name="Productivity" dot={false} />
+              <Line type="monotone" dataKey="drinks" stroke="#ef4444" name="Drinks" dot={false} />
+            </LineChart>
+          </ResponsiveContainer>
         </div>
       </main>
     </PinGate>
