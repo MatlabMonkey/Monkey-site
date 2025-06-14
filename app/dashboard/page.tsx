@@ -87,8 +87,10 @@ export default function Dashboard() {
           </Card>
 
           <Card title="Workout Tracker (Last 14 Days)">
-            {Object.entries(stats.workoutCounts).map(([key, value]) => (
-              <p key={key} className="text-md">{key}: <span className="font-semibold">{value}</span></p>
+            {Object.entries(stats.workoutCounts as Record<string, number>).map(([key, value]) => (
+              <p key={key} className="text-md">
+                {key}: <span className="font-semibold">{value}</span>
+              </p>
             ))}
             <p className="text-md">Other: <span className="font-semibold">{stats.discreetCount}</span></p>
           </Card>
