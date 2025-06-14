@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
+import PinGate from '../components/PinGate';
 import Card from '../components/Card';
-import PinGate from "../components/PinGate";
 
 type Entry = {
   date: string;
@@ -14,6 +14,7 @@ type Entry = {
   rose: string;
   gratitude: string;
   thought_of_day: string;
+  booleans: string[];
 };
 
 export default function Dashboard() {
@@ -21,9 +22,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     async function fetchData() {
-      const { data: entries, error } = await supabase
-        .from('journal_entries')
-        .select('*');
+      const { data: entries, error } = await supabase.from('journal_entries').select('*');
 
       if (error) {
         console.error('Supabase error:', error);
@@ -41,61 +40,67 @@ export default function Dashboard() {
       const last14 = parsed.filter(e => dateDiff(e.date, today) <= 14);
       const thisYearEntries = parsed.filter(e => e.date.getFullYear() === thisYear);
 
-      const rand = (arr: any[], field: string) =>
-        arr.filter(e => e[field]?.trim()).sort(() => 0.5 - Math.random())[0]?.[field] || '—';
+      const rand = (arr: any[], field: string) => arr.filter(e => e[field]?.trim()).sort(() => 0.5 - Math.random())[0]?.[field] || '—';
+
+      const workouts = ['Push', 'Pull', 'Legs', 'Surfing', 'Full body', 'Core', 'Cardio'];
+      const workoutCounts = Object.fromEntries(workouts.map(type => [type, 0]));
+      let other = 0;
+      last14.forEach(e => {
+        e.booleans?.forEach((val: string) => {
+          if (workouts.includes(val)) workoutCounts[val]++;
+        });
+        other += e.scount || 0;
+      });
 
       setStats({
         avgQuality7: avg(last7.map(e => e.how_good)),
         avgProductivity7: avg(last7.map(e => e.productivity)),
         totalDrinksYear: sum(thisYearEntries.map(e => e.drinks)),
         drinks14: sum(last14.map(e => e.drinks)),
-        discreetCount: sum(parsed.map(e => e.scount)),
+        discreetCount: other,
         rose: rand(parsed, 'rose'),
         gratitude: rand(parsed, 'gratitude'),
         thought: rand(parsed, 'thought_of_day'),
+        workoutCounts
       });
     }
 
     fetchData();
   }, []);
 
-  if (!stats) return <p className="p-6 text-white">Loading dashboard...</p>;
+  if (!stats) return <p className="p-6 text-gray-800">Loading dashboard...</p>;
 
   return (
     <PinGate>
-      {!stats ? (
-        <p className="p-6 text-white">Loading dashboard...</p>
-      ) : (
-        <main className="p-6 space-y-6">
-          <h1 className="text-3xl font-bold text-white mb-4">Dashboard</h1>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <Card title="Avg Quality (7 days)">
-              <p className="text-3xl font-bold">{stats.avgQuality7.toFixed(2)}</p>
-            </Card>
-            <Card title="Avg Productivity (7 days)">
-              <p className="text-3xl font-bold">{stats.avgProductivity7.toFixed(2)}</p>
-            </Card>
-            <Card title="Total Drinks (This Year)">
-              <p className="text-3xl font-bold">{stats.totalDrinksYear}</p>
-            </Card>
-            <Card title="Drinks (Last 14 Days)">
-              <p className="text-3xl font-bold">{stats.drinks14}</p>
-            </Card>
-            <Card title="🎯 Mystery Tracker">
-              <p className="text-3xl font-bold">{stats.discreetCount}</p>
-            </Card>
-            <Card title="🌹 Highlight of a Random Day">
-              <p>{stats.rose}</p>
-            </Card>
-            <Card title="🙏 Gratitude from a Random Day">
-              <p>{stats.gratitude}</p>
-            </Card>
-            <Card title="💭 Thought of the Day (Random)">
-              <p>{stats.thought}</p>
-            </Card>
-          </div>
-        </main>
-      )}
+      <main className="p-6 space-y-6 bg-gray-100 min-h-screen">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">Dashboard</h1>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+
+          <Card title="Daily Averages (Last 7 Days)">
+            <p className="text-lg">Quality of Life: <span className="font-bold text-xl">{stats.avgQuality7.toFixed(2)}</span></p>
+            <p className="text-lg">Productivity: <span className="font-bold text-xl">{stats.avgProductivity7.toFixed(2)}</span></p>
+          </Card>
+
+          <Card title="Drink Summary">
+            <p className="text-lg">Total This Year: <span className="font-bold text-xl">{stats.totalDrinksYear}</span></p>
+            <p className="text-lg">Last 14 Days: <span className="font-bold text-xl">{stats.drinks14}</span></p>
+          </Card>
+
+          <Card title="Workout Tracker (Last 14 Days)">
+            {Object.entries(stats.workoutCounts).map(([key, value]) => (
+              <p key={key} className="text-md">{key}: <span className="font-semibold">{value}</span></p>
+            ))}
+            <p className="text-md">Other: <span className="font-semibold">{stats.discreetCount}</span></p>
+          </Card>
+
+          <Card title="Random Highlights">
+            <p><strong>🌹 Highlight:</strong> {stats.rose}</p>
+            <p><strong>🙏 Gratitude:</strong> {stats.gratitude}</p>
+            <p><strong>💭 Thought:</strong> {stats.thought}</p>
+          </Card>
+
+        </div>
+      </main>
     </PinGate>
   );
 }
@@ -112,4 +117,3 @@ function sum(arr: number[]) {
 function dateDiff(a: Date, b: Date) {
   return Math.floor((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
 }
-
