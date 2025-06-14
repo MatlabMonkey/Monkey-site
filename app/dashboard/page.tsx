@@ -32,16 +32,23 @@ function gaussianSmooth(data: number[], sigma: number = 2): number[] {
 
 function formatTick(dateStr: string, index: number, full: boolean) {
   const [y, m, d] = dateStr.split('-');
-  if (full) return `${m}/${d}`;
-  return d === '01' ? new Date(dateStr).toLocaleString('default', { month: 'short' }) : (d === '15' ? '15' : '');
+  return d === '01' ? new Date(dateStr).toLocaleString('default', { month: 'short' }) : '';
 }
 
 function formatTooltipLabel(value: string) {
   return new Date(value).toISOString().split('T')[0];
 }
 
-function formatTooltipValue(value: number, name: string) {
-  return [`${value.toFixed(1)}`, name];
+function formatTooltipValue(value: number, name: string, props: any) {
+  const raw = props?.payload?.[0]?.payload;
+  if (!raw) return [`${value.toFixed(1)}`, name];
+  const lookup: Record<string, any> = {
+    'How Good': raw.actual_how_good,
+    'Productivity': raw.actual_productivity,
+    'Drinks': raw.actual_drinks
+  };
+  const val = lookup[name] ?? value;
+  return [`${val.toFixed(1)}`, name];
 }
 
 type Entry = {
@@ -93,9 +100,10 @@ export default function Dashboard() {
       });
 
       const dates = thisYearEntries.map(e => e.date.toISOString().split('T')[0]);
-      const qualitySeries = gaussianSmooth(thisYearEntries.map(e => e.how_good));
-      const productivitySeries = gaussianSmooth(thisYearEntries.map(e => e.productivity));
-      const drinksSeries = gaussianSmooth(thisYearEntries.map(e => e.drinks));
+      const sigma = timeRange === '30days' ? 1.5 : 2;
+      const qualitySeries = gaussianSmooth(thisYearEntries.map(e => e.how_good), sigma);
+      const productivitySeries = gaussianSmooth(thisYearEntries.map(e => e.productivity), sigma);
+      const drinksSeries = gaussianSmooth(thisYearEntries.map(e => e.drinks), sigma);
 
       setStats({
         avgQuality7: avg(last7.map(e => e.how_good)),
@@ -107,11 +115,14 @@ export default function Dashboard() {
         gratitude: rand(parsed, 'gratitude'),
         thought: rand(parsed, 'thought_of_day'),
         workoutCounts,
-        chartData: dates.map((d, i) => ({
-          date: d,
+        chartData: thisYearEntries.map((e, i) => ({
+        date: e.date.toISOString().split('T')[0],
           how_good: qualitySeries[i],
           productivity: productivitySeries[i],
           drinks: drinksSeries[i],
+        actual_how_good: e.how_good,
+        actual_productivity: e.productivity,
+        actual_drinks: e.drinks,
         }))
       });
     }
@@ -175,7 +186,7 @@ export default function Dashboard() {
                     : formatTick(d, 0, true)
                 }
               />
-              <YAxis domain={[0, 10]} />
+              <YAxis domain={[0, 10]} ticks={[0, 2.5, 5, 7.5, 10]} />
               <Tooltip
                 labelFormatter={formatTooltipLabel}
                 formatter={formatTooltipValue}
