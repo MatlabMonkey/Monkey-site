@@ -119,13 +119,19 @@ export default function Dashboard() {
       let other = 0;
       let sunsets = 0;
       let guitar = 0;
+      
       last14.forEach(e => {
         e.booleans?.forEach((val: string) => {
           if (workouts.includes(val)) workoutCounts[val]++;
+        });
+        other += e.scount || 0;
+      });
+      
+      thisYearEntries.forEach(e => {
+        e.booleans?.forEach((val: string) => {
           if (val === 'Watch sunset') sunsets++;
           if (val === 'Guitar') guitar++;
         });
-        other += e.scount || 0;
       });
 
       const pieData = Object.entries(workoutCounts).map(([name, value]) => ({ name, value, color: colorMap[name] || '#ccc' }));
