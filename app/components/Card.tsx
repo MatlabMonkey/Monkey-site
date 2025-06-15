@@ -1,6 +1,7 @@
 type CardProps = {
   title: string;
   children: React.ReactNode;
+  bg?: string;
 };
 
 export default function Card({ title, children }: CardProps) {
