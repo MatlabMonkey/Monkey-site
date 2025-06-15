@@ -44,12 +44,12 @@ function formatTooltipLabel(value: string) {
 function formatTooltipValue(value: number, name: string, props: any) {
   const raw = props?.payload?.[0]?.payload;
   if (!raw) return [`${value.toFixed(1)}`, name];
-  const lookup: Record<'How Good' | 'Productivity' | 'Drinks', number> = {
+  const lookup: Record<string, number> = {
     'How Good': raw.actual_how_good,
     'Productivity': raw.actual_productivity,
     'Drinks': raw.actual_drinks
   };
-  const val = lookup[name as keyof typeof lookup] ?? value;
+  const val = lookup[name] ?? value;
   return [`${val.toFixed(1)}`, name];
 }
 
@@ -63,11 +63,11 @@ const colorMap: Record<string, string> = {
   Cardio: '#f472b6',
 };
 
-const progressBar = (label: string, value: number, goal: number) => (
-  <div className="mb-2">
-    <p className="text-sm font-medium text-gray-700 mb-1">{label}</p>
-    <div className="w-full bg-gray-200 rounded-full h-4">
-      <div className="h-4 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center" style={{ width: `${Math.min(100, (value / goal) * 100)}%` }}>
+const progressBar = (label: string, value: number, goal: number, color: string) => (
+  <div className="mb-2 w-full">
+    <p className="text-sm font-semibold text-gray-800 mb-1">{label}</p>
+    <div className="w-full bg-gray-200 rounded-full h-5">
+      <div className="h-5 rounded-full text-white text-xs flex items-center justify-center" style={{ width: `${Math.min(100, (value / goal) * 100)}%`, backgroundColor: color }}>
         {value}/{goal}
       </div>
     </div>
@@ -200,22 +200,26 @@ export default function Dashboard() {
           </Card>
 
           <Card title="Sunsets & Guitar Progress" bg="bg-green-100">
-            {progressBar('Sunsets', stats.sunsets, 100)}
-            {progressBar('Guitar', stats.guitar, 200)}
+            {progressBar('Sunsets', stats.sunsets, 100, '#f97316')}
+            {progressBar('Guitar', stats.guitar, 200, '#a855f7')}
           </Card>
 
           <Card title="Workout Tracker (Last 14 Days)" bg="bg-purple-100">
-            {Object.entries(stats.workoutCounts as Record<string, number>).map(([k, v]) => (
-              <p key={k}><span className="inline-block w-3 h-3 mr-2 rounded-full" style={{ backgroundColor: colorMap[k] }}></span>{k}: {v}</p>
-            ))}
-            <p><span className="inline-block w-3 h-3 mr-2 rounded-full bg-gray-600"></span>Other: {stats.discreetCount}</p>
-            <PieChart width={300} height={200}>
-              <Pie data={stats.pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60}>
-                {stats.pieData.map((entry: { color: string }, idx: number) => (
-                  <Cell key={`cell-${idx}`} fill={entry.color} />
+            <div className="flex">
+              <div className="flex-1 space-y-1">
+                {['Push', 'Pull', 'Legs', 'Surfing', 'Full body', 'Core', 'Cardio'].map((k) => (
+                  <p key={k}><span className="inline-block w-3 h-3 mr-2 rounded-full" style={{ backgroundColor: colorMap[k] }}></span>{k}: {stats.workoutCounts[k]}</p>
                 ))}
-              </Pie>
-            </PieChart>
+                <p><span className="inline-block w-3 h-3 mr-2 rounded-full bg-gray-600"></span>Other: {stats.discreetCount}</p>
+              </div>
+              <PieChart width={300} height={200}>
+                <Pie data={stats.pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60}>
+                  {stats.pieData.map((entry: { color: string }, idx: number) => (
+                    <Cell key={`cell-${idx}`} fill={entry.color} />
+                  ))}
+                </Pie>
+              </PieChart>
+            </div>
           </Card>
         </div>
 
@@ -237,7 +241,11 @@ export default function Dashboard() {
                 <input
                   type="checkbox"
                   checked={value}
-                  onChange={() => setVisibleLines(prev => ({ ...prev, [key as keyof typeof prev]: !prev[key as keyof typeof prev] }))}
+                  onChange={() =>
+                    setVisibleLines(prev => ({
+                      ...prev,
+                  [key as keyof typeof prev]: !prev[key as keyof typeof prev]
+                    }))}
                   className="mr-1"
                 />
                 {key.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}
