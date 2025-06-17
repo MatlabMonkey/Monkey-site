@@ -111,6 +111,9 @@ export default function Dashboard() {
       const last7 = parsed.filter(e => dateDiff(e.date, today) <= 7);
       const last14 = parsed.filter(e => dateDiff(e.date, today) <= 14);
       const thisYearEntries = parsed.filter(e => e.date.getFullYear() === thisYear);
+      const lastEntryDate = parsed.length > 0 ? parsed[parsed.length - 1].date : null;
+      const daysBehind = lastEntryDate ? dateDiff(lastEntryDate, today) - 1 : 0;
+      const lastEntryStr = lastEntryDate ? lastEntryDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'No entries yet';
 
       const rand = (arr: any[], field: string) => arr.filter(e => e[field]?.trim()).sort(() => 0.5 - Math.random())[0]?.[field] || '—';
 
@@ -154,6 +157,9 @@ export default function Dashboard() {
         sunsets,
         guitar,
         pieData,
+        lastEntryDate,
+        daysBehind,
+        lastEntryStr,
         chartData: thisYearEntries.map((e, i) => ({
           date: e.date.toISOString().split('T')[0],
           how_good: qualitySeries[i],
@@ -227,8 +233,13 @@ export default function Dashboard() {
               </PieChart>
             </div>
           </Card>
-        </div>
+              
+          <Card title={`Days Behind: ${stats.daysBehind}`} bg="bg-gray-100">
+            <p className="text-md text-gray-800">Last entry: <strong>{stats.lastEntryStr}</strong></p>
+          </Card>
 
+        </div>
+            
         <div className="w-full bg-white rounded-xl p-4 shadow">
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-xl font-bold text-gray-800">Yearly Trends</h2>
