@@ -8,7 +8,6 @@ import ProgressBar from "../components/ProgressBar"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
 
 
-
 import {
   TrendingUp,
   Wine,
@@ -22,9 +21,12 @@ import {
   Music,
   Eye,
   EyeOff,
+  Sparkles,
+  Clock,
+  TrendingDown,
 } from "lucide-react"
 
-// Keep all the existing utility functions
+// Enhanced smoothing functions with different sigma values
 function gaussianSmooth(data: number[], sigma = 2): number[] {
   const kernelSize = Math.ceil(sigma * 3) * 2 + 1
   const kernel: number[] = []
@@ -57,7 +59,11 @@ function formatTick(dateStr: string, index: number, showAllDays: boolean) {
 }
 
 function formatTooltipLabel(value: string) {
-  return new Date(value).toISOString().split("T")[0]
+  return new Date(value).toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+  })
 }
 
 function formatTooltipValue(value: number, name: string, props: any) {
@@ -76,8 +82,8 @@ const colorMap: Record<string, string> = {
   Push: "#ef4444",
   Pull: "#f97316",
   Legs: "#eab308",
-  Surfing: "#22c55e",
-  "Full body": "#3b82f6",
+  "Full body": "#22c55e",
+  Surfing: "#3b82f6",
   Core: "#8b5cf6",
   Cardio: "#ec4899",
 }
@@ -92,6 +98,117 @@ type Entry = {
   gratitude: string
   thought_of_day: string
   booleans: string[]
+}
+
+// Modern Metric Card Component
+function MetricCard({
+  title,
+  value,
+  subtitle,
+  icon,
+  gradient,
+  trend,
+  children,
+}: {
+  title: string
+  value: string | number
+  subtitle?: string
+  icon: React.ReactNode
+  gradient: string
+  trend?: "up" | "down" | "neutral"
+  children?: React.ReactNode
+}) {
+  return (
+    <div
+      className={`relative overflow-hidden rounded-3xl p-6 ${gradient} shadow-lg hover:shadow-xl transition-all duration-300 group`}
+    >
+      <div className="absolute top-0 right-0 w-32 h-32 opacity-10 transform translate-x-8 -translate-y-8">
+        <div className="w-full h-full rounded-full bg-white"></div>
+      </div>
+
+      <div className="relative z-10">
+        <div className="flex items-center justify-between mb-4">
+          <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">{icon}</div>
+          {trend && (
+            <div
+              className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                trend === "up"
+                  ? "bg-green-100 text-green-700"
+                  : trend === "down"
+                    ? "bg-red-100 text-red-700"
+                    : "bg-gray-100 text-gray-700"
+              }`}
+            >
+              {trend === "up" ? (
+                <TrendingUp className="w-3 h-3" />
+              ) : trend === "down" ? (
+                <TrendingDown className="w-3 h-3" />
+              ) : (
+                <Clock className="w-3 h-3" />
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="space-y-1">
+          <h3 className="text-white/80 text-sm font-medium">{title}</h3>
+          <div className="text-3xl font-bold text-white">{value}</div>
+          {subtitle && <p className="text-white/70 text-sm">{subtitle}</p>}
+        </div>
+
+        {children && <div className="mt-4">{children}</div>}
+      </div>
+    </div>
+  )
+}
+
+// Progress Ring Component
+function ProgressRing({
+  progress,
+  size = 120,
+  strokeWidth = 8,
+  color = "#3b82f6",
+}: {
+  progress: number
+  size?: number
+  strokeWidth?: number
+  color?: string
+}) {
+  const radius = (size - strokeWidth) / 2
+  const circumference = radius * 2 * Math.PI
+  const strokeDasharray = `${circumference} ${circumference}`
+  const strokeDashoffset = circumference - (progress / 100) * circumference
+
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg className="transform -rotate-90" width={size} height={size}>
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke="currentColor"
+          strokeWidth={strokeWidth}
+          fill="transparent"
+          className="text-gray-200"
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          stroke={color}
+          strokeWidth={strokeWidth}
+          fill="transparent"
+          strokeDasharray={strokeDasharray}
+          strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round"
+          className="transition-all duration-1000 ease-out"
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center">
+        <span className="text-2xl font-bold text-gray-700">{Math.round(progress)}%</span>
+      </div>
+    </div>
+  )
 }
 
 export default function Dashboard() {
@@ -139,15 +256,19 @@ export default function Dashboard() {
       const rand = (arr: any[], field: string) =>
         arr.filter((e) => e[field]?.trim()).sort(() => 0.5 - Math.random())[0]?.[field] || "—"
 
-      const workouts = ["Push", "Pull", "Legs", "Surfing", "Full body", "Core", "Cardio"]
+      const workouts = ["Push", "Pull", "Legs", "Full body", "Surfing", "Core", "Cardio"]
       const workoutCounts: Record<string, number> = Object.fromEntries(workouts.map((type) => [type, 0]))
       let other = 0
       let sunsets = 0
       let guitar = 0
+      let totalWorkouts = 0
 
       last14.forEach((e) => {
         e.booleans?.forEach((val: string) => {
-          if (workouts.includes(val)) workoutCounts[val]++
+          if (workouts.includes(val)) {
+            workoutCounts[val]++
+            totalWorkouts++
+          }
         })
         other += e.scount || 0
       })
@@ -167,7 +288,8 @@ export default function Dashboard() {
           color: colorMap[name] || "#6b7280",
         }))
 
-      const sigma = timeRange === "30days" ? 1.5 : 2
+      // Use different sigma values based on time range
+      const sigma = timeRange === "30days" ? 0.8 : 2
       const qualitySeries = gaussianSmooth(
         thisYearEntries.map((e) => e.how_good),
         sigma,
@@ -191,6 +313,7 @@ export default function Dashboard() {
         gratitude: rand(parsed, "gratitude"),
         thought: rand(parsed, "thought_of_day"),
         workoutCounts,
+        totalWorkouts,
         sunsets,
         guitar,
         pieData,
@@ -223,10 +346,16 @@ export default function Dashboard() {
 
   if (!stats) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="text-gray-600 font-medium">Loading your dashboard...</p>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
+        <div className="text-center space-y-6">
+          <div className="relative">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-200 border-t-indigo-600 mx-auto"></div>
+            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-400 to-purple-400 opacity-20 animate-pulse"></div>
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-bold text-gray-800">Loading Dashboard</h2>
+            <p className="text-gray-600">Preparing your personal insights...</p>
+          </div>
         </div>
       </div>
     )
@@ -237,283 +366,348 @@ export default function Dashboard() {
 
   return (
     <PinGate>
-      <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 p-4 md:p-6">
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 bg-clip-text text-transparent mb-2">
-            Life Dashboard
-          </h1>
-          <p className="text-gray-600 text-lg">Your personal journey insights and analytics</p>
+        <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 sticky top-0 z-40">
+          <div className="max-w-7xl mx-auto px-6 py-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  Life Dashboard
+                </h1>
+                <p className="text-gray-600 mt-1">Your personal journey insights and analytics</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="px-4 py-2 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full">
+                  <span className="text-sm font-medium text-green-700">
+                    {stats.daysBehind === 0 ? "Up to date!" : `${stats.daysBehind} days behind`}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 mb-8">
-          <Card
-            title="Daily Averages (Last 7 Days)"
-            gradient="blue"
-            icon={<TrendingUp className="w-5 h-5 text-blue-600" />}
-          >
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Quality of Life</span>
-                <span className="text-2xl font-bold text-blue-700">{stats.avgQuality7.toFixed(1)}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Productivity</span>
-                <span className="text-2xl font-bold text-blue-700">{stats.avgProductivity7.toFixed(1)}</span>
-              </div>
-            </div>
-          </Card>
+        <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
+          {/* Key Metrics Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <MetricCard
+              title="Quality of Life"
+              value={stats.avgQuality7.toFixed(1)}
+              subtitle="7-day average"
+              icon={<Heart className="w-6 h-6 text-white" />}
+              gradient="bg-gradient-to-br from-pink-500 to-rose-600"
+              trend="up"
+            />
 
-          <Card title="Drink Summary" gradient="orange" icon={<Wine className="w-5 h-5 text-orange-600" />}>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Total This Year</span>
-                <span className="text-2xl font-bold text-orange-700">{stats.totalDrinksYear}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">Last 14 Days</span>
-                <span className="text-2xl font-bold text-orange-700">{stats.drinks14}</span>
-              </div>
-            </div>
-          </Card>
+            <MetricCard
+              title="Productivity"
+              value={stats.avgProductivity7.toFixed(1)}
+              subtitle="7-day average"
+              icon={<Zap className="w-6 h-6 text-white" />}
+              gradient="bg-gradient-to-br from-blue-500 to-indigo-600"
+              trend="neutral"
+            />
 
-          <Card title="Random Highlights" gradient="pink" icon={<Heart className="w-5 h-5 text-pink-600" />}>
-            <div className="space-y-3 text-sm">
-              <div>
-                <span className="font-semibold text-pink-700">🌹 Highlight:</span>
-                <p className="mt-1 text-gray-700 line-clamp-2">{stats.rose}</p>
-              </div>
-              <div>
-                <span className="font-semibold text-pink-700">🙏 Gratitude:</span>
-                <p className="mt-1 text-gray-700 line-clamp-2">{stats.gratitude}</p>
-              </div>
-              <div>
-                <span className="font-semibold text-pink-700">💭 Thought:</span>
-                <p className="mt-1 text-gray-700 line-clamp-2">{stats.thought}</p>
-              </div>
-            </div>
-          </Card>
+            <MetricCard
+              title="Total Workouts"
+              value={stats.totalWorkouts}
+              subtitle="Last 14 days"
+              icon={<Activity className="w-6 h-6 text-white" />}
+              gradient="bg-gradient-to-br from-green-500 to-emerald-600"
+              trend="up"
+            />
 
-          <Card title="Goals Progress" gradient="green" icon={<Target className="w-5 h-5 text-green-600" />}>
-            <div className="space-y-4">
-              <ProgressBar
-                label="Sunsets"
-                value={stats.sunsets}
-                goal={100}
-                color="#f97316"
-                icon={<Sun className="w-4 h-4" />}
-              />
-              <ProgressBar
-                label="Guitar Practice"
-                value={stats.guitar}
-                goal={200}
-                color="#8b5cf6"
-                icon={<Music className="w-4 h-4" />}
-              />
-            </div>
-          </Card>
+            <MetricCard
+              title="Drinks"
+              value={stats.drinks14}
+              subtitle="Last 14 days"
+              icon={<Wine className="w-6 h-6 text-white" />}
+              gradient="bg-gradient-to-br from-orange-500 to-red-600"
+              trend="down"
+            />
+          </div>
 
-          <Card
-            title="Workout Tracker (Last 14 Days)"
-            gradient="purple"
-            icon={<Activity className="w-5 h-5 text-purple-600" />}
-          >
-            <div className="flex flex-col lg:flex-row gap-4">
-              <div className="flex-1 space-y-2">
-                {["Push", "Pull", "Legs", "Surfing", "Full body", "Core", "Cardio"].map((k) => (
-                  <div key={k} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="w-3 h-3 rounded-full" style={{ backgroundColor: colorMap[k] }}></span>
-                      <span>{k}</span>
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* Chart Section */}
+              <div className="bg-white rounded-3xl shadow-lg border border-gray-200/50 overflow-hidden">
+                <div className="p-6 border-b border-gray-100">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-indigo-100 rounded-xl">
+                        <BarChart3 className="w-5 h-5 text-indigo-600" />
+                      </div>
+                      <h2 className="text-xl font-bold text-gray-800">Trends Over Time</h2>
                     </div>
-                    <span className="font-semibold">{stats.workoutCounts[k]}</span>
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setShowSmoothed(!showSmoothed)}
+                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                          showSmoothed
+                            ? "bg-purple-100 text-purple-700 border border-purple-200"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                        }`}
+                      >
+                        <Sparkles className="w-4 h-4 inline mr-1" />
+                        {showSmoothed ? "Smoothed" : "Raw"}
+                      </button>
+
+                      <button
+                        onClick={() => setTimeRange(timeRange === "year" ? "30days" : "year")}
+                        className="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-all"
+                      >
+                        {timeRange === "year" ? "Full Year" : "30 Days"}
+                      </button>
+                    </div>
                   </div>
-                ))}
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full bg-gray-600"></span>
-                    <span>Other</span>
+
+                  {/* Line Toggles */}
+                  <div className="flex flex-wrap gap-3 mt-4">
+                    {Object.entries(visibleLines).map(([key, value]) => (
+                      <button
+                        key={key}
+                        onClick={() =>
+                          setVisibleLines((prev) => ({
+                            ...prev,
+                            [key as keyof typeof prev]: !prev[key as keyof typeof prev],
+                          }))
+                        }
+                        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
+                          value
+                            ? "bg-indigo-100 text-indigo-700 border border-indigo-200"
+                            : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                        }`}
+                      >
+                        {value ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                        {key.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                      </button>
+                    ))}
                   </div>
-                  <span className="font-semibold">{stats.discreetCount}</span>
+                </div>
+
+                <div className="p-6">
+                  <ResponsiveContainer width="100%" height={400}>
+                    <LineChart data={filteredData} margin={{ left: 10, right: 10, top: 10, bottom: 10 }}>
+                      <XAxis
+                        dataKey="date"
+                        tickFormatter={(d) => formatTick(d, 0, timeRange !== "year")}
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 12, fill: "#6b7280" }}
+                      />
+                      <YAxis
+                        domain={[0, 10]}
+                        ticks={[0, 2.5, 5, 7.5, 10]}
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 12, fill: "#6b7280" }}
+                      />
+                      <Tooltip
+                        labelFormatter={formatTooltipLabel}
+                        formatter={formatTooltipValue}
+                        contentStyle={{
+                          backgroundColor: "white",
+                          border: "none",
+                          borderRadius: "16px",
+                          boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                          fontSize: "14px",
+                        }}
+                      />
+                      <Legend wrapperStyle={{ fontSize: "14px", paddingTop: "20px" }} iconType="line" />
+                      {visibleLines.how_good && (
+                        <Line
+                          type="monotone"
+                          dataKey="how_good"
+                          stroke="#eab308"
+                          name="How Good"
+                          dot={false}
+                          strokeWidth={3}
+                          activeDot={{ r: 6, fill: "#eab308", strokeWidth: 2, stroke: "#fff" }}
+                        />
+                      )}
+                      {visibleLines.productivity && (
+                        <Line
+                          type="monotone"
+                          dataKey="productivity"
+                          stroke="#3b82f6"
+                          name="Productivity"
+                          dot={false}
+                          strokeWidth={3}
+                          activeDot={{ r: 6, fill: "#3b82f6", strokeWidth: 2, stroke: "#fff" }}
+                        />
+                      )}
+                      {visibleLines.drinks && (
+                        <Line
+                          type="monotone"
+                          dataKey="drinks"
+                          stroke="#ef4444"
+                          name="Drinks"
+                          dot={false}
+                          strokeWidth={3}
+                          activeDot={{ r: 6, fill: "#ef4444", strokeWidth: 2, stroke: "#fff" }}
+                        />
+                      )}
+                    </LineChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
 
-              {stats.pieData.length > 0 && (
-                <div className="flex justify-center">
-                  <PieChart width={120} height={120}>
-                    <Pie
-                      data={stats.pieData}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={40}
-                      innerRadius={20}
-                    >
-                      {stats.pieData.map((entry: { color: string }, idx: number) => (
-                        <Cell key={`cell-${idx}`} fill={entry.color} />
-                      ))}
-                    </Pie>
-                  </PieChart>
+              {/* Highlights Section */}
+              <div className="bg-white rounded-3xl shadow-lg border border-gray-200/50 p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-pink-100 rounded-xl">
+                    <Sparkles className="w-5 h-5 text-pink-600" />
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-800">Random Highlights</h2>
                 </div>
-              )}
-            </div>
-          </Card>
 
-          <Card
-            title={`Days Behind: ${stats.daysBehind}`}
-            gradient={stats.daysBehind > 3 ? "orange" : "gray"}
-            icon={<Calendar className="w-5 h-5 text-gray-600" />}
-          >
-            <div className="space-y-2">
-              <p className="text-sm">
-                <span className="font-medium">Last entry:</span>
-              </p>
-              <p className="font-semibold text-gray-800">{stats.lastEntryStr}</p>
-              {stats.daysBehind > 0 && (
-                <div className="mt-3 p-2 bg-orange-100 rounded-lg">
-                  <p className="text-xs text-orange-800">
-                    {stats.daysBehind === 1 ? "You're 1 day behind" : `You're ${stats.daysBehind} days behind`}
+                <div className="grid gap-4">
+                  <div className="p-4 bg-gradient-to-r from-rose-50 to-pink-50 rounded-2xl border border-rose-100">
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">🌹</span>
+                      <div>
+                        <h3 className="font-semibold text-rose-800 mb-1">Highlight</h3>
+                        <p className="text-rose-700 text-sm leading-relaxed">{stats.rose}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-gradient-to-r from-emerald-50 to-green-50 rounded-2xl border border-emerald-100">
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">🙏</span>
+                      <div>
+                        <h3 className="font-semibold text-emerald-800 mb-1">Gratitude</h3>
+                        <p className="text-emerald-700 text-sm leading-relaxed">{stats.gratitude}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">💭</span>
+                      <div>
+                        <h3 className="font-semibold text-blue-800 mb-1">Thought</h3>
+                        <p className="text-blue-700 text-sm leading-relaxed">{stats.thought}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-8">
+              {/* Goals Progress */}
+              <div className="bg-white rounded-3xl shadow-lg border border-gray-200/50 p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-amber-100 rounded-xl">
+                    <Target className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-800">Goals Progress</h2>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="text-center">
+                    <div className="flex items-center justify-center mb-3">
+                      <Sun className="w-5 h-5 text-orange-500 mr-2" />
+                      <span className="font-semibold text-gray-700">Sunsets</span>
+                    </div>
+                    <ProgressRing progress={(stats.sunsets / 100) * 100} color="#f97316" size={100} />
+                    <p className="text-sm text-gray-600 mt-2">{stats.sunsets}/100</p>
+                  </div>
+
+                  <div className="text-center">
+                    <div className="flex items-center justify-center mb-3">
+                      <Music className="w-5 h-5 text-purple-500 mr-2" />
+                      <span className="font-semibold text-gray-700">Guitar</span>
+                    </div>
+                    <ProgressRing progress={(stats.guitar / 200) * 100} color="#8b5cf6" size={100} />
+                    <p className="text-sm text-gray-600 mt-2">{stats.guitar}/200</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Workout Distribution */}
+              <div className="bg-white rounded-3xl shadow-lg border border-gray-200/50 p-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-green-100 rounded-xl">
+                    <Activity className="w-5 h-5 text-green-600" />
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-800">Workouts (14 days)</h2>
+                </div>
+
+                <div className="space-y-4">
+                  {["Push", "Pull", "Legs", "Full body", "Surfing", "Core", "Cardio"].map((workout) => (
+                    <div key={workout} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: colorMap[workout] }}></div>
+                        <span className="text-sm font-medium text-gray-700">{workout}</span>
+                      </div>
+                      <span className="text-sm font-bold text-gray-800">{stats.workoutCounts[workout]}</span>
+                    </div>
+                  ))}
+
+                  {stats.pieData.length > 0 && (
+                    <div className="flex justify-center mt-6">
+                      <PieChart width={160} height={160}>
+                        <Pie
+                          data={stats.pieData}
+                          dataKey="value"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={60}
+                          innerRadius={30}
+                        >
+                          {stats.pieData.map((entry: { color: string }, idx: number) => (
+                            <Cell key={`cell-${idx}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                      </PieChart>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Last Entry Status */}
+              <div
+                className={`rounded-3xl shadow-lg border p-6 ${
+                  stats.daysBehind > 3
+                    ? "bg-gradient-to-br from-red-50 to-orange-50 border-red-200/50"
+                    : "bg-gradient-to-br from-green-50 to-emerald-50 border-green-200/50"
+                }`}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className={`p-2 rounded-xl ${stats.daysBehind > 3 ? "bg-red-100" : "bg-green-100"}`}>
+                    <Calendar className={`w-5 h-5 ${stats.daysBehind > 3 ? "text-red-600" : "text-green-600"}`} />
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-800">Journal Status</h2>
+                </div>
+
+                <div className="space-y-3">
+                  <div className={`text-3xl font-bold ${stats.daysBehind > 3 ? "text-red-700" : "text-green-700"}`}>
+                    {stats.daysBehind === 0 ? "✅ Current" : `${stats.daysBehind} days behind`}
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Last entry:</span>
+                    <br />
+                    {stats.lastEntryStr}
                   </p>
                 </div>
-              )}
+              </div>
             </div>
-          </Card>
+          </div>
         </div>
-
-        {/* Chart Section */}
-        <Card
-          title="Yearly Trends"
-          gradient="gray"
-          icon={<BarChart3 className="w-5 h-5 text-gray-600" />}
-          className="mb-6"
-        >
-          {/* Chart Controls */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <div className="flex flex-wrap gap-3">
-              {Object.entries(visibleLines).map(([key, value]) => (
-                <button
-                  key={key}
-                  onClick={() =>
-                    setVisibleLines((prev) => ({
-                      ...prev,
-                      [key as keyof typeof prev]: !prev[key as keyof typeof prev],
-                    }))
-                  }
-                  className={`
-                    flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all
-                    ${
-                      value
-                        ? "bg-blue-100 text-blue-700 border border-blue-200"
-                        : "bg-gray-100 text-gray-500 border border-gray-200 hover:bg-gray-200"
-                    }
-                  `}
-                >
-                  {value ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                  {key.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                </button>
-              ))}
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowSmoothed(!showSmoothed)}
-                className={`
-                  px-4 py-2 rounded-lg text-sm font-medium transition-all
-                  ${
-                    showSmoothed
-                      ? "bg-purple-100 text-purple-700 border border-purple-200"
-                      : "bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200"
-                  }
-                `}
-              >
-                <Zap className="w-4 h-4 inline mr-1" />
-                {showSmoothed ? "Smoothed" : "Raw Data"}
-              </button>
-
-              <button
-                onClick={() => setTimeRange(timeRange === "year" ? "30days" : "year")}
-                className="px-4 py-2 bg-gray-100 text-gray-600 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-200 transition-all"
-              >
-                {timeRange === "year" ? "Full Year" : "Last 30 Days"}
-              </button>
-            </div>
-          </div>
-
-          {/* Chart */}
-          <div className="bg-white rounded-xl p-4 border border-gray-200">
-            <ResponsiveContainer width="100%" height={400}>
-              <LineChart data={filteredData} margin={{ left: 10, right: 10, top: 10, bottom: 10 }}>
-                <XAxis
-                  dataKey="date"
-                  tickFormatter={(d) => formatTick(d, 0, timeRange !== "year")}
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12, fill: "#6b7280" }}
-                />
-                <YAxis
-                  domain={[0, 10]}
-                  ticks={[0, 2.5, 5, 7.5, 10]}
-                  axisLine={false}
-                  tickLine={false}
-                  tick={{ fontSize: 12, fill: "#6b7280" }}
-                />
-                <Tooltip
-                  labelFormatter={formatTooltipLabel}
-                  formatter={formatTooltipValue}
-                  contentStyle={{
-                    backgroundColor: "white",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "12px",
-                    boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-                    fontSize: "14px",
-                  }}
-                />
-                <Legend wrapperStyle={{ fontSize: "14px", paddingTop: "20px" }} iconType="line" />
-                {visibleLines.how_good && (
-                  <Line
-                    type="monotone"
-                    dataKey="how_good"
-                    stroke="#eab308"
-                    name="How Good"
-                    dot={false}
-                    strokeWidth={3}
-                    activeDot={{ r: 6, fill: "#eab308" }}
-                  />
-                )}
-                {visibleLines.productivity && (
-                  <Line
-                    type="monotone"
-                    dataKey="productivity"
-                    stroke="#3b82f6"
-                    name="Productivity"
-                    dot={false}
-                    strokeWidth={3}
-                    activeDot={{ r: 6, fill: "#3b82f6" }}
-                  />
-                )}
-                {visibleLines.drinks && (
-                  <Line
-                    type="monotone"
-                    dataKey="drinks"
-                    stroke="#ef4444"
-                    name="Drinks"
-                    dot={false}
-                    strokeWidth={3}
-                    activeDot={{ r: 6, fill: "#ef4444" }}
-                  />
-                )}
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
-      </main>
+      </div>
     </PinGate>
   )
 }
 
-// Keep all existing utility functions
+// Utility functions
 function avg(arr: number[]) {
   const valid = arr.filter((n) => typeof n === "number" && !isNaN(n))
   return valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 0
