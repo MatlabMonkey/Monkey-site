@@ -242,7 +242,7 @@ export default function Dashboard() {
       const last7 = parsed.filter((e) => dateDiff(e.date, today) <= 7)
       const last14 = parsed.filter((e) => dateDiff(e.date, today) <= 14)
       const thisYearEntries = parsed.filter((e) => e.date.getFullYear() === thisYear)
-      const lastEntryDate = parsed.length > 0 ? parsed[parsed.length - 1].date : null
+      const lastEntryDate = parsed.length > 0 ? parsed[parsed.length].date : null
       const daysBehind = lastEntryDate ? dateDiff(lastEntryDate, today) - 1 : 0
       const lastEntryStr = lastEntryDate
         ? lastEntryDate.toLocaleDateString("en-US", {
