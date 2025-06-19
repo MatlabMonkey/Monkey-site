@@ -2,7 +2,7 @@ export default function Home() {
   return (
     <main className="min-h-screen flex items-center justify-center p-6 text-white bg-black">
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold">Welcome to ZT Dashboard</h1>
+        <h1 className="text-4xl font-bold">SITEARIAS</h1>
         <p className="text-gray-400">A hub for all my personal data and projects.</p>
         <a
           href="/dashboard"
