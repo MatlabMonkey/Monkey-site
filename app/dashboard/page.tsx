@@ -233,7 +233,7 @@ export default function Dashboard() {
       const parsed = entries
         .map((e: any) => ({
           ...e,
-          date: new Date(e.date),
+          date: new Date(e.date + 'T00:00:00'),
         }))
         .sort((a, b) => a.date.getTime() - b.date.getTime())
 
