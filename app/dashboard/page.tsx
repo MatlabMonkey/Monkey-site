@@ -1,13 +1,11 @@
-'use client';
+"use client"
 
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabaseClient';
-import PinGate from '../components/PinGate';
-import Card from '../components/Card';
-import ProgressBar from "../components/ProgressBar"
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from 'recharts';
+import type React from "react"
 
-
+import { useEffect, useState } from "react"
+import { supabase } from "../lib/supabaseClient"
+import PinGate from "../components/PinGate"
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from "recharts"
 import {
   TrendingUp,
   Wine,
@@ -24,6 +22,8 @@ import {
   Sparkles,
   Clock,
   TrendingDown,
+  BookOpen,
+  RotateCcw,
 } from "lucide-react"
 
 // Enhanced smoothing functions with different sigma values
@@ -100,14 +100,16 @@ type Entry = {
   booleans: string[]
 }
 
-// Modern Metric Card Component
-function MetricCard({
+// Flippable Metric Card Component
+function FlippableMetricCard({
   title,
   value,
   subtitle,
   icon,
   gradient,
   trend,
+  yearValue,
+  yearSubtitle,
   children,
 }: {
   title: string
@@ -116,47 +118,86 @@ function MetricCard({
   icon: React.ReactNode
   gradient: string
   trend?: "up" | "down" | "neutral"
+  yearValue: string | number
+  yearSubtitle: string
   children?: React.ReactNode
 }) {
+  const [isFlipped, setIsFlipped] = useState(false)
+
   return (
-    <div
-      className={`relative overflow-hidden rounded-3xl p-6 ${gradient} shadow-lg hover:shadow-xl transition-all duration-300 group`}
-    >
-      <div className="absolute top-0 right-0 w-32 h-32 opacity-10 transform translate-x-8 -translate-y-8">
-        <div className="w-full h-full rounded-full bg-white"></div>
-      </div>
+    <div className="relative h-48 perspective-1000">
+      <div
+        className={`relative w-full h-full transition-transform duration-700 transform-style-preserve-3d cursor-pointer ${
+          isFlipped ? "rotate-y-180" : ""
+        }`}
+        onClick={() => setIsFlipped(!isFlipped)}
+      >
+        {/* Front Side */}
+        <div
+          className={`absolute inset-0 w-full h-full backface-hidden overflow-hidden rounded-3xl p-6 ${gradient} shadow-lg hover:shadow-xl transition-all duration-300 group`}
+        >
+          <div className="absolute top-0 right-0 w-32 h-32 opacity-10 transform translate-x-8 -translate-y-8">
+            <div className="w-full h-full rounded-full bg-white"></div>
+          </div>
 
-      <div className="relative z-10">
-        <div className="flex items-center justify-between mb-4">
-          <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">{icon}</div>
-          {trend && (
-            <div
-              className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                trend === "up"
-                  ? "bg-green-100 text-green-700"
-                  : trend === "down"
-                    ? "bg-red-100 text-red-700"
-                    : "bg-gray-100 text-gray-700"
-              }`}
-            >
-              {trend === "up" ? (
-                <TrendingUp className="w-3 h-3" />
-              ) : trend === "down" ? (
-                <TrendingDown className="w-3 h-3" />
-              ) : (
-                <Clock className="w-3 h-3" />
-              )}
+          <div className="relative z-10 h-full flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">{icon}</div>
+              <div className="flex items-center gap-2">
+                {trend && (
+                  <div
+                    className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                      trend === "up"
+                        ? "bg-green-100 text-green-700"
+                        : trend === "down"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    {trend === "up" ? (
+                      <TrendingUp className="w-3 h-3" />
+                    ) : trend === "down" ? (
+                      <TrendingDown className="w-3 h-3" />
+                    ) : (
+                      <Clock className="w-3 h-3" />
+                    )}
+                  </div>
+                )}
+                <RotateCcw className="w-4 h-4 text-white/60" />
+              </div>
             </div>
-          )}
+
+            <div className="flex-1 flex flex-col justify-center space-y-1">
+              <h3 className="text-white/80 text-sm font-medium">{title}</h3>
+              <div className="text-3xl font-bold text-white">{value}</div>
+              {subtitle && <p className="text-white/70 text-sm">{subtitle}</p>}
+            </div>
+
+            {children && <div className="mt-4">{children}</div>}
+          </div>
         </div>
 
-        <div className="space-y-1">
-          <h3 className="text-white/80 text-sm font-medium">{title}</h3>
-          <div className="text-3xl font-bold text-white">{value}</div>
-          {subtitle && <p className="text-white/70 text-sm">{subtitle}</p>}
-        </div>
+        {/* Back Side */}
+        <div
+          className={`absolute inset-0 w-full h-full backface-hidden rotate-y-180 overflow-hidden rounded-3xl p-6 ${gradient} shadow-lg hover:shadow-xl transition-all duration-300 group`}
+        >
+          <div className="absolute top-0 right-0 w-32 h-32 opacity-10 transform translate-x-8 -translate-y-8">
+            <div className="w-full h-full rounded-full bg-white"></div>
+          </div>
 
-        {children && <div className="mt-4">{children}</div>}
+          <div className="relative z-10 h-full flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">{icon}</div>
+              <RotateCcw className="w-4 h-4 text-white/60" />
+            </div>
+
+            <div className="flex-1 flex flex-col justify-center space-y-1">
+              <h3 className="text-white/80 text-sm font-medium">{title}</h3>
+              <div className="text-3xl font-bold text-white">{yearValue}</div>
+              <p className="text-white/70 text-sm">{yearSubtitle}</p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -233,7 +274,7 @@ export default function Dashboard() {
       const parsed = entries
         .map((e: any) => ({
           ...e,
-          date: new Date(e.date + 'T00:00:00'),
+          date: new Date(e.date),
         }))
         .sort((a, b) => a.date.getTime() - b.date.getTime())
 
@@ -242,7 +283,7 @@ export default function Dashboard() {
       const last7 = parsed.filter((e) => dateDiff(e.date, today) <= 7)
       const last14 = parsed.filter((e) => dateDiff(e.date, today) <= 14)
       const thisYearEntries = parsed.filter((e) => e.date.getFullYear() === thisYear)
-      const lastEntryDate = parsed.length > 0 ? parsed[parsed.length].date : null
+      const lastEntryDate = parsed.length > 0 ? parsed[parsed.length - 1].date : null
       const daysBehind = lastEntryDate ? dateDiff(lastEntryDate, today) - 1 : 0
       const lastEntryStr = lastEntryDate
         ? lastEntryDate.toLocaleDateString("en-US", {
@@ -253,21 +294,35 @@ export default function Dashboard() {
           })
         : "No entries yet"
 
-      const rand = (arr: any[], field: string) =>
-        arr.filter((e) => e[field]?.trim()).sort(() => 0.5 - Math.random())[0]?.[field] || "—"
+      // Enhanced random function that returns both value and date
+      const randWithDate = (arr: any[], field: string) => {
+        const validEntries = arr.filter((e) => e[field]?.trim())
+        if (validEntries.length === 0) return { value: "—", date: null }
+        const randomEntry = validEntries.sort(() => 0.5 - Math.random())[0]
+        return {
+          value: randomEntry[field],
+          date: randomEntry.date.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          }),
+        }
+      }
 
       const workouts = ["Push", "Pull", "Legs", "Full body", "Surfing", "Core", "Cardio"]
       const workoutCounts: Record<string, number> = Object.fromEntries(workouts.map((type) => [type, 0]))
       let other = 0
       let sunsets = 0
       let guitar = 0
-      let totalWorkouts = 0
+      let reading = 0
+      let totalWorkouts14 = 0
+      let totalWorkoutsYear = 0
 
       last14.forEach((e) => {
         e.booleans?.forEach((val: string) => {
           if (workouts.includes(val)) {
             workoutCounts[val]++
-            totalWorkouts++
+            totalWorkouts14++
           }
         })
         other += e.scount || 0
@@ -277,6 +332,8 @@ export default function Dashboard() {
         e.booleans?.forEach((val: string) => {
           if (val === "Watch sunset") sunsets++
           if (val === "Guitar") guitar++
+          if (val === "Read ten pages") reading++
+          if (workouts.includes(val)) totalWorkoutsYear++
         })
       })
 
@@ -305,17 +362,21 @@ export default function Dashboard() {
 
       setStats({
         avgQuality7: avg(last7.map((e) => e.how_good)),
+        avgQualityYear: avg(thisYearEntries.map((e) => e.how_good)),
         avgProductivity7: avg(last7.map((e) => e.productivity)),
+        avgProductivityYear: avg(thisYearEntries.map((e) => e.productivity)),
         totalDrinksYear: sum(thisYearEntries.map((e) => e.drinks)),
         drinks14: sum(last14.map((e) => e.drinks)),
         discreetCount: other,
-        rose: rand(parsed, "rose"),
-        gratitude: rand(parsed, "gratitude"),
-        thought: rand(parsed, "thought_of_day"),
+        rose: randWithDate(parsed, "rose"),
+        gratitude: randWithDate(parsed, "gratitude"),
+        thought: randWithDate(parsed, "thought_of_day"),
         workoutCounts,
-        totalWorkouts,
+        totalWorkouts14,
+        totalWorkoutsYear,
         sunsets,
         guitar,
+        reading,
         pieData,
         lastEntryDate,
         daysBehind,
@@ -389,39 +450,47 @@ export default function Dashboard() {
         </div>
 
         <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-          {/* Key Metrics Row */}
+          {/* Key Metrics Row - Now Flippable */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <MetricCard
+            <FlippableMetricCard
               title="Quality of Life"
               value={stats.avgQuality7.toFixed(1)}
               subtitle="7-day average"
+              yearValue={stats.avgQualityYear.toFixed(1)}
+              yearSubtitle="Full year average"
               icon={<Heart className="w-6 h-6 text-white" />}
               gradient="bg-gradient-to-br from-pink-500 to-rose-600"
               trend="up"
             />
 
-            <MetricCard
+            <FlippableMetricCard
               title="Productivity"
               value={stats.avgProductivity7.toFixed(1)}
               subtitle="7-day average"
+              yearValue={stats.avgProductivityYear.toFixed(1)}
+              yearSubtitle="Full year average"
               icon={<Zap className="w-6 h-6 text-white" />}
               gradient="bg-gradient-to-br from-blue-500 to-indigo-600"
               trend="neutral"
             />
 
-            <MetricCard
+            <FlippableMetricCard
               title="Total Workouts"
-              value={stats.totalWorkouts}
+              value={stats.totalWorkouts14}
               subtitle="Last 14 days"
+              yearValue={stats.totalWorkoutsYear}
+              yearSubtitle="Full year total"
               icon={<Activity className="w-6 h-6 text-white" />}
               gradient="bg-gradient-to-br from-green-500 to-emerald-600"
               trend="up"
             />
 
-            <MetricCard
+            <FlippableMetricCard
               title="Drinks"
               value={stats.drinks14}
               subtitle="Last 14 days"
+              yearValue={stats.totalDrinksYear}
+              yearSubtitle="Full year total"
               icon={<Wine className="w-6 h-6 text-white" />}
               gradient="bg-gradient-to-br from-orange-500 to-red-600"
               trend="down"
@@ -498,6 +567,7 @@ export default function Dashboard() {
                         axisLine={false}
                         tickLine={false}
                         tick={{ fontSize: 12, fill: "#6b7280" }}
+                        interval={timeRange === "year" ? "preserveStartEnd" : 0}
                       />
                       <YAxis
                         domain={[0, 10]}
@@ -517,7 +587,7 @@ export default function Dashboard() {
                           fontSize: "14px",
                         }}
                       />
-                      <Legend wrapperStyle={{ fontSize: "14px", paddingTop: "20px" }} iconType="line" />
+                      <Legend wrapperStyle={{ fontSize: "14px", paddingTop: "20px" }} iconType="rect" iconSize={12} />
                       {visibleLines.how_good && (
                         <Line
                           type="monotone"
@@ -556,7 +626,7 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* Highlights Section */}
+              {/* Highlights Section with Dates */}
               <div className="bg-white rounded-3xl shadow-lg border border-gray-200/50 p-6">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-2 bg-pink-100 rounded-xl">
@@ -569,9 +639,14 @@ export default function Dashboard() {
                   <div className="p-4 bg-gradient-to-r from-rose-50 to-pink-50 rounded-2xl border border-rose-100">
                     <div className="flex items-start gap-3">
                       <span className="text-2xl">🌹</span>
-                      <div>
-                        <h3 className="font-semibold text-rose-800 mb-1">Highlight</h3>
-                        <p className="text-rose-700 text-sm leading-relaxed">{stats.rose}</p>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="font-semibold text-rose-800">Highlight</h3>
+                          <span className="text-xs text-rose-600 bg-rose-100 px-2 py-1 rounded-full">
+                            {stats.rose.date}
+                          </span>
+                        </div>
+                        <p className="text-rose-700 text-sm leading-relaxed">{stats.rose.value}</p>
                       </div>
                     </div>
                   </div>
@@ -579,9 +654,14 @@ export default function Dashboard() {
                   <div className="p-4 bg-gradient-to-r from-emerald-50 to-green-50 rounded-2xl border border-emerald-100">
                     <div className="flex items-start gap-3">
                       <span className="text-2xl">🙏</span>
-                      <div>
-                        <h3 className="font-semibold text-emerald-800 mb-1">Gratitude</h3>
-                        <p className="text-emerald-700 text-sm leading-relaxed">{stats.gratitude}</p>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="font-semibold text-emerald-800">Gratitude</h3>
+                          <span className="text-xs text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">
+                            {stats.gratitude.date}
+                          </span>
+                        </div>
+                        <p className="text-emerald-700 text-sm leading-relaxed">{stats.gratitude.value}</p>
                       </div>
                     </div>
                   </div>
@@ -589,9 +669,14 @@ export default function Dashboard() {
                   <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
                     <div className="flex items-start gap-3">
                       <span className="text-2xl">💭</span>
-                      <div>
-                        <h3 className="font-semibold text-blue-800 mb-1">Thought</h3>
-                        <p className="text-blue-700 text-sm leading-relaxed">{stats.thought}</p>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="font-semibold text-blue-800">Thought</h3>
+                          <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                            {stats.thought.date}
+                          </span>
+                        </div>
+                        <p className="text-blue-700 text-sm leading-relaxed">{stats.thought.value}</p>
                       </div>
                     </div>
                   </div>
@@ -601,7 +686,7 @@ export default function Dashboard() {
 
             {/* Right Column */}
             <div className="space-y-8">
-              {/* Goals Progress */}
+              {/* Goals Progress - Now with Reading and Total Workouts */}
               <div className="bg-white rounded-3xl shadow-lg border border-gray-200/50 p-6">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-2 bg-amber-100 rounded-xl">
@@ -610,23 +695,46 @@ export default function Dashboard() {
                   <h2 className="text-xl font-bold text-gray-800">Goals Progress</h2>
                 </div>
 
-                <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-6">
                   <div className="text-center">
                     <div className="flex items-center justify-center mb-3">
-                      <Sun className="w-5 h-5 text-orange-500 mr-2" />
-                      <span className="font-semibold text-gray-700">Sunsets</span>
+                      <Sun className="w-4 h-4 text-orange-500 mr-2" />
+                      <span className="font-semibold text-gray-700 text-sm">Sunsets</span>
                     </div>
-                    <ProgressRing progress={(stats.sunsets / 100) * 100} color="#f97316" size={100} />
-                    <p className="text-sm text-gray-600 mt-2">{stats.sunsets}/100</p>
+                    <ProgressRing progress={(stats.sunsets / 100) * 100} color="#f97316" size={80} strokeWidth={6} />
+                    <p className="text-xs text-gray-600 mt-2">{stats.sunsets}/100</p>
                   </div>
 
                   <div className="text-center">
                     <div className="flex items-center justify-center mb-3">
-                      <Music className="w-5 h-5 text-purple-500 mr-2" />
-                      <span className="font-semibold text-gray-700">Guitar</span>
+                      <Music className="w-4 h-4 text-purple-500 mr-2" />
+                      <span className="font-semibold text-gray-700 text-sm">Guitar</span>
                     </div>
-                    <ProgressRing progress={(stats.guitar / 200) * 100} color="#8b5cf6" size={100} />
-                    <p className="text-sm text-gray-600 mt-2">{stats.guitar}/200</p>
+                    <ProgressRing progress={(stats.guitar / 200) * 100} color="#8b5cf6" size={80} strokeWidth={6} />
+                    <p className="text-xs text-gray-600 mt-2">{stats.guitar}/200</p>
+                  </div>
+
+                  <div className="text-center">
+                    <div className="flex items-center justify-center mb-3">
+                      <BookOpen className="w-4 h-4 text-blue-500 mr-2" />
+                      <span className="font-semibold text-gray-700 text-sm">Reading</span>
+                    </div>
+                    <ProgressRing progress={(stats.reading / 200) * 100} color="#3b82f6" size={80} strokeWidth={6} />
+                    <p className="text-xs text-gray-600 mt-2">{stats.reading}/200</p>
+                  </div>
+
+                  <div className="text-center">
+                    <div className="flex items-center justify-center mb-3">
+                      <Activity className="w-4 h-4 text-green-500 mr-2" />
+                      <span className="font-semibold text-gray-700 text-sm">Workouts</span>
+                    </div>
+                    <ProgressRing
+                      progress={(stats.totalWorkoutsYear / 300) * 100}
+                      color="#22c55e"
+                      size={80}
+                      strokeWidth={6}
+                    />
+                    <p className="text-xs text-gray-600 mt-2">{stats.totalWorkoutsYear}/300</p>
                   </div>
                 </div>
               </div>
@@ -703,6 +811,21 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      <style jsx>{`
+        .perspective-1000 {
+          perspective: 1000px;
+        }
+        .transform-style-preserve-3d {
+          transform-style: preserve-3d;
+        }
+        .backface-hidden {
+          backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+          transform: rotateY(180deg);
+        }
+      `}</style>
     </PinGate>
   )
 }
