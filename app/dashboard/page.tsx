@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useEffect, useState } from "react"
-import { supabase } from "../lib/supabaseClient"
+import { supabase } from "@/lib/supabaseClient"
 import PinGate from "../components/PinGate"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from "recharts"
 import {
@@ -24,6 +24,8 @@ import {
   TrendingDown,
   BookOpen,
   RotateCcw,
+  Flame,
+  Award,
 } from "lucide-react"
 
 // Enhanced smoothing functions with different sigma values
@@ -49,6 +51,77 @@ function gaussianSmooth(data: number[], sigma = 2): number[] {
     }
     return acc
   })
+}
+
+// Streak calculation function
+function calculateStreak(
+  entries: any[],
+  habitKey: string,
+  isBoolean = true,
+): { current: number; longest: number; lastDate: string | null } {
+  if (entries.length === 0) return { current: 0, longest: 0, lastDate: null }
+
+  // Sort entries by date (most recent first)
+  const sortedEntries = [...entries].sort((a, b) => b.date.getTime() - a.date.getTime())
+
+  let currentStreak = 0
+  let longestStreak = 0
+  let tempStreak = 0
+  let lastStreakDate = null
+
+  // Check if we should count today/yesterday for current streak
+  const today = new Date()
+  const yesterday = new Date(today)
+  yesterday.setDate(yesterday.getDate() - 1)
+
+  for (let i = 0; i < sortedEntries.length; i++) {
+    const entry = sortedEntries[i]
+    const hasHabit = isBoolean ? entry.booleans?.includes(habitKey) : entry[habitKey] > 0 // For non-boolean habits like productivity > 7
+
+    if (hasHabit) {
+      tempStreak++
+
+      // For current streak, only count if it's recent (today or consecutive days leading to today/yesterday)
+      if (i === 0 && (isSameDay(entry.date, today) || isSameDay(entry.date, yesterday))) {
+        currentStreak = 1
+        lastStreakDate = entry.date
+
+        // Continue counting backwards for consecutive days
+        for (let j = 1; j < sortedEntries.length; j++) {
+          const prevEntry = sortedEntries[j]
+          const expectedDate = new Date(sortedEntries[j - 1].date)
+          expectedDate.setDate(expectedDate.getDate() - 1)
+
+          if (
+            isSameDay(prevEntry.date, expectedDate) &&
+            (isBoolean ? prevEntry.booleans?.includes(habitKey) : prevEntry[habitKey] > 0)
+          ) {
+            currentStreak++
+          } else {
+            break
+          }
+        }
+      }
+
+      longestStreak = Math.max(longestStreak, tempStreak)
+    } else {
+      tempStreak = 0
+    }
+  }
+
+  return {
+    current: currentStreak,
+    longest: longestStreak,
+    lastDate: lastStreakDate ? lastStreakDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : null,
+  }
+}
+
+function isSameDay(date1: Date, date2: Date): boolean {
+  return (
+    date1.getFullYear() === date2.getFullYear() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getDate() === date2.getDate()
+  )
 }
 
 function formatTick(dateStr: string, index: number, showAllDays: boolean) {
@@ -98,6 +171,55 @@ type Entry = {
   gratitude: string
   thought_of_day: string
   booleans: string[]
+}
+
+// Streak Card Component
+function StreakCard({
+  title,
+  icon,
+  current,
+  longest,
+  lastDate,
+  color,
+}: {
+  title: string
+  icon: React.ReactNode
+  current: number
+  longest: number
+  lastDate: string | null
+  color: string
+}) {
+  const isActive = current > 0
+
+  return (
+    <div
+      className={`relative overflow-hidden rounded-2xl p-4 transition-all duration-300 ${
+        isActive ? `bg-gradient-to-br ${color} shadow-lg` : "bg-gray-50 border border-gray-200"
+      }`}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className={`p-2 rounded-xl ${isActive ? "bg-white/20" : "bg-gray-200"}`}>{icon}</div>
+        {isActive && <Flame className="w-5 h-5 text-orange-300 animate-pulse" />}
+      </div>
+
+      <div className="space-y-1">
+        <h3 className={`text-sm font-medium ${isActive ? "text-white/90" : "text-gray-600"}`}>{title}</h3>
+        <div className={`text-2xl font-bold ${isActive ? "text-white" : "text-gray-800"}`}>
+          {current} {current === 1 ? "day" : "days"}
+        </div>
+        <div className={`text-xs ${isActive ? "text-white/70" : "text-gray-500"}`}>
+          Best: {longest} days
+          {lastDate && current > 0 && <span className="block">Last: {lastDate}</span>}
+        </div>
+      </div>
+
+      {current >= 7 && (
+        <div className="absolute top-2 right-2">
+          <Award className="w-4 h-4 text-yellow-300" />
+        </div>
+      )}
+    </div>
+  )
 }
 
 // Flippable Metric Card Component
@@ -337,6 +459,46 @@ export default function Dashboard() {
         })
       })
 
+      // Calculate streaks for various habits
+      const streaks = {
+        workout: calculateStreak(thisYearEntries, "workout", false), // Any workout
+        reading: calculateStreak(thisYearEntries, "Read ten pages", true),
+        guitar: calculateStreak(thisYearEntries, "Guitar", true),
+        sunset: calculateStreak(thisYearEntries, "Watch sunset", true),
+        highProductivity: calculateStreak(thisYearEntries, "productivity", false), // productivity > 7
+        goodDay: calculateStreak(thisYearEntries, "how_good", false), // how_good > 7
+      }
+
+      // Custom streak calculation for workouts (any workout type)
+      streaks.workout = calculateStreak(
+        thisYearEntries.map((e) => ({
+          ...e,
+          workout: e.booleans?.some((b: string) => workouts.includes(b)) ? 1 : 0,
+        })),
+        "workout",
+        false,
+      )
+
+      // Custom streak calculation for high productivity (>= 7)
+      streaks.highProductivity = calculateStreak(
+        thisYearEntries.map((e) => ({
+          ...e,
+          productivity: e.productivity >= 7 ? 1 : 0,
+        })),
+        "productivity",
+        false,
+      )
+
+      // Custom streak calculation for good days (>= 7)
+      streaks.goodDay = calculateStreak(
+        thisYearEntries.map((e) => ({
+          ...e,
+          how_good: e.how_good >= 7 ? 1 : 0,
+        })),
+        "how_good",
+        false,
+      )
+
       const pieData = Object.entries(workoutCounts)
         .filter(([_, value]) => value > 0)
         .map(([name, value]) => ({
@@ -377,6 +539,7 @@ export default function Dashboard() {
         sunsets,
         guitar,
         reading,
+        streaks,
         pieData,
         lastEntryDate,
         daysBehind,
@@ -495,6 +658,73 @@ export default function Dashboard() {
               gradient="bg-gradient-to-br from-orange-500 to-red-600"
               trend="down"
             />
+          </div>
+
+          {/* Habit Streaks Section */}
+          <div className="bg-white rounded-3xl shadow-lg border border-gray-200/50 p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-2 bg-orange-100 rounded-xl">
+                <Flame className="w-5 h-5 text-orange-600" />
+              </div>
+              <h2 className="text-xl font-bold text-gray-800">Habit Streaks</h2>
+              <span className="text-sm text-gray-500">Current consecutive days</span>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <StreakCard
+                title="Workouts"
+                icon={<Activity className="w-5 h-5 text-white" />}
+                current={stats.streaks.workout.current}
+                longest={stats.streaks.workout.longest}
+                lastDate={stats.streaks.workout.lastDate}
+                color="from-green-500 to-emerald-600"
+              />
+
+              <StreakCard
+                title="Reading"
+                icon={<BookOpen className="w-5 h-5 text-white" />}
+                current={stats.streaks.reading.current}
+                longest={stats.streaks.reading.longest}
+                lastDate={stats.streaks.reading.lastDate}
+                color="from-blue-500 to-indigo-600"
+              />
+
+              <StreakCard
+                title="Guitar"
+                icon={<Music className="w-5 h-5 text-white" />}
+                current={stats.streaks.guitar.current}
+                longest={stats.streaks.guitar.longest}
+                lastDate={stats.streaks.guitar.lastDate}
+                color="from-purple-500 to-violet-600"
+              />
+
+              <StreakCard
+                title="Sunsets"
+                icon={<Sun className="w-5 h-5 text-white" />}
+                current={stats.streaks.sunset.current}
+                longest={stats.streaks.sunset.longest}
+                lastDate={stats.streaks.sunset.lastDate}
+                color="from-orange-500 to-red-600"
+              />
+
+              <StreakCard
+                title="High Productivity"
+                icon={<Zap className="w-5 h-5 text-white" />}
+                current={stats.streaks.highProductivity.current}
+                longest={stats.streaks.highProductivity.longest}
+                lastDate={stats.streaks.highProductivity.lastDate}
+                color="from-cyan-500 to-blue-600"
+              />
+
+              <StreakCard
+                title="Good Days"
+                icon={<Heart className="w-5 h-5 text-white" />}
+                current={stats.streaks.goodDay.current}
+                longest={stats.streaks.goodDay.longest}
+                lastDate={stats.streaks.goodDay.lastDate}
+                color="from-pink-500 to-rose-600"
+              />
+            </div>
           </div>
 
           {/* Main Content Grid */}
