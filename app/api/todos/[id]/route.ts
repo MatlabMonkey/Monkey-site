@@ -1,11 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { supabase } from "../../../../lib/supabaseClient"
 
-export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const body = await request.json()
     const { completed } = body
-    const id = params.id
+    const { id } = await context.params
 
     const { data: todo, error } = await supabase
       .from("todos")
@@ -29,9 +29,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const id = params.id
+    const { id } = await context.params
 
     const { error } = await supabase.from("todos").delete().eq("id", id)
 
