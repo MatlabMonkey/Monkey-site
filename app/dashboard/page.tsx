@@ -69,40 +69,66 @@ function calculateStreak(
   let tempStreak = 0
   let lastStreakDate = null
 
-  // Check if we should count today/yesterday for current streak
-  const today = new Date()
-  const yesterday = new Date(today)
-  yesterday.setDate(yesterday.getDate() - 1)
+  // Find the most recent entry with this habit
+  let mostRecentWithHabit = null
+  let mostRecentWithoutHabit = null
 
   for (let i = 0; i < sortedEntries.length; i++) {
     const entry = sortedEntries[i]
-    const hasHabit = isBoolean ? entry.booleans?.includes(habitKey) : entry[habitKey] > 0 // For non-boolean habits like productivity > 7
+    const hasHabit = isBoolean ? entry.booleans?.includes(habitKey) : entry[habitKey] > 0
+
+    if (hasHabit && !mostRecentWithHabit) {
+      mostRecentWithHabit = entry
+    } else if (!hasHabit && !mostRecentWithoutHabit) {
+      mostRecentWithoutHabit = entry
+    }
+
+    if (mostRecentWithHabit && mostRecentWithoutHabit) break
+  }
+
+  // If the most recent entry with the habit is more recent than the most recent entry without it,
+  // or if there's no entry without the habit, the streak is still active
+  const streakIsActive = !mostRecentWithoutHabit || 
+    (mostRecentWithHabit && mostRecentWithoutHabit && 
+     mostRecentWithHabit.date.getTime() > mostRecentWithoutHabit.date.getTime())
+
+  if (streakIsActive && mostRecentWithHabit) {
+    // Calculate current streak by counting consecutive days backwards from the most recent entry with the habit
+    currentStreak = 1
+    lastStreakDate = mostRecentWithHabit.date
+
+    for (let i = 1; i < sortedEntries.length; i++) {
+      const currentEntry = sortedEntries[i - 1]
+      const prevEntry = sortedEntries[i]
+      
+      // Check if previous entry is consecutive and has the habit
+      const expectedDate = new Date(currentEntry.date)
+      expectedDate.setDate(expectedDate.getDate() - 1)
+
+      if (isSameDay(prevEntry.date, expectedDate)) {
+        const prevHasHabit = isBoolean ? prevEntry.booleans?.includes(habitKey) : prevEntry[habitKey] > 0
+        
+        if (prevHasHabit) {
+          currentStreak++
+        } else {
+          // Found a break in the streak
+          break
+        }
+      } else {
+        // Gap in entries, streak continues (innocent until proven guilty)
+        currentStreak++
+      }
+    }
+  }
+
+  // Calculate longest streak
+  tempStreak = 0
+  for (let i = 0; i < sortedEntries.length; i++) {
+    const entry = sortedEntries[i]
+    const hasHabit = isBoolean ? entry.booleans?.includes(habitKey) : entry[habitKey] > 0
 
     if (hasHabit) {
       tempStreak++
-
-      // For current streak, only count if it's recent (today or consecutive days leading to today/yesterday)
-      if (i === 0 && (isSameDay(entry.date, today) || isSameDay(entry.date, yesterday))) {
-        currentStreak = 1
-        lastStreakDate = entry.date
-
-        // Continue counting backwards for consecutive days
-        for (let j = 1; j < sortedEntries.length; j++) {
-          const prevEntry = sortedEntries[j]
-          const expectedDate = new Date(sortedEntries[j - 1].date)
-          expectedDate.setDate(expectedDate.getDate() - 1)
-
-          if (
-            isSameDay(prevEntry.date, expectedDate) &&
-            (isBoolean ? prevEntry.booleans?.includes(habitKey) : prevEntry[habitKey] > 0)
-          ) {
-            currentStreak++
-          } else {
-            break
-          }
-        }
-      }
-
       longestStreak = Math.max(longestStreak, tempStreak)
     } else {
       tempStreak = 0
@@ -127,12 +153,30 @@ function isSameDay(date1: Date, date2: Date): boolean {
 function formatTick(dateStr: string, index: number, showAllDays: boolean) {
   const [y, m, d] = dateStr.split("-")
   const day = Number.parseInt(d, 10)
-  if (showAllDays) return `${Number.parseInt(m, 10)}/${d}`
-  return day === 1 ? new Date(dateStr).toLocaleString("default", { month: "short" }) : ""
+  const month = Number.parseInt(m, 10)
+  
+  if (showAllDays) {
+    // For 30 days view, show every 5th day to avoid overlap
+    if (day % 5 === 0 || day === 1) {
+      return `${month}/${d}`
+    }
+    return ""
+  } else {
+    // For year view, show month names for any day in the first week of each month
+    if (day <= 7) {
+      const date = new Date(dateStr)
+      return date.toLocaleString("default", { month: "short" })
+    }
+    return ""
+  }
 }
 
 function formatTooltipLabel(value: string) {
-  return new Date(value).toLocaleDateString("en-US", {
+  // Parse the date string and create a date object in local timezone
+  const [year, month, day] = value.split("-").map(Number)
+  const date = new Date(year, month - 1, day) // month is 0-indexed
+  
+  return date.toLocaleDateString("en-US", {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -162,15 +206,26 @@ const colorMap: Record<string, string> = {
 }
 
 type Entry = {
+  timestamp: string
   date: string
   how_good: number
   productivity: number
   drinks: number
+  plot: number
   scount: number
+  summary: string
+  reflection: string
   rose: string
+  bud: string
+  thorn: string
+  proud_of: string
   gratitude: string
+  met_person: string
   thought_of_day: string
+  raok: string
+  goals: string
   booleans: string[]
+  deep_work_hours: number
 }
 
 // Streak Card Component
@@ -265,7 +320,7 @@ function FlippableMetricCard({
           <div className="relative z-10 h-full flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">{icon}</div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 {trend && (
                   <div
                     className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
@@ -285,7 +340,9 @@ function FlippableMetricCard({
                     )}
                   </div>
                 )}
-                <RotateCcw className="w-4 h-4 text-white/60" />
+                <div className="p-1 bg-white/20 rounded-full">
+                  <RotateCcw className="w-3 h-3 text-white/60" />
+                </div>
               </div>
             </div>
 
@@ -310,7 +367,9 @@ function FlippableMetricCard({
           <div className="relative z-10 h-full flex flex-col">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">{icon}</div>
-              <RotateCcw className="w-4 h-4 text-white/60" />
+              <div className="p-1 bg-white/20 rounded-full">
+                <RotateCcw className="w-3 h-3 text-white/60" />
+              </div>
             </div>
 
             <div className="flex-1 flex flex-col justify-center space-y-1">
@@ -393,10 +452,13 @@ export default function Dashboard() {
         return
       }
 
+      console.log("Raw entries from database:", entries)
+      console.log("Number of entries:", entries.length)
+
       const parsed = entries
         .map((e: any) => ({
           ...e,
-          date: new Date(e.date),
+          date: new Date(e.date + 'T00:00:00'), // Force to start of day in local timezone
         }))
         .sort((a, b) => a.date.getTime() - b.date.getTime())
 
@@ -405,8 +467,15 @@ export default function Dashboard() {
       const last7 = parsed.filter((e) => dateDiff(e.date, today) <= 7)
       const last14 = parsed.filter((e) => dateDiff(e.date, today) <= 14)
       const thisYearEntries = parsed.filter((e) => e.date.getFullYear() === thisYear)
-      const lastEntryDate = parsed.length > 0 ? parsed[parsed.length - 1].date : null
+      const lastEntryDate = parsed.length > 0 ? new Date(Math.max(...parsed.map(e => e.date.getTime()))) : null
       const daysBehind = lastEntryDate ? dateDiff(lastEntryDate, today) - 1 : 0
+      
+      console.log("Last entry date calculation:", {
+        totalEntries: parsed.length,
+        lastEntryDate: lastEntryDate,
+        today: today,
+        daysBehind: daysBehind
+      })
       const lastEntryStr = lastEntryDate
         ? lastEntryDate.toLocaleDateString("en-US", {
             weekday: "long",
@@ -461,43 +530,55 @@ export default function Dashboard() {
 
       // Calculate streaks for various habits
       const streaks = {
-        workout: calculateStreak(thisYearEntries, "workout", false), // Any workout
+        // Custom streak calculation for workouts (any workout type)
+        workout: calculateStreak(
+          thisYearEntries.map((e) => ({
+            ...e,
+            workout: e.booleans?.some((b: string) => workouts.includes(b)) ? 1 : 0,
+          })),
+          "workout",
+          false,
+        ),
         reading: calculateStreak(thisYearEntries, "Read ten pages", true),
         guitar: calculateStreak(thisYearEntries, "Guitar", true),
         sunset: calculateStreak(thisYearEntries, "Watch sunset", true),
-        highProductivity: calculateStreak(thisYearEntries, "productivity", false), // productivity > 7
-        goodDay: calculateStreak(thisYearEntries, "how_good", false), // how_good > 7
+        // Custom streak calculation for high productivity (>= 7)
+        highProductivity: calculateStreak(
+          thisYearEntries.map((e) => ({
+            ...e,
+            productivity: e.productivity >= 7 ? 1 : 0,
+          })),
+          "productivity",
+          false,
+        ),
+        // Custom streak calculation for good days (>= 7)
+        goodDay: calculateStreak(
+          thisYearEntries.map((e) => ({
+            ...e,
+            how_good: e.how_good >= 7 ? 1 : 0,
+          })),
+          "how_good",
+          false,
+        ),
       }
 
-      // Custom streak calculation for workouts (any workout type)
-      streaks.workout = calculateStreak(
-        thisYearEntries.map((e) => ({
-          ...e,
-          workout: e.booleans?.some((b: string) => workouts.includes(b)) ? 1 : 0,
-        })),
-        "workout",
-        false,
-      )
-
-      // Custom streak calculation for high productivity (>= 7)
-      streaks.highProductivity = calculateStreak(
-        thisYearEntries.map((e) => ({
-          ...e,
-          productivity: e.productivity >= 7 ? 1 : 0,
-        })),
-        "productivity",
-        false,
-      )
-
-      // Custom streak calculation for good days (>= 7)
-      streaks.goodDay = calculateStreak(
-        thisYearEntries.map((e) => ({
-          ...e,
-          how_good: e.how_good >= 7 ? 1 : 0,
-        })),
-        "how_good",
-        false,
-      )
+      // Debug: Log streak calculations
+      console.log('Streak Debug:', {
+        workout: streaks.workout,
+        reading: streaks.reading,
+        guitar: streaks.guitar,
+        sunset: streaks.sunset,
+        highProductivity: streaks.highProductivity,
+        goodDay: streaks.goodDay,
+        totalEntries: thisYearEntries.length,
+        lastEntryDate: lastEntryDate?.toLocaleDateString(),
+        workouts: workouts,
+        sampleEntries: thisYearEntries.slice(0, 3).map(e => ({
+          date: e.date.toLocaleDateString(),
+          booleans: e.booleans,
+          hasWorkout: e.booleans?.some((b: string) => workouts.includes(b))
+        }))
+      })
 
       const pieData = Object.entries(workoutCounts)
         .filter(([_, value]) => value > 0)
@@ -529,10 +610,14 @@ export default function Dashboard() {
         avgProductivityYear: avg(thisYearEntries.map((e) => e.productivity)),
         totalDrinksYear: sum(thisYearEntries.map((e) => e.drinks)),
         drinks14: sum(last14.map((e) => e.drinks)),
+        avgDeepWork7: avg(last7.map((e) => e.deep_work_hours || 0)),
+        avgDeepWorkYear: avg(thisYearEntries.map((e) => e.deep_work_hours || 0)),
         discreetCount: other,
         rose: randWithDate(parsed, "rose"),
         gratitude: randWithDate(parsed, "gratitude"),
         thought: randWithDate(parsed, "thought_of_day"),
+        bud: randWithDate(parsed, "bud"),
+        thorn: randWithDate(parsed, "thorn"),
         workoutCounts,
         totalWorkouts14,
         totalWorkoutsYear,
@@ -545,7 +630,7 @@ export default function Dashboard() {
         daysBehind,
         lastEntryStr,
         chartData: thisYearEntries.map((e, i) => ({
-          date: e.date.toISOString().split("T")[0],
+          date: e.date.toLocaleDateString("en-CA"), // YYYY-MM-DD format in local timezone
           how_good: qualitySeries[i],
           productivity: productivitySeries[i],
           drinks: drinksSeries[i],
@@ -554,7 +639,7 @@ export default function Dashboard() {
           actual_drinks: e.drinks,
         })),
         rawChartData: thisYearEntries.map((e) => ({
-          date: e.date.toISOString().split("T")[0],
+          date: e.date.toLocaleDateString("en-CA"), // YYYY-MM-DD format in local timezone
           how_good: e.how_good,
           productivity: e.productivity,
           drinks: e.drinks,
@@ -586,7 +671,9 @@ export default function Dashboard() {
   }
 
   const chartData = showSmoothed ? stats.chartData : stats.rawChartData
-  const filteredData = chartData.slice(timeRange === "year" ? 0 : -30)
+  
+  // Use only actual data, no markers
+  let filteredData = chartData.slice(timeRange === "year" ? 0 : -30)
 
   return (
     <PinGate>
@@ -614,13 +701,13 @@ export default function Dashboard() {
 
         <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
           {/* Key Metrics Row - Now Flippable */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5 gap-3 md:gap-4 lg:gap-6">
             <FlippableMetricCard
               title="Quality of Life"
               value={stats.avgQuality7.toFixed(1)}
               subtitle="7-day average"
               yearValue={stats.avgQualityYear.toFixed(1)}
-              yearSubtitle="Full year average"
+              yearSubtitle="All-time average"
               icon={<Heart className="w-6 h-6 text-white" />}
               gradient="bg-gradient-to-br from-pink-500 to-rose-600"
               trend="up"
@@ -631,7 +718,7 @@ export default function Dashboard() {
               value={stats.avgProductivity7.toFixed(1)}
               subtitle="7-day average"
               yearValue={stats.avgProductivityYear.toFixed(1)}
-              yearSubtitle="Full year average"
+              yearSubtitle="All-time average"
               icon={<Zap className="w-6 h-6 text-white" />}
               gradient="bg-gradient-to-br from-blue-500 to-indigo-600"
               trend="neutral"
@@ -642,7 +729,7 @@ export default function Dashboard() {
               value={stats.totalWorkouts14}
               subtitle="Last 14 days"
               yearValue={stats.totalWorkoutsYear}
-              yearSubtitle="Full year total"
+              yearSubtitle="All-time total"
               icon={<Activity className="w-6 h-6 text-white" />}
               gradient="bg-gradient-to-br from-green-500 to-emerald-600"
               trend="up"
@@ -653,10 +740,21 @@ export default function Dashboard() {
               value={stats.drinks14}
               subtitle="Last 14 days"
               yearValue={stats.totalDrinksYear}
-              yearSubtitle="Full year total"
+              yearSubtitle="All-time total"
               icon={<Wine className="w-6 h-6 text-white" />}
               gradient="bg-gradient-to-br from-orange-500 to-red-600"
               trend="down"
+            />
+
+            <FlippableMetricCard
+              title="Deep Work"
+              value={stats.avgDeepWork7.toFixed(1)}
+              subtitle="7-day average hours"
+              yearValue={stats.avgDeepWorkYear.toFixed(1)}
+              yearSubtitle="All-time average"
+              icon={<BookOpen className="w-6 h-6 text-white" />}
+              gradient="bg-gradient-to-br from-purple-500 to-indigo-600"
+              trend="up"
             />
           </div>
 
@@ -797,7 +895,7 @@ export default function Dashboard() {
                         axisLine={false}
                         tickLine={false}
                         tick={{ fontSize: 12, fill: "#6b7280" }}
-                        interval={timeRange === "year" ? "preserveStartEnd" : 0}
+                        interval={timeRange === "year" ? "preserveStartEnd" : "preserveStartEnd"}
                       />
                       <YAxis
                         domain={[0, 10]}
@@ -811,10 +909,12 @@ export default function Dashboard() {
                         formatter={formatTooltipValue}
                         contentStyle={{
                           backgroundColor: "white",
-                          border: "none",
+                          border: "1px solid #e5e7eb",
                           borderRadius: "16px",
                           boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
                           fontSize: "14px",
+                          color: "#374151",
+                          fontWeight: "500",
                         }}
                       />
                       <Legend wrapperStyle={{ fontSize: "14px", paddingTop: "20px" }} iconType="rect" iconSize={12} />
@@ -907,6 +1007,36 @@ export default function Dashboard() {
                           </span>
                         </div>
                         <p className="text-blue-700 text-sm leading-relaxed">{stats.thought.value}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-2xl border border-yellow-100">
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">🌱</span>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="font-semibold text-yellow-800">Bud</h3>
+                          <span className="text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded-full">
+                            {stats.bud.date}
+                          </span>
+                        </div>
+                        <p className="text-yellow-700 text-sm leading-relaxed">{stats.bud.value}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-gradient-to-r from-red-50 to-rose-50 rounded-2xl border border-red-100">
+                    <div className="flex items-start gap-3">
+                      <span className="text-2xl">🌵</span>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="font-semibold text-red-800">Thorn</h3>
+                          <span className="text-xs text-red-600 bg-red-100 px-2 py-1 rounded-full">
+                            {stats.thorn.date}
+                          </span>
+                        </div>
+                        <p className="text-red-700 text-sm leading-relaxed">{stats.thorn.value}</p>
                       </div>
                     </div>
                   </div>
