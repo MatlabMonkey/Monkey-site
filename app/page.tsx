@@ -294,25 +294,35 @@ async function fetchUnsplashImage(searchTerms: string[]) {
       }
     }
 
-    console.log('API Key available:', !!UNSPLASH_ACCESS_KEY)
-    console.log('Search terms:', searchTerms)
-
     const query = searchTerms.join(' ')
-    const url = `https://api.unsplash.com/photos/random?query=${encodeURIComponent(query)}&orientation=landscape&client_id=${UNSPLASH_ACCESS_KEY}`
-    console.log('Fetching from URL:', url)
-    
-    const response = await fetch(url)
-    
-    console.log('Response status:', response.status)
+    const url = `https://api.unsplash.com/photos/random?query=${encodeURIComponent(query)}&orientation=landscape`
+    const response = await fetch(url, {
+      headers: { 'Authorization': `Client-ID ${UNSPLASH_ACCESS_KEY}` }
+    })
     
     if (!response.ok) {
+      // Silently fail if API key is invalid - use fallback image
+      if (response.status === 401) {
+        console.warn('Unsplash API key invalid or expired. Using fallback image.')
+        return {
+          url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=1080&fit=crop&crop=center&auto=format&q=80',
+          alt: 'Mountain landscape',
+          photographer: 'Unsplash',
+          unsplashLink: 'https://unsplash.com'
+        }
+      }
       const errorText = await response.text()
-      console.error('Response error:', errorText)
-      throw new Error(`Failed to fetch image: ${response.status} - ${errorText}`)
+      console.warn('Unsplash API error:', errorText)
+      // Return fallback instead of throwing
+      return {
+        url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=1080&fit=crop&crop=center&auto=format&q=80',
+        alt: 'Mountain landscape',
+        photographer: 'Unsplash',
+        unsplashLink: 'https://unsplash.com'
+      }
     }
     
     const data = await response.json()
-    console.log('Received data:', data)
     
     // Trigger download event for Unsplash compliance
     fetch(`https://api.unsplash.com/photos/${data.id}/download`, {
@@ -329,8 +339,8 @@ async function fetchUnsplashImage(searchTerms: string[]) {
       unsplashLink: data.links.html
     }
   } catch (error) {
-    console.error('Error fetching Unsplash image:', error)
-    // Fallback to a default image
+    // Silently handle errors - use fallback image
+    console.warn('Error fetching Unsplash image:', error instanceof Error ? error.message : 'Unknown error')
     return {
       url: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1920&h=1080&fit=crop&crop=center&auto=format&q=80',
       alt: 'Mountain landscape',
@@ -397,11 +407,15 @@ export default function Home() {
   const quoteIndex = getDailyQuoteIndex()
 
   useEffect(() => {
+    let cancelled = false
     const photo = getDailyPhoto()
     setDailyPhoto(photo)
     if (photo.searchTerms) {
-      fetchUnsplashImage(photo.searchTerms).then(setImageData)
+      fetchUnsplashImage(photo.searchTerms).then((data) => {
+        if (!cancelled) setImageData(data)
+      })
     }
+    return () => { cancelled = true }
   }, [])
 
   const backgroundPattern =
@@ -443,8 +457,8 @@ export default function Home() {
               className="group bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 flex flex-col items-center justify-center shadow-lg hover:shadow-xl hover:scale-105"
             >
               <ArrowRight className="w-8 h-8 text-purple-300 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">Dashboard</h3>
-              <p className="text-white/70 text-sm">View your analytics, progress, and reflections</p>
+              <h3 className="text-lg font-semibold text-white mb-2">Journal</h3>
+              <p className="text-white/70 text-sm">View your journal analytics, progress, and reflections</p>
             </Link>
             <Link
               href="/todos"

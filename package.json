@@ -6,12 +6,13 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:push-todos": "node scripts/push-todos-migration.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.50.0",
     "lucide-react": "^0.517.0",
-    "next": "15.3.8",
+    "next": "^15.5.9",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^2.15.3"
@@ -21,7 +22,8 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "supabase": "^2.31.4",
+    "dotenv": "^17.2.3",
+    "supabase": "^2.72.8",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

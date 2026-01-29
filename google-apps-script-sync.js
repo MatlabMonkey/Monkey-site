@@ -1,7 +1,11 @@
+// LEGACY: Syncs Google Form to an OLD Supabase project (ekmhgzx...). Deprecated;
+// the journal is now entirely in-app using the new Supabase project. Keep for
+// reference or one-time migration of historical data.
+
 // Robust Google Apps Script Sync Function
 // This version handles sync failures and can recover from issues
 
-// Configuration
+// Configuration (OLD project - do not use for new journal)
 const SUPABASE_URL = 'https://ekmhgzxidqbkpdiilzfc.supabase.co';
 const SUPABASE_API_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVrbWhzenhpZHFia3BkaWlsemZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk2MTg0NDEsImV4cCI6MjA2NTE5NDQ0MX0.t8Bi6SJqLKFzzDGtetJJTn1I37XLQmnok_TLUtWRcc4';
 const SUPABASE_TABLE = 'journal_entries';

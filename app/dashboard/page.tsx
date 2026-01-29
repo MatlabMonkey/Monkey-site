@@ -1,1205 +1,679 @@
 "use client"
 
-import type React from "react"
-
 import { useEffect, useState } from "react"
+import Link from "next/link"
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts"
 import { supabase } from "../../lib/supabaseClient"
 import PinGate from "../components/PinGate"
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from "recharts"
-import {
-  TrendingUp,
-  Wine,
-  Heart,
-  Target,
-  Activity,
-  Calendar,
-  BarChart3,
-  Zap,
-  Sun,
-  Music,
-  Eye,
-  EyeOff,
-  Sparkles,
-  Clock,
-  TrendingDown,
-  BookOpen,
-  RotateCcw,
-  Flame,
-  Award,
-} from "lucide-react"
+import { Calendar, Heart, Zap, Activity, Brain, Target, Sparkles, ArrowRight } from "lucide-react"
 
-// Enhanced smoothing functions with different sigma values
-function gaussianSmooth(data: number[], sigma = 2): number[] {
-  const kernelSize = Math.ceil(sigma * 3) * 2 + 1
-  const kernel: number[] = []
-  const mid = Math.floor(kernelSize / 2)
-  let sum = 0
-  for (let i = 0; i < kernelSize; i++) {
-    const x = i - mid
-    const g = Math.exp(-(x * x) / (2 * sigma * sigma))
-    kernel.push(g)
-    sum += g
-  }
-  const normalized = kernel.map((v) => v / sum)
-  return data.map((_, i) => {
-    let acc = 0
-    for (let j = 0; j < kernelSize; j++) {
-      const idx = i + j - mid
-      if (idx >= 0 && idx < data.length) {
-        acc += data[idx] * normalized[j]
-      }
-    }
-    return acc
-  })
-}
+type QuestionType = "text" | "number" | "rating" | "boolean" | "multiselect" | "date"
 
-// Streak calculation function
-function calculateStreak(
-  entries: any[],
-  habitKey: string,
-  isBoolean = true,
-): { current: number; longest: number; lastDate: string | null } {
-  if (entries.length === 0) return { current: 0, longest: 0, lastDate: null }
-
-  // Sort entries by date (most recent first)
-  const sortedEntries = [...entries].sort((a, b) => b.date.getTime() - a.date.getTime())
-
-  let currentStreak = 0
-  let longestStreak = 0
-  let tempStreak = 0
-  let lastStreakDate = null
-
-  // Find the most recent entry with this habit
-  let mostRecentWithHabit = null
-  let mostRecentWithoutHabit = null
-
-  for (let i = 0; i < sortedEntries.length; i++) {
-    const entry = sortedEntries[i]
-    const hasHabit = isBoolean ? entry.booleans?.includes(habitKey) : entry[habitKey] > 0
-
-    if (hasHabit && !mostRecentWithHabit) {
-      mostRecentWithHabit = entry
-    } else if (!hasHabit && !mostRecentWithoutHabit) {
-      mostRecentWithoutHabit = entry
-    }
-
-    if (mostRecentWithHabit && mostRecentWithoutHabit) break
-  }
-
-  // If the most recent entry with the habit is more recent than the most recent entry without it,
-  // or if there's no entry without the habit, the streak is still active
-  const streakIsActive = !mostRecentWithoutHabit || 
-    (mostRecentWithHabit && mostRecentWithoutHabit && 
-     mostRecentWithHabit.date.getTime() > mostRecentWithoutHabit.date.getTime())
-
-  if (streakIsActive && mostRecentWithHabit) {
-    // Calculate current streak by counting consecutive days backwards from the most recent entry with the habit
-    currentStreak = 1
-    lastStreakDate = mostRecentWithHabit.date
-
-    for (let i = 1; i < sortedEntries.length; i++) {
-      const currentEntry = sortedEntries[i - 1]
-      const prevEntry = sortedEntries[i]
-      
-      // Check if previous entry is consecutive and has the habit
-      const expectedDate = new Date(currentEntry.date)
-      expectedDate.setDate(expectedDate.getDate() - 1)
-
-      if (isSameDay(prevEntry.date, expectedDate)) {
-        const prevHasHabit = isBoolean ? prevEntry.booleans?.includes(habitKey) : prevEntry[habitKey] > 0
-        
-        if (prevHasHabit) {
-          currentStreak++
-        } else {
-          // Found a break in the streak
-          break
-        }
-      } else {
-        // Gap in entries, streak continues (innocent until proven guilty)
-        currentStreak++
-      }
-    }
-  }
-
-  // Calculate longest streak
-  tempStreak = 0
-  for (let i = 0; i < sortedEntries.length; i++) {
-    const entry = sortedEntries[i]
-    const hasHabit = isBoolean ? entry.booleans?.includes(habitKey) : entry[habitKey] > 0
-
-    if (hasHabit) {
-      tempStreak++
-      longestStreak = Math.max(longestStreak, tempStreak)
-    } else {
-      tempStreak = 0
-    }
-  }
-
-  return {
-    current: currentStreak,
-    longest: longestStreak,
-    lastDate: lastStreakDate ? lastStreakDate.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : null,
+type AnswerRow = {
+  entry_id: string
+  value_text: string | null
+  value_number: number | null
+  value_boolean: boolean | null
+  value_json: any
+  question_catalog: {
+    key: string
+    question_type: QuestionType
   }
 }
 
-function isSameDay(date1: Date, date2: Date): boolean {
-  return (
-    date1.getFullYear() === date2.getFullYear() &&
-    date1.getMonth() === date2.getMonth() &&
-    date1.getDate() === date2.getDate()
-  )
+type JournalDay = {
+  date: string // YYYY-MM-DD
+  answers: Record<string, any>
 }
 
-function formatTick(dateStr: string, index: number, showAllDays: boolean) {
-  const [y, m, d] = dateStr.split("-")
-  const day = Number.parseInt(d, 10)
-  const month = Number.parseInt(m, 10)
-  
-  if (showAllDays) {
-    // For 30 days view, show every 5th day to avoid overlap
-    if (day % 5 === 0 || day === 1) {
-      return `${month}/${d}`
-    }
-    return ""
-  } else {
-    // For year view, show month names for any day in the first week of each month
-    if (day <= 7) {
-      const date = new Date(dateStr)
-      return date.toLocaleString("default", { month: "short" })
-    }
-    return ""
+type DashboardStats = {
+  days: JournalDay[]
+  avgDayQuality7: number
+  avgProductivity7: number
+  avgEnergy7: number
+  avgStress7: number
+  avgFocus7: number
+  avgSocial7: number
+  avgAlcohol7: number
+  totalAlcohol30: number
+  workoutCounts14: Record<string, number>
+  roseHighlight: { date: string; value: string } | null
+  budHighlight: { date: string; value: string } | null
+  thornHighlight: { date: string; value: string } | null
+  totalEntries: number
+  daysBehind: number
+  lastEntryStr: string
+  chartData: Array<{
+    date: string
+    day_quality: number | null
+    productivity: number | null
+    energy: number | null
+    stress: number | null
+    focus: number | null
+  }>
+}
+
+const WORKOUT_COLOR_MAP: Record<
+  string,
+  {
+    from: string
+    to: string
   }
+> = {
+  Push: { from: "#ef4444", to: "#f97373" }, // red
+  Pull: { from: "#eab308", to: "#facc15" }, // yellow
+  Legs: { from: "#a855f7", to: "#c4b5fd" }, // purple (chosen)
+  "Full body": { from: "#22c55e", to: "#4ade80" }, // green
+  Surfing: { from: "#3b82f6", to: "#60a5fa" }, // blue
+  Core: { from: "#f97316", to: "#fdba74" }, // orange
+  Cardio: { from: "#ec4899", to: "#f472b6" }, // pink
 }
 
-function formatTooltipLabel(value: string) {
-  // Parse the date string and create a date object in local timezone
-  const [year, month, day] = value.split("-").map(Number)
-  const date = new Date(year, month - 1, day) // month is 0-indexed
-  
-  return date.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-  })
+function answerValue(row: AnswerRow): any {
+  const t = row.question_catalog?.question_type
+  if (t === "number" || t === "rating") return row.value_number
+  if (t === "boolean") return row.value_boolean
+  if (t === "multiselect") return row.value_json
+  return row.value_text
 }
 
-function formatTooltipValue(value: number, name: string, props: any) {
-  const raw = props?.payload?.[0]?.payload
-  if (!raw) return [`${value.toFixed(1)}`, name]
-  const lookup: Record<string, number> = {
-    "How Good": raw.actual_how_good,
-    Productivity: raw.actual_productivity,
-    Drinks: raw.actual_drinks,
-  }
-  const val = lookup[name] ?? value
-  return [`${val.toFixed(1)}`, name]
+function avg(values: Array<number | null | undefined>): number {
+  const nums = values.filter((v): v is number => typeof v === "number" && !Number.isNaN(v))
+  if (!nums.length) return 0
+  return nums.reduce((a, b) => a + b, 0) / nums.length
 }
 
-const colorMap: Record<string, string> = {
-  Push: "#ef4444",
-  Pull: "#f97316",
-  Legs: "#eab308",
-  "Full body": "#22c55e",
-  Surfing: "#3b82f6",
-  Core: "#8b5cf6",
-  Cardio: "#ec4899",
-}
-
-type Entry = {
-  timestamp: string
-  date: string
-  how_good: number
-  productivity: number
-  drinks: number
-  plot: number
-  scount: number
-  summary: string
-  reflection: string
-  rose: string
-  bud: string
-  thorn: string
-  proud_of: string
-  gratitude: string
-  met_person: string
-  thought_of_day: string
-  raok: string
-  goals: string
-  booleans: string[]
-  deep_work_hours: number
-}
-
-// Streak Card Component
-function StreakCard({
-  title,
-  icon,
-  current,
-  longest,
-  lastDate,
-  color,
-}: {
-  title: string
-  icon: React.ReactNode
-  current: number
-  longest: number
-  lastDate: string | null
-  color: string
-}) {
-  const isActive = current > 0
-
-  return (
-    <div
-      className={`relative overflow-hidden rounded-2xl p-4 transition-all duration-300 ${
-        isActive ? `bg-gradient-to-br ${color} shadow-lg` : "bg-gray-50 border border-gray-200"
-      }`}
-    >
-      <div className="flex items-center justify-between mb-3">
-        <div className={`p-2 rounded-xl ${isActive ? "bg-white/20" : "bg-gray-200"}`}>{icon}</div>
-        {isActive && <Flame className="w-5 h-5 text-orange-300 animate-pulse" />}
-      </div>
-
-      <div className="space-y-1">
-        <h3 className={`text-sm font-medium ${isActive ? "text-white/90" : "text-gray-600"}`}>{title}</h3>
-        <div className={`text-2xl font-bold ${isActive ? "text-white" : "text-gray-800"}`}>
-          {current} {current === 1 ? "day" : "days"}
-        </div>
-        <div className={`text-xs ${isActive ? "text-white/70" : "text-gray-500"}`}>
-          Best: {longest} days
-          {lastDate && current > 0 && <span className="block">Last: {lastDate}</span>}
-        </div>
-      </div>
-
-      {current >= 7 && (
-        <div className="absolute top-2 right-2">
-          <Award className="w-4 h-4 text-yellow-300" />
-        </div>
-      )}
-    </div>
-  )
-}
-
-// Flippable Metric Card Component
-function FlippableMetricCard({
-  title,
-  value,
-  subtitle,
-  icon,
-  gradient,
-  trend,
-  yearValue,
-  yearSubtitle,
-  children,
-}: {
-  title: string
-  value: string | number
-  subtitle?: string
-  icon: React.ReactNode
-  gradient: string
-  trend?: "up" | "down" | "neutral"
-  yearValue: string | number
-  yearSubtitle: string
-  children?: React.ReactNode
-}) {
-  const [isFlipped, setIsFlipped] = useState(false)
-
-  return (
-    <div className="relative h-48 perspective-1000">
-      <div
-        className={`relative w-full h-full transition-transform duration-700 transform-style-preserve-3d cursor-pointer ${
-          isFlipped ? "rotate-y-180" : ""
-        }`}
-        onClick={() => setIsFlipped(!isFlipped)}
-      >
-        {/* Front Side */}
-        <div
-          className={`absolute inset-0 w-full h-full backface-hidden overflow-hidden rounded-3xl p-6 ${gradient} shadow-lg hover:shadow-xl transition-all duration-300 group`}
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 opacity-10 transform translate-x-8 -translate-y-8">
-            <div className="w-full h-full rounded-full bg-white"></div>
-          </div>
-
-          <div className="relative z-10 h-full flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">{icon}</div>
-              <div className="flex items-center gap-1">
-                {trend && (
-                  <div
-                    className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                      trend === "up"
-                        ? "bg-green-100 text-green-700"
-                        : trend === "down"
-                          ? "bg-red-100 text-red-700"
-                          : "bg-gray-100 text-gray-700"
-                    }`}
-                  >
-                    {trend === "up" ? (
-                      <TrendingUp className="w-3 h-3" />
-                    ) : trend === "down" ? (
-                      <TrendingDown className="w-3 h-3" />
-                    ) : (
-                      <Clock className="w-3 h-3" />
-                    )}
-                  </div>
-                )}
-                <div className="p-1 bg-white/20 rounded-full">
-                  <RotateCcw className="w-3 h-3 text-white/60" />
-                </div>
-              </div>
-            </div>
-
-            <div className="flex-1 flex flex-col justify-center space-y-1">
-              <h3 className="text-white/80 text-sm font-medium">{title}</h3>
-              <div className="text-3xl font-bold text-white">{value}</div>
-              {subtitle && <p className="text-white/70 text-sm">{subtitle}</p>}
-            </div>
-
-            {children && <div className="mt-4">{children}</div>}
-          </div>
-        </div>
-
-        {/* Back Side */}
-        <div
-          className={`absolute inset-0 w-full h-full backface-hidden rotate-y-180 overflow-hidden rounded-3xl p-6 ${gradient} shadow-lg hover:shadow-xl transition-all duration-300 group`}
-        >
-          <div className="absolute top-0 right-0 w-32 h-32 opacity-10 transform translate-x-8 -translate-y-8">
-            <div className="w-full h-full rounded-full bg-white"></div>
-          </div>
-
-          <div className="relative z-10 h-full flex flex-col">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-white/20 rounded-2xl backdrop-blur-sm">{icon}</div>
-              <div className="p-1 bg-white/20 rounded-full">
-                <RotateCcw className="w-3 h-3 text-white/60" />
-              </div>
-            </div>
-
-            <div className="flex-1 flex flex-col justify-center space-y-1">
-              <h3 className="text-white/80 text-sm font-medium">{title}</h3>
-              <div className="text-3xl font-bold text-white">{yearValue}</div>
-              <p className="text-white/70 text-sm">{yearSubtitle}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// Progress Ring Component
-function ProgressRing({
-  progress,
-  size = 120,
-  strokeWidth = 8,
-  color = "#3b82f6",
-}: {
-  progress: number
-  size?: number
-  strokeWidth?: number
-  color?: string
-}) {
-  const radius = (size - strokeWidth) / 2
-  const circumference = radius * 2 * Math.PI
-  const strokeDasharray = `${circumference} ${circumference}`
-  const strokeDashoffset = circumference - (progress / 100) * circumference
-
-  return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg className="transform -rotate-90" width={size} height={size}>
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke="currentColor"
-          strokeWidth={strokeWidth}
-          fill="transparent"
-          className="text-gray-200"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          stroke={color}
-          strokeWidth={strokeWidth}
-          fill="transparent"
-          strokeDasharray={strokeDasharray}
-          strokeDashoffset={strokeDashoffset}
-          strokeLinecap="round"
-          className="transition-all duration-1000 ease-out"
-        />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-2xl font-bold text-gray-700">{Math.round(progress)}%</span>
-      </div>
-    </div>
-  )
+function formatDateLabel(dateStr: string): string {
+  const d = new Date(dateStr + "T00:00:00")
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
 export default function Dashboard() {
-  const [stats, setStats] = useState<null | Record<string, any>>(null)
-  const [timeRange, setTimeRange] = useState<"year" | "30days">("year")
-  const [showSmoothed, setShowSmoothed] = useState(true)
-  const [visibleLines, setVisibleLines] = useState<Record<"how_good" | "productivity" | "drinks", boolean>>({
-    how_good: true,
-    productivity: true,
-    drinks: true,
-  })
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    async function fetchData() {
-      const { data: entries, error } = await supabase.from("journal_entries").select("*")
+    async function load() {
+      setLoading(true)
+      try {
+        // 1) Get submitted entries (non-drafts)
+        const { data: entryRows, error: entryError } = await supabase
+          .from("journal_entry")
+          .select("id, date, is_draft, completed_at")
+          .eq("is_draft", false)
+          .order("date", { ascending: true })
 
-      if (error) {
-        console.error("Supabase error:", error)
-        return
-      }
-
-      console.log("Raw entries from database:", entries)
-      console.log("Number of entries:", entries.length)
-
-      const parsed = entries
-        .map((e: any) => ({
-          ...e,
-          date: new Date(e.date + 'T00:00:00'), // Force to start of day in local timezone
-        }))
-        .sort((a, b) => a.date.getTime() - b.date.getTime())
-
-      const today = new Date()
-      const thisYear = today.getFullYear()
-      const last7 = parsed.filter((e) => dateDiff(e.date, today) <= 7)
-      const last14 = parsed.filter((e) => dateDiff(e.date, today) <= 14)
-      const thisYearEntries = parsed.filter((e) => e.date.getFullYear() === thisYear)
-      const lastEntryDate = parsed.length > 0 ? new Date(Math.max(...parsed.map(e => e.date.getTime()))) : null
-      const daysBehind = lastEntryDate ? dateDiff(lastEntryDate, today) - 1 : 0
-      
-      console.log("Last entry date calculation:", {
-        totalEntries: parsed.length,
-        lastEntryDate: lastEntryDate,
-        today: today,
-        daysBehind: daysBehind
-      })
-      const lastEntryStr = lastEntryDate
-        ? lastEntryDate.toLocaleDateString("en-US", {
-            weekday: "long",
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })
-        : "No entries yet"
-
-      // Enhanced random function that returns both value and date
-      const randWithDate = (arr: any[], field: string) => {
-        const validEntries = arr.filter((e) => e[field]?.trim())
-        if (validEntries.length === 0) return { value: "—", date: null }
-        const randomEntry = validEntries.sort(() => 0.5 - Math.random())[0]
-        return {
-          value: randomEntry[field],
-          date: randomEntry.date.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          }),
+        if (entryError) {
+          console.error("Supabase error (journal_entry):", entryError)
+          setStats(null)
+          return
         }
-      }
 
-      const workouts = ["Push", "Pull", "Legs", "Full body", "Surfing", "Core", "Cardio"]
-      const workoutCounts: Record<string, number> = Object.fromEntries(workouts.map((type) => [type, 0]))
-      let other = 0
-      let sunsets = 0
-      let guitar = 0
-      let reading = 0
-      let totalWorkouts14 = 0
-      let totalWorkoutsYear = 0
+        if (!entryRows || entryRows.length === 0) {
+          // Empty state: initialize all metrics to safe defaults so UI can render.
+          const WORKOUT_OPTIONS = ["Push", "Pull", "Legs", "Full body", "Surfing", "Core", "Cardio"]
+          const workoutCounts14: Record<string, number> = Object.fromEntries(
+            WORKOUT_OPTIONS.map((k) => [k, 0]),
+          ) as Record<string, number>
 
-      last14.forEach((e) => {
-        e.booleans?.forEach((val: string) => {
-          if (workouts.includes(val)) {
-            workoutCounts[val]++
-            totalWorkouts14++
+          setStats({
+            days: [],
+            avgDayQuality7: 0,
+            avgProductivity7: 0,
+            avgEnergy7: 0,
+            avgStress7: 0,
+            avgFocus7: 0,
+            avgSocial7: 0,
+            avgAlcohol7: 0,
+            totalAlcohol30: 0,
+            workoutCounts14,
+            roseHighlight: null,
+            budHighlight: null,
+            thornHighlight: null,
+            totalEntries: 0,
+            daysBehind: 0,
+            lastEntryStr: "No entries yet",
+            chartData: [],
+          })
+          return
+        }
+
+        const ids = entryRows.map((e: any) => e.id as string)
+
+        // 2) Get answers + question keys
+        const { data: answerRows, error: answerError } = await supabase
+          .from("journal_answer")
+          .select(
+            "entry_id, value_text, value_number, value_boolean, value_json, question_catalog!inner(key, question_type)",
+          )
+          .in("entry_id", ids)
+
+        if (answerError) {
+          console.error("Supabase error (journal_answer):", answerError)
+          setStats(null)
+          return
+        }
+
+        const byEntry: Map<string, Record<string, any>> = new Map()
+
+        ;(answerRows as AnswerRow[]).forEach((row) => {
+          const key = row.question_catalog?.key
+          if (!key) return
+          const value = answerValue(row)
+          const map = byEntry.get(row.entry_id) ?? {}
+          map[key] = value
+          byEntry.set(row.entry_id, map)
+        })
+
+        const days: JournalDay[] = (entryRows as any[]).map((e) => ({
+          date: e.date,
+          answers: byEntry.get(e.id) ?? {},
+        }))
+
+        const today = new Date()
+        const lastEntryRow = entryRows[entryRows.length - 1] as any
+        const lastDateObj = new Date(lastEntryRow.date + "T00:00:00")
+        const diffDays = Math.floor(
+          (today.getTime() - lastDateObj.getTime()) / (1000 * 60 * 60 * 24),
+        )
+
+        const last7 = days.slice(-7)
+        const last30 = days.slice(-30)
+
+        const getNum = (d: JournalDay, key: string): number | null => {
+          const v = d.answers[key]
+          if (typeof v === "number") return v
+          if (typeof v === "string" && v.trim() !== "") {
+            const n = Number(v)
+            return Number.isNaN(n) ? null : n
+          }
+          return null
+        }
+
+        const avgDayQuality7 = avg(last7.map((d) => getNum(d, "day_quality")))
+        const avgProductivity7 = avg(last7.map((d) => getNum(d, "productivity")))
+        const avgEnergy7 = avg(last7.map((d) => getNum(d, "energy")))
+        const avgStress7 = avg(last7.map((d) => getNum(d, "stress_calm")))
+        const avgFocus7 = avg(last7.map((d) => getNum(d, "focus_presence")))
+        const avgSocial7 = avg(last7.map((d) => getNum(d, "social_connection")))
+        const avgAlcohol7 = avg(last7.map((d) => getNum(d, "alcohol")))
+        const totalAlcohol30 = last30
+          .map((d) => getNum(d, "alcohol") || 0)
+          .reduce((a, b) => a + b, 0)
+
+        // Workouts (multiselect) over last 14 days
+        const WORKOUT_OPTIONS = ["Push", "Pull", "Legs", "Full body", "Surfing", "Core", "Cardio"]
+        const workoutCounts14: Record<string, number> = Object.fromEntries(
+          WORKOUT_OPTIONS.map((k) => [k, 0]),
+        ) as Record<string, number>
+
+        const last14 = days.slice(-14)
+        last14.forEach((d) => {
+          const vals = d.answers["workouts"]
+          if (Array.isArray(vals)) {
+            vals.forEach((v: string) => {
+              if (WORKOUT_OPTIONS.includes(v)) {
+                workoutCounts14[v] = (workoutCounts14[v] || 0) + 1
+              }
+            })
           }
         })
-        other += e.scount || 0
-      })
 
-      thisYearEntries.forEach((e) => {
-        e.booleans?.forEach((val: string) => {
-          if (val === "Watch sunset") sunsets++
-          if (val === "Guitar") guitar++
-          if (val === "Read ten pages") reading++
-          if (workouts.includes(val)) totalWorkoutsYear++
+        // Rose / bud / thorn highlights – latest non-empty values
+        const latestWith = (key: string): { date: string; value: string } | null => {
+          for (let i = days.length - 1; i >= 0; i--) {
+            const d = days[i]
+            const v = d.answers[key]
+            if (typeof v === "string" && v.trim() !== "") {
+              return { date: d.date, value: v }
+            }
+          }
+          return null
+        }
+
+        const roseHighlight = latestWith("rose")
+        const budHighlight = latestWith("bud")
+        const thornHighlight = latestWith("thorn")
+
+        const chartData = days.map((d) => ({
+          date: d.date,
+          day_quality: getNum(d, "day_quality"),
+          productivity: getNum(d, "productivity"),
+          energy: getNum(d, "energy"),
+          stress: getNum(d, "stress_calm"),
+          focus: getNum(d, "focus_presence"),
+        }))
+
+        const lastEntryStr = lastDateObj.toLocaleDateString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
         })
-      })
 
-      // Calculate streaks for various habits
-      const streaks = {
-        // Custom streak calculation for workouts (any workout type)
-        workout: calculateStreak(
-          thisYearEntries.map((e) => ({
-            ...e,
-            workout: e.booleans?.some((b: string) => workouts.includes(b)) ? 1 : 0,
-          })),
-          "workout",
-          false,
-        ),
-        reading: calculateStreak(thisYearEntries, "Read ten pages", true),
-        guitar: calculateStreak(thisYearEntries, "Guitar", true),
-        sunset: calculateStreak(thisYearEntries, "Watch sunset", true),
-        // Custom streak calculation for high productivity (>= 7)
-        highProductivity: calculateStreak(
-          thisYearEntries.map((e) => ({
-            ...e,
-            productivity: e.productivity >= 7 ? 1 : 0,
-          })),
-          "productivity",
-          false,
-        ),
-        // Custom streak calculation for good days (>= 7)
-        goodDay: calculateStreak(
-          thisYearEntries.map((e) => ({
-            ...e,
-            how_good: e.how_good >= 7 ? 1 : 0,
-          })),
-          "how_good",
-          false,
-        ),
+        setStats({
+          days,
+          avgDayQuality7,
+          avgProductivity7,
+          avgEnergy7,
+          avgStress7,
+          avgFocus7,
+          avgSocial7,
+          avgAlcohol7,
+          totalAlcohol30,
+          workoutCounts14,
+          roseHighlight,
+          budHighlight,
+          thornHighlight,
+          totalEntries: days.length,
+          daysBehind: Math.max(diffDays, 0),
+          lastEntryStr,
+          chartData,
+        })
+      } finally {
+        setLoading(false)
       }
-
-      // Debug: Log streak calculations
-      console.log('Streak Debug:', {
-        workout: streaks.workout,
-        reading: streaks.reading,
-        guitar: streaks.guitar,
-        sunset: streaks.sunset,
-        highProductivity: streaks.highProductivity,
-        goodDay: streaks.goodDay,
-        totalEntries: thisYearEntries.length,
-        lastEntryDate: lastEntryDate?.toLocaleDateString(),
-        workouts: workouts,
-        sampleEntries: thisYearEntries.slice(0, 3).map(e => ({
-          date: e.date.toLocaleDateString(),
-          booleans: e.booleans,
-          hasWorkout: e.booleans?.some((b: string) => workouts.includes(b))
-        }))
-      })
-
-      const pieData = Object.entries(workoutCounts)
-        .filter(([_, value]) => value > 0)
-        .map(([name, value]) => ({
-          name,
-          value,
-          color: colorMap[name] || "#6b7280",
-        }))
-
-      // Use different sigma values based on time range
-      const sigma = timeRange === "30days" ? 0.8 : 2
-      const qualitySeries = gaussianSmooth(
-        thisYearEntries.map((e) => e.how_good),
-        sigma,
-      )
-      const productivitySeries = gaussianSmooth(
-        thisYearEntries.map((e) => e.productivity),
-        sigma,
-      )
-      const drinksSeries = gaussianSmooth(
-        thisYearEntries.map((e) => e.drinks),
-        sigma,
-      )
-
-      setStats({
-        avgQuality7: avg(last7.map((e) => e.how_good)),
-        avgQualityYear: avg(thisYearEntries.map((e) => e.how_good)),
-        avgProductivity7: avg(last7.map((e) => e.productivity)),
-        avgProductivityYear: avg(thisYearEntries.map((e) => e.productivity)),
-        totalDrinksYear: sum(thisYearEntries.map((e) => e.drinks)),
-        drinks14: sum(last14.map((e) => e.drinks)),
-        avgDeepWork7: avg(last7.map((e) => e.deep_work_hours || 0)),
-        avgDeepWorkYear: avg(thisYearEntries.map((e) => e.deep_work_hours || 0)),
-        discreetCount: other,
-        rose: randWithDate(parsed, "rose"),
-        gratitude: randWithDate(parsed, "gratitude"),
-        thought: randWithDate(parsed, "thought_of_day"),
-        bud: randWithDate(parsed, "bud"),
-        thorn: randWithDate(parsed, "thorn"),
-        workoutCounts,
-        totalWorkouts14,
-        totalWorkoutsYear,
-        sunsets,
-        guitar,
-        reading,
-        streaks,
-        pieData,
-        lastEntryDate,
-        daysBehind,
-        lastEntryStr,
-        chartData: thisYearEntries.map((e, i) => ({
-          date: e.date.toLocaleDateString("en-CA"), // YYYY-MM-DD format in local timezone
-          how_good: qualitySeries[i],
-          productivity: productivitySeries[i],
-          drinks: drinksSeries[i],
-          actual_how_good: e.how_good,
-          actual_productivity: e.productivity,
-          actual_drinks: e.drinks,
-        })),
-        rawChartData: thisYearEntries.map((e) => ({
-          date: e.date.toLocaleDateString("en-CA"), // YYYY-MM-DD format in local timezone
-          how_good: e.how_good,
-          productivity: e.productivity,
-          drinks: e.drinks,
-          actual_how_good: e.how_good,
-          actual_productivity: e.productivity,
-          actual_drinks: e.drinks,
-        })),
-      })
     }
 
-    fetchData()
-  }, [timeRange, showSmoothed])
+    load()
+  }, [])
 
-  if (!stats) {
+  if (loading || !stats) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center">
-        <div className="text-center space-y-6">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-200 border-t-indigo-600 mx-auto"></div>
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-indigo-400 to-purple-400 opacity-20 animate-pulse"></div>
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold text-gray-800">Loading Dashboard</h2>
-            <p className="text-gray-600">Preparing your personal insights...</p>
+      <PinGate>
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center text-slate-100">
+          <div className="text-center space-y-6">
+            <div className="relative">
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-slate-800 border-t-purple-400 mx-auto" />
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 opacity-30 animate-pulse" />
+            </div>
+            <div className="space-y-2">
+              <h2 className="text-2xl font-bold text-slate-50">Loading dashboard</h2>
+              <p className="text-slate-300">Fetching your journal insights…</p>
+            </div>
           </div>
         </div>
-      </div>
+      </PinGate>
     )
   }
 
-  const chartData = showSmoothed ? stats.chartData : stats.rawChartData
-  
-  // Use only actual data, no markers
-  let filteredData = chartData.slice(timeRange === "year" ? 0 : -30)
+  const latestDay = stats.days[stats.days.length - 1]
+  const maxWorkoutCount = Math.max(
+    1,
+    ...Object.values(stats.workoutCounts14).map((c) => (typeof c === "number" ? c : 0)),
+  )
 
   return (
     <PinGate>
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100">
         {/* Header */}
-        <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200/50 sticky top-0 z-40">
-          <div className="max-w-7xl mx-auto px-6 py-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  Life Dashboard
-                </h1>
-                <p className="text-gray-600 mt-1">Your personal journey insights and analytics</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="px-4 py-2 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full">
-                  <span className="text-sm font-medium text-green-700">
-                    {stats.daysBehind === 0 ? "Up to date!" : `${stats.daysBehind} days behind`}
-                  </span>
-                </div>
+        <div className="bg-slate-950/80 backdrop-blur-sm border-b border-slate-800/60 sticky top-0 z-40">
+          <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-300 via-indigo-300 to-sky-300 bg-clip-text text-transparent">
+                Journal dashboard
+              </h1>
+              <p className="text-slate-300 mt-1">
+                Overview of your days, energy, and reflection patterns
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/journal"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 text-sm font-medium shadow-md hover:from-purple-400 hover:to-indigo-400 transition-all"
+              >
+                <ArrowRight className="w-4 h-4" />
+                New entry
+              </Link>
+              <div className="px-4 py-2 rounded-full border border-slate-700 bg-slate-900/70 text-xs font-medium">
+                {stats.daysBehind === 0
+                  ? "Up to date"
+                  : `${stats.daysBehind} day${stats.daysBehind === 1 ? "" : "s"} since last entry`}
               </div>
             </div>
           </div>
         </div>
 
         <div className="max-w-7xl mx-auto px-6 py-8 space-y-8">
-          {/* Key Metrics Row - Now Flippable */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-5 gap-3 md:gap-4 lg:gap-6">
-            <FlippableMetricCard
-              title="Quality of Life"
-              value={stats.avgQuality7.toFixed(1)}
-              subtitle="7-day average"
-              yearValue={stats.avgQualityYear.toFixed(1)}
-              yearSubtitle="All-time average"
-              icon={<Heart className="w-6 h-6 text-white" />}
-              gradient="bg-gradient-to-br from-pink-500 to-rose-600"
-              trend="up"
+          {/* Top metrics */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <MetricCard
+              title="Day quality"
+              value={stats.avgDayQuality7.toFixed(1)}
+              subtitle="7‑day avg (0–10)"
+              icon={<Heart className="w-5 h-5" />}
+              gradient="from-pink-500 to-rose-500"
             />
-
-            <FlippableMetricCard
+            <MetricCard
               title="Productivity"
               value={stats.avgProductivity7.toFixed(1)}
-              subtitle="7-day average"
-              yearValue={stats.avgProductivityYear.toFixed(1)}
-              yearSubtitle="All-time average"
-              icon={<Zap className="w-6 h-6 text-white" />}
-              gradient="bg-gradient-to-br from-blue-500 to-indigo-600"
-              trend="neutral"
+              subtitle="7‑day avg (0–10)"
+              icon={<Zap className="w-5 h-5" />}
+              gradient="from-sky-500 to-indigo-500"
             />
-
-            <FlippableMetricCard
-              title="Total Workouts"
-              value={stats.totalWorkouts14}
-              subtitle="Last 14 days"
-              yearValue={stats.totalWorkoutsYear}
-              yearSubtitle="All-time total"
-              icon={<Activity className="w-6 h-6 text-white" />}
-              gradient="bg-gradient-to-br from-green-500 to-emerald-600"
-              trend="up"
+            <MetricCard
+              title="Energy"
+              value={stats.avgEnergy7.toFixed(1)}
+              subtitle="7‑day avg (0–10)"
+              icon={<Activity className="w-5 h-5" />}
+              gradient="from-emerald-500 to-teal-500"
             />
-
-            <FlippableMetricCard
-              title="Drinks"
-              value={stats.drinks14}
-              subtitle="Last 14 days"
-              yearValue={stats.totalDrinksYear}
-              yearSubtitle="All-time total"
-              icon={<Wine className="w-6 h-6 text-white" />}
-              gradient="bg-gradient-to-br from-orange-500 to-red-600"
-              trend="down"
+            <MetricCard
+              title="Stress"
+              value={stats.avgStress7.toFixed(1)}
+              subtitle="7‑day avg (0–10)"
+              icon={<Brain className="w-5 h-5" />}
+              gradient="from-amber-500 to-orange-500"
             />
-
-            <FlippableMetricCard
-              title="Deep Work"
-              value={stats.avgDeepWork7.toFixed(1)}
-              subtitle="7-day average hours"
-              yearValue={stats.avgDeepWorkYear.toFixed(1)}
-              yearSubtitle="All-time average"
-              icon={<BookOpen className="w-6 h-6 text-white" />}
-              gradient="bg-gradient-to-br from-purple-500 to-indigo-600"
-              trend="up"
+            <MetricCard
+              title="Focus"
+              value={stats.avgFocus7.toFixed(1)}
+              subtitle="7‑day avg (0–10)"
+              icon={<Target className="w-5 h-5" />}
+              gradient="from-violet-500 to-purple-500"
+            />
+            <MetricCard
+              title="Social"
+              value={stats.avgSocial7.toFixed(1)}
+              subtitle="7‑day avg (0–10)"
+              icon={<Sparkles className="w-5 h-5" />}
+              gradient="from-fuchsia-500 to-pink-500"
             />
           </div>
 
-          {/* Habit Streaks Section */}
-          <div className="bg-white rounded-3xl shadow-lg border border-gray-200/50 p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-2 bg-orange-100 rounded-xl">
-                <Flame className="w-5 h-5 text-orange-600" />
-              </div>
-              <h2 className="text-xl font-bold text-gray-800">Habit Streaks</h2>
-              <span className="text-sm text-gray-500">Current consecutive days</span>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-              <StreakCard
-                title="Workouts"
-                icon={<Activity className="w-5 h-5 text-white" />}
-                current={stats.streaks.workout.current}
-                longest={stats.streaks.workout.longest}
-                lastDate={stats.streaks.workout.lastDate}
-                color="from-green-500 to-emerald-600"
-              />
-
-              <StreakCard
-                title="Reading"
-                icon={<BookOpen className="w-5 h-5 text-white" />}
-                current={stats.streaks.reading.current}
-                longest={stats.streaks.reading.longest}
-                lastDate={stats.streaks.reading.lastDate}
-                color="from-blue-500 to-indigo-600"
-              />
-
-              <StreakCard
-                title="Guitar"
-                icon={<Music className="w-5 h-5 text-white" />}
-                current={stats.streaks.guitar.current}
-                longest={stats.streaks.guitar.longest}
-                lastDate={stats.streaks.guitar.lastDate}
-                color="from-purple-500 to-violet-600"
-              />
-
-              <StreakCard
-                title="Sunsets"
-                icon={<Sun className="w-5 h-5 text-white" />}
-                current={stats.streaks.sunset.current}
-                longest={stats.streaks.sunset.longest}
-                lastDate={stats.streaks.sunset.lastDate}
-                color="from-orange-500 to-red-600"
-              />
-
-              <StreakCard
-                title="High Productivity"
-                icon={<Zap className="w-5 h-5 text-white" />}
-                current={stats.streaks.highProductivity.current}
-                longest={stats.streaks.highProductivity.longest}
-                lastDate={stats.streaks.highProductivity.lastDate}
-                color="from-cyan-500 to-blue-600"
-              />
-
-              <StreakCard
-                title="Good Days"
-                icon={<Heart className="w-5 h-5 text-white" />}
-                current={stats.streaks.goodDay.current}
-                longest={stats.streaks.goodDay.longest}
-                lastDate={stats.streaks.goodDay.lastDate}
-                color="from-pink-500 to-rose-600"
-              />
-            </div>
-          </div>
-
-          {/* Main Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column */}
-            <div className="lg:col-span-2 space-y-8">
-              {/* Chart Section */}
-              <div className="bg-white rounded-3xl shadow-lg border border-gray-200/50 overflow-hidden">
-                <div className="p-6 border-b border-gray-100">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-indigo-100 rounded-xl">
-                        <BarChart3 className="w-5 h-5 text-indigo-600" />
-                      </div>
-                      <h2 className="text-xl font-bold text-gray-800">Trends Over Time</h2>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => setShowSmoothed(!showSmoothed)}
-                        className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
-                          showSmoothed
-                            ? "bg-purple-100 text-purple-700 border border-purple-200"
-                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                        }`}
-                      >
-                        <Sparkles className="w-4 h-4 inline mr-1" />
-                        {showSmoothed ? "Smoothed" : "Raw"}
-                      </button>
-
-                      <button
-                        onClick={() => setTimeRange(timeRange === "year" ? "30days" : "year")}
-                        className="px-4 py-2 bg-gray-100 text-gray-600 rounded-xl text-sm font-medium hover:bg-gray-200 transition-all"
-                      >
-                        {timeRange === "year" ? "Full Year" : "30 Days"}
-                      </button>
-                    </div>
+            {/* Trends */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="bg-slate-900 rounded-3xl border border-slate-800/70 shadow-lg shadow-black/40 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-purple-300" />
+                    <h2 className="text-lg font-semibold text-slate-50">Trends over time</h2>
                   </div>
-
-                  {/* Line Toggles */}
-                  <div className="flex flex-wrap gap-3 mt-4">
-                    {Object.entries(visibleLines).map(([key, value]) => (
-                      <button
-                        key={key}
-                        onClick={() =>
-                          setVisibleLines((prev) => ({
-                            ...prev,
-                            [key as keyof typeof prev]: !prev[key as keyof typeof prev],
-                          }))
-                        }
-                        className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-all ${
-                          value
-                            ? "bg-indigo-100 text-indigo-700 border border-indigo-200"
-                            : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-                        }`}
-                      >
-                        {value ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                        {key.replace("_", " ").replace(/\b\w/g, (c) => c.toUpperCase())}
-                      </button>
-                    ))}
-                  </div>
+                  <span className="text-xs text-slate-400">
+                    {stats.totalEntries} entries · latest {stats.lastEntryStr}
+                  </span>
                 </div>
 
-                <div className="p-6">
-                  <ResponsiveContainer width="100%" height={400}>
-                    <LineChart data={filteredData} margin={{ left: 10, right: 10, top: 10, bottom: 10 }}>
-                      <XAxis
-                        dataKey="date"
-                        tickFormatter={(d) => formatTick(d, 0, timeRange !== "year")}
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 12, fill: "#6b7280" }}
-                        interval={timeRange === "year" ? "preserveStartEnd" : "preserveStartEnd"}
-                      />
-                      <YAxis
-                        domain={[0, 10]}
-                        ticks={[0, 2.5, 5, 7.5, 10]}
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 12, fill: "#6b7280" }}
-                      />
-                      <Tooltip
-                        labelFormatter={formatTooltipLabel}
-                        formatter={formatTooltipValue}
-                        contentStyle={{
-                          backgroundColor: "white",
-                          border: "1px solid #e5e7eb",
-                          borderRadius: "16px",
-                          boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-                          fontSize: "14px",
-                          color: "#374151",
-                          fontWeight: "500",
-                        }}
-                      />
-                      <Legend wrapperStyle={{ fontSize: "14px", paddingTop: "20px" }} iconType="rect" iconSize={12} />
-                      {visibleLines.how_good && (
-                        <Line
-                          type="monotone"
-                          dataKey="how_good"
-                          stroke="#eab308"
-                          name="How Good"
-                          dot={false}
-                          strokeWidth={3}
-                          activeDot={{ r: 6, fill: "#eab308", strokeWidth: 2, stroke: "#fff" }}
-                        />
-                      )}
-                      {visibleLines.productivity && (
-                        <Line
-                          type="monotone"
-                          dataKey="productivity"
-                          stroke="#3b82f6"
-                          name="Productivity"
-                          dot={false}
-                          strokeWidth={3}
-                          activeDot={{ r: 6, fill: "#3b82f6", strokeWidth: 2, stroke: "#fff" }}
-                        />
-                      )}
-                      {visibleLines.drinks && (
-                        <Line
-                          type="monotone"
-                          dataKey="drinks"
-                          stroke="#ef4444"
-                          name="Drinks"
-                          dot={false}
-                          strokeWidth={3}
-                          activeDot={{ r: 6, fill: "#ef4444", strokeWidth: 2, stroke: "#fff" }}
-                        />
-                      )}
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-
-              {/* Highlights Section with Dates */}
-              <div className="bg-white rounded-3xl shadow-lg border border-gray-200/50 p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-pink-100 rounded-xl">
-                    <Sparkles className="w-5 h-5 text-pink-600" />
-                  </div>
-                  <h2 className="text-xl font-bold text-gray-800">Random Highlights</h2>
-                </div>
-
-                <div className="grid gap-4">
-                  <div className="p-4 bg-gradient-to-r from-rose-50 to-pink-50 rounded-2xl border border-rose-100">
-                    <div className="flex items-start gap-3">
-                      <span className="text-2xl">🌹</span>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <h3 className="font-semibold text-rose-800">Highlight</h3>
-                          <span className="text-xs text-rose-600 bg-rose-100 px-2 py-1 rounded-full">
-                            {stats.rose.date}
-                          </span>
-                        </div>
-                        <p className="text-rose-700 text-sm leading-relaxed">{stats.rose.value}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-gradient-to-r from-emerald-50 to-green-50 rounded-2xl border border-emerald-100">
-                    <div className="flex items-start gap-3">
-                      <span className="text-2xl">🙏</span>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <h3 className="font-semibold text-emerald-800">Gratitude</h3>
-                          <span className="text-xs text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">
-                            {stats.gratitude.date}
-                          </span>
-                        </div>
-                        <p className="text-emerald-700 text-sm leading-relaxed">{stats.gratitude.value}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
-                    <div className="flex items-start gap-3">
-                      <span className="text-2xl">💭</span>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <h3 className="font-semibold text-blue-800">Thought</h3>
-                          <span className="text-xs text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
-                            {stats.thought.date}
-                          </span>
-                        </div>
-                        <p className="text-blue-700 text-sm leading-relaxed">{stats.thought.value}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-2xl border border-yellow-100">
-                    <div className="flex items-start gap-3">
-                      <span className="text-2xl">🌱</span>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <h3 className="font-semibold text-yellow-800">Bud</h3>
-                          <span className="text-xs text-yellow-600 bg-yellow-100 px-2 py-1 rounded-full">
-                            {stats.bud.date}
-                          </span>
-                        </div>
-                        <p className="text-yellow-700 text-sm leading-relaxed">{stats.bud.value}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-gradient-to-r from-red-50 to-rose-50 rounded-2xl border border-red-100">
-                    <div className="flex items-start gap-3">
-                      <span className="text-2xl">🌵</span>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-1">
-                          <h3 className="font-semibold text-red-800">Thorn</h3>
-                          <span className="text-xs text-red-600 bg-red-100 px-2 py-1 rounded-full">
-                            {stats.thorn.date}
-                          </span>
-                        </div>
-                        <p className="text-red-700 text-sm leading-relaxed">{stats.thorn.value}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <ResponsiveContainer width="100%" height={320}>
+                  <LineChart data={stats.chartData} margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
+                    <XAxis
+                      dataKey="date"
+                      tickFormatter={formatDateLabel}
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: "#9ca3af" }}
+                    />
+                    <YAxis
+                      domain={[0, 10]}
+                      ticks={[0, 2.5, 5, 7.5, 10]}
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: "#9ca3af" }}
+                    />
+                    <Tooltip
+                      labelFormatter={(v) =>
+                        new Date(v + "T00:00:00").toLocaleDateString("en-US", {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                        })
+                      }
+                      contentStyle={{
+                        backgroundColor: "#020617",
+                        border: "1px solid #1e293b",
+                        borderRadius: 16,
+                        color: "#e5e7eb",
+                        fontSize: 12,
+                      }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 12, color: "#e5e7eb" }} />
+                    <Line
+                      type="monotone"
+                      dataKey="day_quality"
+                      name="Day quality"
+                      stroke="#f97316"
+                      strokeWidth={2.5}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="productivity"
+                      name="Productivity"
+                      stroke="#3b82f6"
+                      strokeWidth={2.5}
+                      dot={false}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="energy"
+                      name="Energy"
+                      stroke="#22c55e"
+                      strokeWidth={1.5}
+                      strokeDasharray="4 4"
+                      dot={false}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
               </div>
             </div>
 
-            {/* Right Column */}
-            <div className="space-y-8">
-              {/* Goals Progress - Now with Reading and Total Workouts */}
-              <div className="bg-white rounded-3xl shadow-lg border border-gray-200/50 p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-amber-100 rounded-xl">
-                    <Target className="w-5 h-5 text-amber-600" />
+            {/* Latest entry summary */}
+            <div className="space-y-6">
+              <div className="bg-slate-900 rounded-3xl border border-slate-800/70 shadow-lg shadow-black/40 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5 text-sky-300" />
+                    <h2 className="text-lg font-semibold text-slate-50">Latest entry</h2>
                   </div>
-                  <h2 className="text-xl font-bold text-gray-800">Goals Progress</h2>
+                  <span className="text-xs text-slate-400">
+                    {latestDay
+                      ? new Date(latestDay.date + "T00:00:00").toLocaleDateString("en-US", {
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                        })
+                      : "—"}
+                  </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="text-center">
-                    <div className="flex items-center justify-center mb-3">
-                      <Sun className="w-4 h-4 text-orange-500 mr-2" />
-                      <span className="font-semibold text-gray-700 text-sm">Sunsets</span>
-                    </div>
-                    <ProgressRing progress={(stats.sunsets / 100) * 100} color="#f97316" size={80} strokeWidth={6} />
-                    <p className="text-xs text-gray-600 mt-2">{stats.sunsets}/100</p>
-                  </div>
-
-                  <div className="text-center">
-                    <div className="flex items-center justify-center mb-3">
-                      <Music className="w-4 h-4 text-purple-500 mr-2" />
-                      <span className="font-semibold text-gray-700 text-sm">Guitar</span>
-                    </div>
-                    <ProgressRing progress={(stats.guitar / 200) * 100} color="#8b5cf6" size={80} strokeWidth={6} />
-                    <p className="text-xs text-gray-600 mt-2">{stats.guitar}/200</p>
-                  </div>
-
-                  <div className="text-center">
-                    <div className="flex items-center justify-center mb-3">
-                      <BookOpen className="w-4 h-4 text-blue-500 mr-2" />
-                      <span className="font-semibold text-gray-700 text-sm">Reading</span>
-                    </div>
-                    <ProgressRing progress={(stats.reading / 200) * 100} color="#3b82f6" size={80} strokeWidth={6} />
-                    <p className="text-xs text-gray-600 mt-2">{stats.reading}/200</p>
-                  </div>
-
-                  <div className="text-center">
-                    <div className="flex items-center justify-center mb-3">
-                      <Activity className="w-4 h-4 text-green-500 mr-2" />
-                      <span className="font-semibold text-gray-700 text-sm">Workouts</span>
-                    </div>
-                    <ProgressRing
-                      progress={(stats.totalWorkoutsYear / 300) * 100}
-                      color="#22c55e"
-                      size={80}
-                      strokeWidth={6}
+                {latestDay ? (
+                  <div className="space-y-4 text-sm">
+                    <FieldBlock
+                      label="Anchor memory"
+                      value={latestDay.answers["anchor_memory"]}
+                      placeholder="No anchor memory captured."
                     />
-                    <p className="text-xs text-gray-600 mt-2">{stats.totalWorkoutsYear}/300</p>
+                    <FieldBlock
+                      label="Wins / proud of"
+                      value={latestDay.answers["wins_proud"]}
+                      placeholder="No wins recorded."
+                    />
+                    <FieldBlock
+                      label="Misses / friction"
+                      value={latestDay.answers["misses_friction"]}
+                      placeholder="No misses recorded."
+                    />
+                    <FieldBlock
+                      label="Lesson"
+                      value={latestDay.answers["lesson_next_time"]}
+                      placeholder="No explicit lesson written."
+                    />
+                  </div>
+                ) : (
+                  <p className="text-slate-400 text-sm">No entries yet.</p>
+                )}
+              </div>
+
+              <div className="bg-slate-900 rounded-3xl border border-slate-800/70 shadow-lg shadow-black/40 p-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <Target className="w-5 h-5 text-emerald-300" />
+                  <h2 className="text-lg font-semibold text-slate-50">Tomorrow focus</h2>
+                </div>
+                {latestDay ? (
+                  <div className="space-y-3 text-sm">
+                    <FieldBlock
+                      label="Tomorrow's #1 priority"
+                      value={latestDay.answers["tomorrow_priority"]}
+                      placeholder="No priority set."
+                    />
+                    <FieldBlock
+                      label="Implementation intention"
+                      value={latestDay.answers["implementation_intention"]}
+                      placeholder="No implementation intention set."
+                    />
+                  </div>
+                ) : (
+                  <p className="text-slate-400 text-sm">Fill in today's entry to seed tomorrow.</p>
+                )}
+              </div>
+
+              {/* Alcohol */}
+              <div className="bg-slate-900 rounded-3xl border border-slate-800/70 shadow-lg shadow-black/40 p-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-amber-300" />
+                    <h2 className="text-lg font-semibold text-slate-50">Alcohol</h2>
+                  </div>
+                  <span className="text-xs text-slate-400">last 7 / 30 days</span>
+                </div>
+                <div className="flex items-baseline justify-between text-sm">
+                  <div>
+                    <div className="text-xs uppercase tracking-wide text-slate-400">7‑day avg</div>
+                    <div className="text-xl font-semibold text-slate-100">
+                      {stats.avgAlcohol7.toFixed(1)}
+                    </div>
+                    <div className="text-xs text-slate-500 mt-1">drinks per day</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs uppercase tracking-wide text-slate-400">30‑day total</div>
+                    <div className="text-xl font-semibold text-slate-100">
+                      {stats.totalAlcohol30.toFixed(1)}
+                    </div>
+                    <div className="text-xs text-slate-500 mt-1">drinks</div>
                   </div>
                 </div>
               </div>
 
-              {/* Workout Distribution */}
-              <div className="bg-white rounded-3xl shadow-lg border border-gray-200/50 p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-green-100 rounded-xl">
-                    <Activity className="w-5 h-5 text-green-600" />
-                  </div>
-                  <h2 className="text-xl font-bold text-gray-800">Workouts (14 days)</h2>
+              {/* Rose / Bud / Thorn */}
+              <div className="bg-slate-900 rounded-3xl border border-slate-800/70 shadow-lg shadow-black/40 p-6 space-y-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <Sparkles className="w-5 h-5 text-pink-300" />
+                  <h2 className="text-lg font-semibold text-slate-50">Daily highlights</h2>
                 </div>
+                <div className="space-y-3 text-sm">
+                  <FieldBlock
+                    label="Rose"
+                    value={stats.roseHighlight?.value}
+                    placeholder="No recent rose captured."
+                  />
+                  <FieldBlock
+                    label="Bud"
+                    value={stats.budHighlight?.value}
+                    placeholder="No recent bud captured."
+                  />
+                  <FieldBlock
+                    label="Thorn"
+                    value={stats.thornHighlight?.value}
+                    placeholder="No recent thorn captured."
+                  />
+                </div>
+              </div>
 
-                <div className="space-y-4">
-                  {["Push", "Pull", "Legs", "Full body", "Surfing", "Core", "Cardio"].map((workout) => (
-                    <div key={workout} className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-4 h-4 rounded-full" style={{ backgroundColor: colorMap[workout] }}></div>
-                        <span className="text-sm font-medium text-gray-700">{workout}</span>
+              {/* Workouts */}
+              <div className="bg-slate-900 rounded-3xl border border-slate-800/70 shadow-lg shadow-black/40 p-6 space-y-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Activity className="w-5 h-5 text-emerald-300" />
+                  <h2 className="text-lg font-semibold text-slate-50">Workouts (last 14 days)</h2>
+                </div>
+                <div className="space-y-2 text-xs text-slate-200">
+                  {Object.entries(stats.workoutCounts14).map(([name, count]) => {
+                    const n = typeof count === "number" ? count : 0
+                    const width = maxWorkoutCount > 0 ? (n / maxWorkoutCount) * 100 : 0
+                    const colors = WORKOUT_COLOR_MAP[name] ?? { from: "#22c55e", to: "#4ade80" }
+                    return (
+                      <div key={name} className="relative h-6 flex items-center">
+                        {/* Bar behind text */}
+                        <div className="absolute inset-y-1 left-0 right-0 rounded-full bg-slate-800 overflow-hidden">
+                          <div
+                            className="h-full rounded-full transition-all"
+                            style={{
+                              width: `${width}%`,
+                              backgroundImage: `linear-gradient(to right, ${colors.from}, ${colors.to})`,
+                            }}
+                          />
+                        </div>
+                        {/* Text + number on top */}
+                        <div className="relative z-10 flex justify-between w-full px-1">
+                          <span className="font-medium">{name}</span>
+                          <span className="font-mono">{n}</span>
+                        </div>
                       </div>
-                      <span className="text-sm font-bold text-gray-800">{stats.workoutCounts[workout]}</span>
-                    </div>
-                  ))}
-
-                  {stats.pieData.length > 0 && (
-                    <div className="flex justify-center mt-6">
-                      <PieChart width={160} height={160}>
-                        <Pie
-                          data={stats.pieData}
-                          dataKey="value"
-                          nameKey="name"
-                          cx="50%"
-                          cy="50%"
-                          outerRadius={60}
-                          innerRadius={30}
-                        >
-                          {stats.pieData.map((entry: { color: string }, idx: number) => (
-                            <Cell key={`cell-${idx}`} fill={entry.color} />
-                          ))}
-                        </Pie>
-                      </PieChart>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Last Entry Status */}
-              <div
-                className={`rounded-3xl shadow-lg border p-6 ${
-                  stats.daysBehind > 3
-                    ? "bg-gradient-to-br from-red-50 to-orange-50 border-red-200/50"
-                    : "bg-gradient-to-br from-green-50 to-emerald-50 border-green-200/50"
-                }`}
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className={`p-2 rounded-xl ${stats.daysBehind > 3 ? "bg-red-100" : "bg-green-100"}`}>
-                    <Calendar className={`w-5 h-5 ${stats.daysBehind > 3 ? "text-red-600" : "text-green-600"}`} />
-                  </div>
-                  <h2 className="text-xl font-bold text-gray-800">Journal Status</h2>
-                </div>
-
-                <div className="space-y-3">
-                  <div className={`text-3xl font-bold ${stats.daysBehind > 3 ? "text-red-700" : "text-green-700"}`}>
-                    {stats.daysBehind === 0 ? "✅ Current" : `${stats.daysBehind} days behind`}
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    <span className="font-medium">Last entry:</span>
-                    <br />
-                    {stats.lastEntryStr}
-                  </p>
+                    )
+                  })}
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-
-      <style jsx>{`
-        .perspective-1000 {
-          perspective: 1000px;
-        }
-        .transform-style-preserve-3d {
-          transform-style: preserve-3d;
-        }
-        .backface-hidden {
-          backface-visibility: hidden;
-        }
-        .rotate-y-180 {
-          transform: rotateY(180deg);
-        }
-      `}</style>
     </PinGate>
   )
 }
 
-// Utility functions
-function avg(arr: number[]) {
-  const valid = arr.filter((n) => typeof n === "number" && !isNaN(n))
-  return valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 0
+function MetricCard({
+  title,
+  value,
+  subtitle,
+  icon,
+  gradient,
+}: {
+  title: string
+  value: string
+  subtitle: string
+  icon: React.ReactNode
+  gradient: string
+}) {
+  return (
+    <div
+      className={`relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br ${gradient} shadow-lg shadow-black/40`}
+    >
+      <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top,_#fff,_transparent_60%)]" />
+      <div className="relative flex items-center justify-between">
+        <div>
+          <div className="text-xs uppercase tracking-wide text-white/70 mb-1">{title}</div>
+          <div className="text-2xl font-bold text-white">{value}</div>
+          <div className="text-xs text-white/70 mt-1">{subtitle}</div>
+        </div>
+        <div className="p-2 bg-black/20 rounded-xl text-white">{icon}</div>
+      </div>
+    </div>
+  )
 }
 
-function sum(arr: number[]) {
-  return arr.reduce((a, b) => a + (typeof b === "number" ? b : 0), 0)
+function FieldBlock({
+  label,
+  value,
+  placeholder,
+}: {
+  label: string
+  value: any
+  placeholder: string
+}) {
+  const text =
+    value == null || (typeof value === "string" && value.trim() === "")
+      ? null
+      : Array.isArray(value)
+        ? value.join(", ")
+        : String(value)
+
+  return (
+    <div className="space-y-1">
+      <div className="text-xs uppercase tracking-wide text-slate-400">{label}</div>
+      <div className="text-slate-100 text-sm leading-relaxed">
+        {text ?? <span className="text-slate-500 italic">{placeholder}</span>}
+      </div>
+    </div>
+  )
 }
 
-function dateDiff(a: Date, b: Date) {
-  return Math.floor((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24))
-}

@@ -11,13 +11,19 @@ export async function GET() {
 
     if (error) {
       console.error("Supabase error:", error)
-      return NextResponse.json({ error: "Failed to fetch todos" }, { status: 500 })
+      return NextResponse.json(
+        { error: "Failed to fetch todos", details: error.message },
+        { status: 500 }
+      )
     }
 
-    return NextResponse.json({ todos })
+    return NextResponse.json({ todos: todos || [] })
   } catch (error) {
     console.error("API error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Internal server error", details: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    )
   }
 }
 
@@ -26,7 +32,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { content } = body
 
-    if (!content || content.trim() === "") {
+    if (!content || typeof content !== "string" || content.trim() === "") {
       return NextResponse.json({ error: "Content is required" }, { status: 400 })
     }
 
@@ -44,12 +50,22 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error("Supabase error:", error)
-      return NextResponse.json({ error: "Failed to create todo" }, { status: 500 })
+      return NextResponse.json(
+        { error: "Failed to create todo", details: error.message },
+        { status: 500 }
+      )
+    }
+
+    if (!todo) {
+      return NextResponse.json({ error: "Todo created but not returned" }, { status: 500 })
     }
 
     return NextResponse.json({ todo }, { status: 201 })
   } catch (error) {
     console.error("API error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Internal server error", details: error instanceof Error ? error.message : String(error) },
+      { status: 500 }
+    )
   }
 }
