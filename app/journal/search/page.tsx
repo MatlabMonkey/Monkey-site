@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
-import PinGate from "../components/PinGate";
+import PinGate from "../../components/PinGate";
 import { ArrowLeft, Search, Loader2, Calendar } from "lucide-react";
 
 type SearchResult = {

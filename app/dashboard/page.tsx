@@ -15,10 +15,9 @@ type AnswerRow = {
   value_number: number | null
   value_boolean: boolean | null
   value_json: any
-  question_catalog: {
-    key: string
-    question_type: QuestionType
-  }
+  question_catalog:
+    | { key: string; question_type: QuestionType }
+    | { key: string; question_type: QuestionType }[]
 }
 
 type JournalDay = {
@@ -70,7 +69,8 @@ const WORKOUT_COLOR_MAP: Record<
 }
 
 function answerValue(row: AnswerRow): any {
-  const t = row.question_catalog?.question_type
+  const catalog = Array.isArray(row.question_catalog) ? row.question_catalog[0] : row.question_catalog
+  const t = catalog?.question_type
   if (t === "number" || t === "rating") return row.value_number
   if (t === "boolean") return row.value_boolean
   if (t === "multiselect") return row.value_json
@@ -156,8 +156,9 @@ export default function Dashboard() {
 
         const byEntry: Map<string, Record<string, any>> = new Map()
 
-        ;(answerRows as AnswerRow[]).forEach((row) => {
-          const key = row.question_catalog?.key
+        ;(answerRows as unknown as AnswerRow[]).forEach((row) => {
+          const catalog = Array.isArray(row.question_catalog) ? row.question_catalog[0] : row.question_catalog
+          const key = catalog?.key
           if (!key) return
           const value = answerValue(row)
           const map = byEntry.get(row.entry_id) ?? {}

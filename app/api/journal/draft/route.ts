@@ -20,16 +20,12 @@ export async function POST(request: NextRequest) {
 
     const result = await saveDraft(date, answers)
 
-    if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 500 })
-    }
-
     return NextResponse.json(
       {
-        draft: result.data,
-        source: result.source,
+        draft: result.entry,
+        answers: result.answers,
       },
-      { status: result.data?.entry.id ? 200 : 201 }
+      { status: result.entry?.id ? 200 : 201 }
     )
   } catch (error) {
     console.error("API error:", error)
