@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import PinGate from "../components/PinGate"
@@ -24,7 +24,7 @@ type Answer = {
   answer_type: string
 }
 
-export default function JournalPage() {
+function JournalPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const dateParam = searchParams.get("date")
@@ -546,5 +546,19 @@ export default function JournalPage() {
         </div>
       </div>
     </PinGate>
+  )
+}
+
+export default function JournalPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center">
+          <Loader2 className="w-10 h-10 animate-spin text-purple-400" />
+        </div>
+      }
+    >
+      <JournalPageContent />
+    </Suspense>
   )
 }
