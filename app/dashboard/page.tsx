@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts"
-import { supabase } from "../../lib/supabaseClient"
 import PinGate from "../components/PinGate"
 import { Calendar, Heart, Zap, Activity, Brain, Target, Sparkles, ArrowRight } from "lucide-react"
 
@@ -96,21 +95,19 @@ export default function Dashboard() {
     async function load() {
       setLoading(true)
       try {
-        // 1) Get submitted entries (non-drafts)
-        const { data: entryRows, error: entryError } = await supabase
-          .from("journal_entry")
-          .select("id, date, is_draft, completed_at")
-          .eq("is_draft", false)
-          .order("date", { ascending: true })
-
-        if (entryError) {
-          console.error("Supabase error (journal_entry):", entryError)
+        const res = await fetch("/api/journal/dashboard")
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}))
+          console.error("Dashboard: API error", err.error || res.statusText)
           setStats(null)
           return
         }
 
-        if (!entryRows || entryRows.length === 0) {
-          // Empty state: initialize all metrics to safe defaults so UI can render.
+        const data = await res.json()
+        const entryRows = data.entries || []
+        const days: JournalDay[] = data.days || []
+
+        if (!entryRows.length) {
           const WORKOUT_OPTIONS = ["Push", "Pull", "Legs", "Full body", "Surfing", "Core", "Cardio"]
           const workoutCounts14: Record<string, number> = Object.fromEntries(
             WORKOUT_OPTIONS.map((k) => [k, 0]),
@@ -137,39 +134,6 @@ export default function Dashboard() {
           })
           return
         }
-
-        const ids = entryRows.map((e: any) => e.id as string)
-
-        // 2) Get answers + question keys
-        const { data: answerRows, error: answerError } = await supabase
-          .from("journal_answer")
-          .select(
-            "entry_id, value_text, value_number, value_boolean, value_json, question_catalog!inner(key, question_type)",
-          )
-          .in("entry_id", ids)
-
-        if (answerError) {
-          console.error("Supabase error (journal_answer):", answerError)
-          setStats(null)
-          return
-        }
-
-        const byEntry: Map<string, Record<string, any>> = new Map()
-
-        ;(answerRows as unknown as AnswerRow[]).forEach((row) => {
-          const catalog = Array.isArray(row.question_catalog) ? row.question_catalog[0] : row.question_catalog
-          const key = catalog?.key
-          if (!key) return
-          const value = answerValue(row)
-          const map = byEntry.get(row.entry_id) ?? {}
-          map[key] = value
-          byEntry.set(row.entry_id, map)
-        })
-
-        const days: JournalDay[] = (entryRows as any[]).map((e) => ({
-          date: e.date,
-          answers: byEntry.get(e.id) ?? {},
-        }))
 
         const today = new Date()
         const lastEntryRow = entryRows[entryRows.length - 1] as any

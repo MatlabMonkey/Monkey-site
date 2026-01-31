@@ -1,0 +1,105 @@
+{
+  "Timestamp": "_timestamp",
+  "Date": {
+    "key": "day_date",
+    "type": "date",
+    "wording": "Date"
+  },
+  "How good of a day was it": {
+    "key": "day_quality",
+    "type": "rating",
+    "wording": "How good of a day was it?"
+  },
+  "How productive were you today": {
+    "key": "productivity",
+    "type": "rating",
+    "wording": "How productive were you today?"
+  },
+  "How many drinks did you have": {
+    "key": "alcohol",
+    "type": "number",
+    "wording": "How many drinks did you have?"
+  },
+  "Plot (how impactful the day was)": {
+    "key": "day_impact",
+    "type": "number",
+    "wording": "Plot (how impactful the day was)"
+  },
+  "_": "_skip",
+  "Summary (what did you do today)": {
+    "key": "daily_timeline_summary",
+    "type": "text",
+    "wording": "Summary (what did you do today)"
+  },
+  "Reflection (thoughts on the day or in general, write down how you felt throughout the day)": {
+    "key": "reflection",
+    "type": "text",
+    "wording": "Reflection"
+  },
+  "Rose (highlight of the day)": {
+    "key": "rose",
+    "type": "text",
+    "wording": "Rose (highlight of the day)"
+  },
+  "Bud (something that could be improved)": {
+    "key": "bud",
+    "type": "text",
+    "wording": "Bud (something that could be improved)"
+  },
+  "Thorn (lowlight)": {
+    "key": "thorn",
+    "type": "text",
+    "wording": "Thorn (lowlight)"
+  },
+  "What are you proud of today?": {
+    "key": "wins_proud",
+    "type": "text",
+    "wording": "What are you proud of today?"
+  },
+  "Gratitude (what is something you were thankful for today)": {
+    "key": "gratitude",
+    "type": "text",
+    "wording": "Gratitude (what is something you were thankful for today)"
+  },
+  "Someone you met today (Name and something about them)": {
+    "key": "people_met",
+    "type": "text",
+    "wording": "Someone you met today"
+  },
+  "Thought of the day": {
+    "key": "thought_of_day",
+    "type": "text",
+    "wording": "Thought of the day"
+  },
+  "Random act of Kindness (RAOK)": {
+    "key": "raok",
+    "type": "text",
+    "wording": "Random act of Kindness (RAOK)"
+  },
+  "What do you hope to accomplish tomorrow?": {
+    "key": "tomorrow_priority",
+    "type": "text",
+    "wording": "What do you hope to accomplish tomorrow?"
+  },
+  "Booleans": {
+    "split": {
+      "workouts": {
+        "key": "workouts",
+        "type": "multiselect",
+        "wording": "Workouts / movement types",
+        "keywords": ["Push", "Pull", "Legs", "Surfing", "Full body", "Core", "Cardio", "Workout or run", "workout", "run"]
+      },
+      "daily_habits": {
+        "key": "daily_habits",
+        "type": "multiselect",
+        "wording": "Daily habits / checklist",
+        "keywords": ["Read ten pages", "Meditate", "In-person social time", "No Snooze", "Watch sunset", "Call parents or old friend", "Talked to a Stranger"]
+      }
+    }
+  },
+  "How many hours of deep work?": {
+    "key": "deep_work_hours",
+    "type": "number",
+    "wording": "How many hours of deep work?"
+  }
+}

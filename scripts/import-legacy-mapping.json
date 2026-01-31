@@ -1,0 +1,63 @@
+{
+  "Timestamp": "_timestamp",
+  "Date": {
+    "key": "day_date",
+    "type": "date",
+    "wording": "Date"
+  },
+  "How many drinks did you have today": {
+    "key": "alcohol",
+    "type": "number",
+    "wording": "How many drinks did you have today?"
+  },
+  "How productive was today?": {
+    "key": "productivity",
+    "type": "rating",
+    "wording": "How productive was today?"
+  },
+  "How good of a day was it?": {
+    "key": "day_quality",
+    "type": "rating",
+    "wording": "How good of a day was it?"
+  },
+  "What are you proud of today?": {
+    "key": "wins_proud",
+    "type": "text",
+    "wording": "What are you proud of today?"
+  },
+  "What did you do today?": {
+    "key": "daily_timeline_summary",
+    "type": "text",
+    "wording": "What did you do today?"
+  },
+  "What could you have done better today?": {
+    "key": "misses_friction",
+    "type": "text",
+    "wording": "What could you have done better today?"
+  },
+  "Thought of the day": {
+    "key": "thought_of_day",
+    "type": "text",
+    "wording": "Thought of the day"
+  },
+  "Checklist": {
+    "split": {
+      "workouts": {
+        "key": "workouts",
+        "type": "multiselect",
+        "wording": "Workouts / movement types",
+        "keywords": ["Workout or run", "workout", "run"]
+      },
+      "daily_habits": {
+        "key": "daily_habits",
+        "type": "multiselect",
+        "wording": "Daily habits / checklist"
+      }
+    }
+  },
+  "Three tasks for tomorrow:": {
+    "key": "tomorrow_priority",
+    "type": "text",
+    "wording": "Three tasks for tomorrow"
+  }
+}

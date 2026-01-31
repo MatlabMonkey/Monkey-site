@@ -6,7 +6,8 @@ import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import PinGate from "../components/PinGate"
-import { ArrowLeft, ChevronLeft, ChevronRight, CheckCircle2, Save, Loader2, Search } from "lucide-react"
+import { JOURNAL_QUESTION_SET } from "../../lib/journalSchema"
+import { ArrowLeft, ChevronLeft, ChevronRight, CheckCircle2, Save, Loader2, Search, Compass } from "lucide-react"
 
 type Question = {
   id: string
@@ -77,6 +78,7 @@ function JournalPageContent() {
       try {
         const response = await fetch(`/api/journal/entry?date=${entryDate}`)
         const data = await response.json()
+        setLoadedEntryExists(!!data.entry)
         if (data.entry) {
           setIsDraft(data.entry.is_draft)
           const answersObj: Record<string, any> = {}
@@ -405,6 +407,17 @@ function JournalPageContent() {
     return value !== null && value !== undefined && value !== "" && !(Array.isArray(value) && value.length === 0)
   }).length
 
+  const currentAppKeys = new Set(JOURNAL_QUESTION_SET.map((q) => q.key))
+  const answerKeysWithValues = Object.entries(answers).filter(([, value]) => {
+    if (value === null || value === undefined || value === "") return false
+    if (Array.isArray(value) && value.length === 0) return false
+    return true
+  })
+  const isLegacyEntry =
+    loadedEntryExists &&
+    answerKeysWithValues.length > 0 &&
+    answerKeysWithValues.some(([key]) => !currentAppKeys.has(key))
+
   return (
     <PinGate>
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100">
@@ -436,6 +449,13 @@ function JournalPageContent() {
                   <Search className="w-4 h-4" />
                   Search
                 </Link>
+                <Link
+                  href="/journal/explorer"
+                  className="flex items-center gap-2 text-sm text-slate-300 hover:text-purple-400 transition-colors"
+                >
+                  <Compass className="w-4 h-4" />
+                  Explorer
+                </Link>
               </div>
               <div className="flex items-center gap-3">
                 {saveStatus === "saving" && (
@@ -462,17 +482,21 @@ function JournalPageContent() {
                 )}
               </div>
             </div>
-            {/* Progress bar */}
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-gradient-to-r from-purple-600 to-blue-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <div className="flex justify-between items-center mt-2 text-sm text-gray-600">
-              <span>Question {currentQuestionIndex + 1} of {totalQuestions}</span>
-              <span>{answeredCount} answered</span>
-            </div>
+            {/* Progress bar — hide for legacy read-only */}
+            {!isLegacyEntry && (
+              <>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <div className="flex justify-between items-center mt-2 text-sm text-gray-600">
+                  <span>Question {currentQuestionIndex + 1} of {totalQuestions}</span>
+                  <span>{answeredCount} answered</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
@@ -492,8 +516,34 @@ function JournalPageContent() {
             </div>
           )}
 
-          {/* Question Card */}
-          {currentQuestion && (
+          {/* Read-only view for legacy / different-question-set entries */}
+          {isLegacyEntry && (
+            <div className="mb-6 rounded-2xl border border-slate-700 bg-slate-900/80 shadow-xl overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-700 bg-slate-800/50">
+                <h2 className="text-lg font-semibold text-slate-100">
+                  View only — {new Date(entryDate).toLocaleDateString()}
+                </h2>
+                <p className="text-sm text-slate-400 mt-1">
+                  This entry was imported or uses a different question set. Showing all answers.
+                </p>
+              </div>
+              <ul className="divide-y divide-slate-700">
+                {answerKeysWithValues.map(([key, value]) => {
+                  const wording = questions.find((q) => q.key === key)?.wording || key
+                  const displayValue = Array.isArray(value) ? value.join(", ") : String(value)
+                  return (
+                    <li key={key} className="px-6 py-4">
+                      <div className="text-sm font-medium text-slate-400 mb-1">{wording}</div>
+                      <div className="text-slate-100 whitespace-pre-wrap break-words">{displayValue}</div>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          )}
+
+          {/* Question Card (current form) — hide when showing legacy read-only */}
+          {!isLegacyEntry && currentQuestion && (
             <div className="bg-slate-900 rounded-2xl shadow-xl shadow-black/40 border border-slate-800 p-8 mb-6">
               <h2 className="text-2xl font-bold text-slate-50 mb-2">{currentQuestion.wording}</h2>
               {currentQuestion.description && (
@@ -504,7 +554,8 @@ function JournalPageContent() {
             </div>
           )}
 
-          {/* Navigation */}
+          {/* Navigation — hide for legacy read-only */}
+          {!isLegacyEntry && (
           <div className="flex items-center justify-between gap-4">
             <button
               onClick={handlePrevious}
@@ -543,6 +594,7 @@ function JournalPageContent() {
               </button>
             )}
           </div>
+          )}
         </div>
       </div>
     </PinGate>

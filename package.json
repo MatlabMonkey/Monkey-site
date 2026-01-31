@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "db:push-todos": "node scripts/push-todos-migration.js"
+    "db:push-todos": "node scripts/push-todos-migration.js",
+    "import-legacy": "node scripts/import-legacy-journal.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.50.0",

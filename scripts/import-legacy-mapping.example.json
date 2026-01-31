@@ -1,0 +1,19 @@
+{
+  "Timestamp": "_timestamp",
+  "Date of the day": {
+    "key": "day_date",
+    "type": "date",
+    "wording": "Date"
+  },
+  "What did you do today?": {
+    "key": "daily_timeline_summary",
+    "type": "text",
+    "wording": "What did you do today?"
+  },
+  "How was your day? (1-10)": {
+    "key": "day_quality",
+    "type": "rating",
+    "wording": "Day quality (1-10)"
+  },
+  "Notes": "notes"
+}

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowRight, CheckSquare, Plus } from "lucide-react"
+import { ArrowRight, CheckSquare, Plus, BarChart3, Compass, PenLine } from "lucide-react"
 import { useEffect, useState } from "react"
 
 // Daily nature photo system with dynamic Unsplash API
@@ -456,9 +456,25 @@ export default function Home() {
               href="/dashboard"
               className="group bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 flex flex-col items-center justify-center shadow-lg hover:shadow-xl hover:scale-105"
             >
-              <ArrowRight className="w-8 h-8 text-purple-300 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">Journal</h3>
+              <BarChart3 className="w-8 h-8 text-purple-300 mb-4" />
+              <h3 className="text-lg font-semibold text-white mb-2">Dashboard</h3>
               <p className="text-white/70 text-sm">View your journal analytics, progress, and reflections</p>
+            </Link>
+            <Link
+              href="/journal/explorer"
+              className="group bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 flex flex-col items-center justify-center shadow-lg hover:shadow-xl hover:scale-105"
+            >
+              <Compass className="w-8 h-8 text-blue-300 mb-4" />
+              <h3 className="text-lg font-semibold text-white mb-2">Journal Explorer</h3>
+              <p className="text-white/70 text-sm">Explore and query your past journal entries</p>
+            </Link>
+            <Link
+              href="/journal"
+              className="group bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 flex flex-col items-center justify-center shadow-lg hover:shadow-xl hover:scale-105"
+            >
+              <PenLine className="w-8 h-8 text-amber-300 mb-4" />
+              <h3 className="text-lg font-semibold text-white mb-2">New Entry</h3>
+              <p className="text-white/70 text-sm">Write today's journal entry</p>
             </Link>
             <Link
               href="/todos"

@@ -311,3 +311,460 @@ export async function searchEntries(params: SearchParams): Promise<SearchResultI
     answers: byEntry.get(e.id) || [],
   }));
 }
+
+export type ExploreParams = {
+  type: string;
+  // Numeric filter
+  question_key?: string;
+  operator?: ">=" | "<=" | "=" | "between";
+  value?: number;
+  value2?: number; // for "between"
+  // Text search
+  search_text?: string;
+  search_fields?: string[]; // question keys to search in
+  // People search/count
+  person_name?: string;
+  // Workout/habit filters
+  workout_types?: string[];
+  habit_types?: string[];
+  // Rose/bud/thorn
+  rbt_field?: "rose" | "bud" | "thorn";
+  rbt_search?: string;
+  // Date patterns
+  day_of_week?: number; // 0-6 (Sunday-Saturday)
+  month?: number; // 1-12
+  year?: number;
+  // Date range (always available)
+  from?: string;
+  to?: string;
+  // Combination
+  conditions?: Array<{
+    question_key: string;
+    operator: string;
+    value: unknown;
+    value2?: unknown; // for "between" operator
+    question_type: string;
+  }>;
+  logic?: "AND" | "OR";
+  // Streaks
+  streak_condition?: {
+    question_key: string;
+    operator: string;
+    value: unknown;
+    question_type: string;
+  };
+};
+
+/**
+ * Advanced exploration of journal entries with various query types.
+ */
+export async function exploreEntries(params: ExploreParams): Promise<SearchResultItem[]> {
+  const { type, from, to } = params;
+  let entryIds: string[] | null = null;
+
+  // Build query based on type
+  if (type === "numeric") {
+    const { question_key, operator, value, value2 } = params;
+    if (!question_key || operator === undefined || value === undefined) return [];
+
+    const qIds = await getQuestionIds([question_key]);
+    const qId = qIds.get(question_key);
+    if (!qId) return [];
+
+    // Get question type to know which column to query
+    const { data: qData } = await supabase.from("question_catalog").select("question_type").eq("id", qId).single();
+    const qType = qData?.question_type || "number";
+
+    let qb = supabase.from("journal_answer").select("entry_id");
+    if (qType === "number" || qType === "rating") {
+      if (operator === ">=") qb = qb.eq("question_id", qId).gte("value_number", value);
+      else if (operator === "<=") qb = qb.eq("question_id", qId).lte("value_number", value);
+      else if (operator === "=") qb = qb.eq("question_id", qId).eq("value_number", value);
+      else if (operator === "between" && value2 !== undefined) {
+        qb = qb.eq("question_id", qId).gte("value_number", value).lte("value_number", value2);
+      }
+    } else {
+      return []; // Only numeric/rating supported
+    }
+
+    const { data: ans, error } = await qb;
+    if (error || !ans || ans.length === 0) return [];
+    entryIds = [...new Set(ans.map((a: { entry_id: string }) => a.entry_id))];
+  } else if (type === "people" || type === "people_count") {
+    const { person_name } = params;
+    if (!person_name || !person_name.trim()) return [];
+
+    // Search in text fields that might contain people names
+    const searchFields = params.search_fields || [
+      "daily_timeline_summary",
+      "people_met",
+      "reflection",
+      "wins_proud",
+      "meaningful_moment",
+    ];
+    const qIds = await getQuestionIds(searchFields);
+    const qIdList = Array.from(qIds.values());
+
+    if (qIdList.length === 0) return [];
+
+    const { data: ans, error } = await supabase
+      .from("journal_answer")
+      .select("entry_id")
+      .in("question_id", qIdList)
+      .ilike("value_text", "%" + person_name.trim() + "%");
+
+    if (error || !ans || ans.length === 0) return [];
+    entryIds = [...new Set(ans.map((a: { entry_id: string }) => a.entry_id))];
+  } else if (type === "activity") {
+    const { search_text } = params;
+    if (!search_text || !search_text.trim()) return [];
+
+    const searchFields = params.search_fields || ["daily_timeline_summary", "reflection"];
+    const qIds = await getQuestionIds(searchFields);
+    const qIdList = Array.from(qIds.values());
+
+    if (qIdList.length === 0) return [];
+
+    const { data: ans, error } = await supabase
+      .from("journal_answer")
+      .select("entry_id")
+      .in("question_id", qIdList)
+      .ilike("value_text", "%" + search_text.trim() + "%");
+
+    if (error || !ans || ans.length === 0) return [];
+    entryIds = [...new Set(ans.map((a: { entry_id: string }) => a.entry_id))];
+  } else if (type === "workout") {
+    const { workout_types } = params;
+    if (!workout_types || workout_types.length === 0) return [];
+
+    const qIds = await getQuestionIds(["workouts"]);
+    const qId = qIds.get("workouts");
+    if (!qId) return [];
+
+    // For multiselect, we need to check if value_json contains any of the workout types
+    // Supabase JSONB contains operator: @>
+    const { data: ans, error } = await supabase
+      .from("journal_answer")
+      .select("entry_id, value_json")
+      .eq("question_id", qId);
+
+    if (error || !ans || ans.length === 0) return [];
+
+    // Filter entries where value_json array contains any workout type
+    const matching = ans.filter((a: any) => {
+      const arr = Array.isArray(a.value_json) ? a.value_json : [];
+      return workout_types.some((wt) => arr.includes(wt));
+    });
+
+    entryIds = [...new Set(matching.map((a: { entry_id: string }) => a.entry_id))];
+  } else if (type === "habit") {
+    const { habit_types } = params;
+    if (!habit_types || habit_types.length === 0) return [];
+
+    const qIds = await getQuestionIds(["daily_habits"]);
+    const qId = qIds.get("daily_habits");
+    if (!qId) return [];
+
+    const { data: ans, error } = await supabase
+      .from("journal_answer")
+      .select("entry_id, value_json")
+      .eq("question_id", qId);
+
+    if (error || !ans || ans.length === 0) return [];
+
+    const matching = ans.filter((a: any) => {
+      const arr = Array.isArray(a.value_json) ? a.value_json : [];
+      return habit_types.some((ht) => arr.includes(ht));
+    });
+
+    entryIds = [...new Set(matching.map((a: { entry_id: string }) => a.entry_id))];
+  } else if (type === "text_search") {
+    const { search_text, search_fields } = params;
+    if (!search_text || !search_text.trim()) return [];
+
+    const fields = search_fields || [
+      "daily_timeline_summary",
+      "reflection",
+      "wins_proud",
+      "misses_friction",
+      "rose",
+      "bud",
+      "thorn",
+    ];
+    const qIds = await getQuestionIds(fields);
+    const qIdList = Array.from(qIds.values());
+
+    if (qIdList.length === 0) return [];
+
+    const { data: ans, error } = await supabase
+      .from("journal_answer")
+      .select("entry_id")
+      .in("question_id", qIdList)
+      .ilike("value_text", "%" + search_text.trim() + "%");
+
+    if (error || !ans || ans.length === 0) return [];
+    entryIds = [...new Set(ans.map((a: { entry_id: string }) => a.entry_id))];
+  } else if (type === "rbt") {
+    const { rbt_field, rbt_search } = params;
+    if (!rbt_field) return [];
+
+    const qIds = await getQuestionIds([rbt_field]);
+    const qId = qIds.get(rbt_field);
+    if (!qId) return [];
+
+    let qb = supabase.from("journal_answer").select("entry_id").eq("question_id", qId);
+    if (rbt_search && rbt_search.trim()) {
+      qb = qb.ilike("value_text", "%" + rbt_search.trim() + "%");
+    } else {
+      // Just check that field is non-empty
+      qb = qb.not("value_text", "is", null).neq("value_text", "");
+    }
+
+    const { data: ans, error } = await qb;
+    if (error || !ans || ans.length === 0) return [];
+    entryIds = [...new Set(ans.map((a: { entry_id: string }) => a.entry_id))];
+  } else if (type === "date_pattern") {
+    // Filter by day of week, month, or year
+    const { day_of_week, month, year } = params;
+
+    // We'll filter entries by date, then check if they match the pattern
+    let qb = supabase.from("journal_entry").select("id, date");
+    if (from) qb = qb.gte("date", from.slice(0, 10));
+    if (to) qb = qb.lte("date", to.slice(0, 10));
+
+    const { data: entries, error } = await qb;
+    if (error || !entries || entries.length === 0) return [];
+
+    const matching = entries.filter((e: any) => {
+      const d = new Date(e.date + "T00:00:00");
+      if (day_of_week !== undefined && d.getDay() !== day_of_week) return false;
+      if (month !== undefined && d.getMonth() + 1 !== month) return false;
+      if (year !== undefined && d.getFullYear() !== year) return false;
+      return true;
+    });
+
+    entryIds = matching.map((e: any) => e.id);
+  } else if (type === "combination") {
+    const { conditions, logic } = params;
+    if (!conditions || conditions.length === 0) return [];
+
+    const logicOp = logic || "AND";
+    const allEntryIds: string[][] = [];
+
+    for (const cond of conditions) {
+      const { question_key, operator, value, question_type } = cond;
+      if (!question_key || operator === undefined) continue;
+
+      const qIds = await getQuestionIds([question_key]);
+      const qId = qIds.get(question_key);
+      if (!qId) continue;
+
+      let qb = supabase.from("journal_answer").select("entry_id").eq("question_id", qId);
+
+      if (question_type === "number" || question_type === "rating") {
+        if (operator === ">=") qb = qb.gte("value_number", Number(value));
+        else if (operator === "<=") qb = qb.lte("value_number", Number(value));
+        else if (operator === "=") qb = qb.eq("value_number", Number(value));
+        else if (operator === "between" && cond.value2 !== undefined) {
+          qb = qb.gte("value_number", Number(value)).lte("value_number", Number(cond.value2));
+        }
+      } else if (question_type === "text") {
+        if (operator === "contains") {
+          qb = qb.ilike("value_text", "%" + String(value) + "%");
+        } else if (operator === "=") {
+          qb = qb.eq("value_text", String(value));
+        }
+      } else if (question_type === "multiselect") {
+        if (operator === "contains") {
+          const { data: ans } = await supabase
+            .from("journal_answer")
+            .select("entry_id, value_json")
+            .eq("question_id", qId);
+          if (ans) {
+            const matching = ans.filter((a: any) => {
+              const arr = Array.isArray(a.value_json) ? a.value_json : [];
+              return arr.includes(String(value));
+            });
+            allEntryIds.push(matching.map((a: { entry_id: string }) => a.entry_id));
+            continue;
+          }
+        }
+      }
+
+      const { data: ans, error } = await qb;
+      if (error || !ans || ans.length === 0) {
+        if (logicOp === "AND") return [];
+        continue;
+      }
+      allEntryIds.push(ans.map((a: { entry_id: string }) => a.entry_id));
+    }
+
+    if (allEntryIds.length === 0) return [];
+
+    if (logicOp === "AND") {
+      // Intersection: entries that match ALL conditions
+      if (allEntryIds.length === 0) return [];
+      entryIds = allEntryIds.reduce((acc, ids) => {
+        if (acc.length === 0) return [];
+        return acc.filter((id) => ids.includes(id));
+      }, allEntryIds[0] || []);
+    } else {
+      // Union: entries that match ANY condition
+      entryIds = [...new Set(allEntryIds.flat())];
+    }
+  } else if (type === "streak") {
+    const { streak_condition } = params;
+    if (!streak_condition) return [];
+
+    // First get all entries matching the condition
+    const { question_key, operator, value, question_type } = streak_condition;
+    const qIds = await getQuestionIds([question_key]);
+    const qId = qIds.get(question_key);
+    if (!qId) return [];
+
+    let qb = supabase.from("journal_answer").select("entry_id").eq("question_id", qId);
+
+    if (question_type === "number" || question_type === "rating") {
+      if (operator === ">=") qb = qb.gte("value_number", Number(value));
+      else if (operator === "<=") qb = qb.lte("value_number", Number(value));
+      else if (operator === "=") qb = qb.eq("value_number", Number(value));
+    } else if (question_type === "multiselect" && operator === "contains") {
+      const { data: ans } = await supabase
+        .from("journal_answer")
+        .select("entry_id, value_json")
+        .eq("question_id", qId);
+      if (ans) {
+        const matching = ans.filter((a: any) => {
+          const arr = Array.isArray(a.value_json) ? a.value_json : [];
+          return arr.includes(String(value));
+        });
+        entryIds = [...new Set(matching.map((a: { entry_id: string }) => a.entry_id))];
+      }
+    } else {
+      const { data: ans, error } = await qb;
+      if (error || !ans || ans.length === 0) return [];
+      entryIds = [...new Set(ans.map((a: { entry_id: string }) => a.entry_id))];
+    }
+
+    // For streaks, we need to get entries in date order and find consecutive sequences
+    // This will be handled in the API layer after fetching entries
+  }
+
+  // Now fetch entries matching the filters
+  let qb = supabase
+    .from("journal_entry")
+    .select("id, date, is_draft, completed_at")
+    .order("date", { ascending: false })
+    .limit(500);
+
+  if (from) qb = qb.gte("date", from.slice(0, 10));
+  if (to) qb = qb.lte("date", to.slice(0, 10));
+  if (entryIds && entryIds.length > 0) {
+    qb = qb.in("id", entryIds);
+  } else if (entryIds !== null && entryIds.length === 0) {
+    // No matching entries found
+    return [];
+  }
+
+  const { data: entries, error: eErr } = await qb;
+  if (eErr) throw eErr;
+  if (!entries || entries.length === 0) return [];
+
+  // For streaks, detect consecutive sequences
+  if (type === "streak" && entries.length > 0) {
+    // Sort by date ascending for streak detection
+    const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
+    const streaks: SearchResultItem[][] = [];
+    let currentStreak: typeof entries = [];
+
+    for (let i = 0; i < sorted.length; i++) {
+      const curr = sorted[i];
+      if (currentStreak.length === 0) {
+        currentStreak.push(curr);
+      } else {
+        const prev = currentStreak[currentStreak.length - 1];
+        const prevDate = new Date(prev.date + "T00:00:00");
+        const currDate = new Date(curr.date + "T00:00:00");
+        const daysDiff = Math.floor((currDate.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
+
+        if (daysDiff === 1) {
+          // Consecutive day
+          currentStreak.push(curr);
+        } else {
+          // Break in streak
+          if (currentStreak.length > 1) {
+            streaks.push(currentStreak as any);
+          }
+          currentStreak = [curr];
+        }
+      }
+    }
+    if (currentStreak.length > 1) {
+      streaks.push(currentStreak as any);
+    }
+
+    // Return only entries that are part of streaks (length > 1)
+    const streakEntryIds = new Set(streaks.flat().map((e: any) => e.id));
+    const filtered = entries.filter((e) => streakEntryIds.has(e.id));
+    if (filtered.length === 0) return [];
+
+    const ids = filtered.map((e) => e.id);
+    const { data: answerRows, error: aErr } = await supabase
+      .from("journal_answer")
+      .select("entry_id, value_text, value_number, value_boolean, value_json, question_catalog!inner(key, question_type)")
+      .in("entry_id", ids);
+
+    if (aErr) throw aErr;
+
+    const byEntry = new Map<string, AnswerOutput[]>();
+    for (const r of answerRows || []) {
+      const eid = (r as any).entry_id;
+      const q = (r as any).question_catalog || {};
+      const val = fromValueCols(
+        { value_text: r.value_text, value_number: r.value_number, value_boolean: r.value_boolean, value_json: r.value_json },
+        q.question_type || "text"
+      );
+      const list = byEntry.get(eid) || [];
+      list.push({ question_key: q.key || "", answer_value: val, answer_type: q.question_type || "text" });
+      byEntry.set(eid, list);
+    }
+
+    return filtered.map((e) => ({
+      id: e.id,
+      date: e.date,
+      is_draft: e.is_draft,
+      completed_at: e.completed_at,
+      answers: byEntry.get(e.id) || [],
+    }));
+  }
+
+  // Standard path: fetch answers for matching entries
+  const ids = entries.map((e) => e.id);
+  const { data: answerRows, error: aErr } = await supabase
+    .from("journal_answer")
+    .select("entry_id, value_text, value_number, value_boolean, value_json, question_catalog!inner(key, question_type)")
+    .in("entry_id", ids);
+
+  if (aErr) throw aErr;
+
+  const byEntry = new Map<string, AnswerOutput[]>();
+  for (const r of answerRows || []) {
+    const eid = (r as any).entry_id;
+    const q = (r as any).question_catalog || {};
+    const val = fromValueCols(
+      { value_text: r.value_text, value_number: r.value_number, value_boolean: r.value_boolean, value_json: r.value_json },
+      q.question_type || "text"
+    );
+    const list = byEntry.get(eid) || [];
+    list.push({ question_key: q.key || "", answer_value: val, answer_type: q.question_type || "text" });
+    byEntry.set(eid, list);
+  }
+
+  return entries.map((e) => ({
+    id: e.id,
+    date: e.date,
+    is_draft: e.is_draft,
+    completed_at: e.completed_at,
+    answers: byEntry.get(e.id) || [],
+  }));
+}
