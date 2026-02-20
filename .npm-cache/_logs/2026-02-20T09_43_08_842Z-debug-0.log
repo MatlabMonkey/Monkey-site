@@ -1,0 +1,588 @@
+0 verbose cli /Users/Arias/.nvm/versions/node/v22.22.0/bin/node /Users/Arias/.nvm/versions/node/v22.22.0/bin/npm
+1 info using npm@10.9.4
+2 info using node@v22.22.0
+3 silly config load:file:/Users/Arias/.nvm/versions/node/v22.22.0/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/Arias/.openclaw/workspace/Monkey-site/.npmrc
+5 silly config load:file:/Users/Arias/.npmrc
+6 silly config load:file:/Users/Arias/.nvm/versions/node/v22.22.0/etc/npmrc
+7 verbose title npm install
+8 verbose argv "install" "--omit" "dev" "--cache" ".npm-cache" "--loglevel" "warn"
+9 verbose logfile logs-max:10 dir:/Users/Arias/.openclaw/workspace/Monkey-site/.npm-cache/_logs/2026-02-20T09_43_08_842Z-
+10 verbose logfile /Users/Arias/.openclaw/workspace/Monkey-site/.npm-cache/_logs/2026-02-20T09_43_08_842Z-debug-0.log
+11 silly logfile done cleaning log files
+12 silly packumentCache heap:4345298944 maxSize:1086324736 maxEntrySize:543162368
+13 silly idealTree buildDeps
+14 silly reify mark retired [
+14 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/bin-links'
+14 silly reify ]
+15 silly reify mark retired [
+15 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/client-only'
+15 silly reify ]
+16 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/clsx' ]
+17 silly reify mark retired [
+17 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/cmd-shim'
+17 silly reify ]
+18 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/csstype' ]
+19 silly reify mark retired [
+19 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-array'
+19 silly reify ]
+20 silly reify mark retired [
+20 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-color'
+20 silly reify ]
+21 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-ease' ]
+22 silly reify mark retired [
+22 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-format'
+22 silly reify ]
+23 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-path' ]
+24 silly reify mark retired [
+24 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-scale'
+24 silly reify ]
+25 silly reify mark retired [
+25 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-shape'
+25 silly reify ]
+26 silly reify mark retired [
+26 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-interpolate'
+26 silly reify ]
+27 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-time' ]
+28 silly reify mark retired [
+28 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/caniuse-lite'
+28 silly reify ]
+29 silly reify mark retired [
+29 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-timer'
+29 silly reify ]
+30 silly reify mark retired [
+30 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/decimal.js-light'
+30 silly reify ]
+31 silly reify mark retired [
+31 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/dom-helpers'
+31 silly reify ]
+32 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/dotenv' ]
+33 silly reify mark retired [
+33 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/enhanced-resolve'
+33 silly reify ]
+34 silly reify mark retired [
+34 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/fast-equals'
+34 silly reify ]
+35 silly reify mark retired [
+35 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/imurmurhash'
+35 silly reify ]
+36 silly reify mark retired [
+36 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/internmap'
+36 silly reify ]
+37 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/jiti' ]
+38 silly reify mark retired [
+38 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss'
+38 silly reify ]
+39 silly reify mark retired [
+39 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-darwin-arm64'
+39 silly reify ]
+40 silly reify mark retired [
+40 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-darwin-x64'
+40 silly reify ]
+41 silly reify mark retired [
+41 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-time-format'
+41 silly reify ]
+42 silly reify mark retired [
+42 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-arm-gnueabihf'
+42 silly reify ]
+43 silly reify mark retired [
+43 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-arm64-gnu'
+43 silly reify ]
+44 silly reify mark retired [
+44 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-x64-musl'
+44 silly reify ]
+45 silly reify mark retired [
+45 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-arm64-musl'
+45 silly reify ]
+46 silly reify mark retired [
+46 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-freebsd-x64'
+46 silly reify ]
+47 silly reify mark retired [
+47 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/js-tokens'
+47 silly reify ]
+48 silly reify mark retired [
+48 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-win32-x64-msvc'
+48 silly reify ]
+49 silly reify mark retired [
+49 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-x64-gnu'
+49 silly reify ]
+50 silly reify mark retired [
+50 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lucide-react'
+50 silly reify ]
+51 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lodash' ]
+52 silly reify mark retired [
+52 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/magic-string'
+52 silly reify ]
+53 silly reify mark retired [
+53 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-win32-arm64-msvc'
+53 silly reify ]
+54 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/nanoid' ]
+55 silly reify mark retired [
+55 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/minipass'
+55 silly reify ]
+56 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/next' ]
+57 silly reify mark retired [
+57 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/npm-normalize-package-bin'
+57 silly reify ]
+58 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/postcss' ]
+59 silly reify mark retired [
+59 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/proc-log'
+59 silly reify ]
+60 silly reify mark retired [
+60 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/loose-envify'
+60 silly reify ]
+61 silly reify mark retired [
+61 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/prop-types'
+61 silly reify ]
+62 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/react' ]
+63 silly reify mark retired [
+63 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/react-dom'
+63 silly reify ]
+64 silly reify mark retired [
+64 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/react-smooth'
+64 silly reify ]
+65 silly reify mark retired [
+65 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/react-transition-group'
+65 silly reify ]
+66 silly reify mark retired [
+66 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/recharts'
+66 silly reify ]
+67 silly reify mark retired [
+67 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/read-cmd-shim'
+67 silly reify ]
+68 silly reify mark retired [
+68 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/recharts-scale'
+68 silly reify ]
+69 silly reify mark retired [
+69 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/react-is'
+69 silly reify ]
+70 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/semver' ]
+71 silly reify mark retired [
+71 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/scheduler'
+71 silly reify ]
+72 silly reify mark retired [
+72 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/source-map-js'
+72 silly reify ]
+73 silly reify mark retired [
+73 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/supabase'
+73 silly reify ]
+74 silly reify mark retired [
+74 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/tailwindcss'
+74 silly reify ]
+75 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/tapable' ]
+76 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/tar' ]
+77 silly reify mark retired [
+77 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/typescript'
+77 silly reify ]
+78 silly reify mark retired [
+78 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/styled-jsx'
+78 silly reify ]
+79 silly reify mark retired [
+79 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/undici-types'
+79 silly reify ]
+80 silly reify mark retired [
+80 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/tiny-invariant'
+80 silly reify ]
+81 silly reify mark retired [
+81 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/victory-vendor'
+81 silly reify ]
+82 silly reify mark retired [
+82 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/write-file-atomic'
+82 silly reify ]
+83 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/ws' ]
+84 silly reify mark retired [
+84 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@ampproject/remapping'
+84 silly reify ]
+85 silly reify mark retired [
+85 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@alloc/quick-lru'
+85 silly reify ]
+86 silly reify mark retired [
+86 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@babel/runtime'
+86 silly reify ]
+87 silly reify mark retired [
+87 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-darwin-x64'
+87 silly reify ]
+88 silly reify mark retired [
+88 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-darwin-x64'
+88 silly reify ]
+89 silly reify mark retired [
+89 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-arm'
+89 silly reify ]
+90 silly reify mark retired [
+90 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-arm64'
+90 silly reify ]
+91 silly reify mark retired [
+91 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-ppc64'
+91 silly reify ]
+92 silly reify mark retired [
+92 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-riscv64'
+92 silly reify ]
+93 silly reify mark retired [
+93 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-s390x'
+93 silly reify ]
+94 silly reify mark retired [
+94 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-x64'
+94 silly reify ]
+95 silly reify mark retired [
+95 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linuxmusl-arm64'
+95 silly reify ]
+96 silly reify mark retired [
+96 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linuxmusl-x64'
+96 silly reify ]
+97 silly reify mark retired [
+97 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-ppc64'
+97 silly reify ]
+98 silly reify mark retired [
+98 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-arm'
+98 silly reify ]
+99 silly reify mark retired [
+99 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-arm64'
+99 silly reify ]
+100 silly reify mark retired [
+100 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-riscv64'
+100 silly reify ]
+101 silly reify mark retired [
+101 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-x64'
+101 silly reify ]
+102 silly reify mark retired [
+102 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-s390x'
+102 silly reify ]
+103 silly reify mark retired [
+103 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linuxmusl-arm64'
+103 silly reify ]
+104 silly reify mark retired [
+104 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linuxmusl-x64'
+104 silly reify ]
+105 silly reify mark retired [
+105 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-wasm32'
+105 silly reify ]
+106 silly reify mark retired [
+106 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-win32-ia32'
+106 silly reify ]
+107 silly reify mark retired [
+107 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-win32-arm64'
+107 silly reify ]
+108 silly reify mark retired [
+108 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-win32-x64'
+108 silly reify ]
+109 silly reify mark retired [
+109 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/gen-mapping'
+109 silly reify ]
+110 silly reify mark retired [
+110 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/set-array'
+110 silly reify ]
+111 silly reify mark retired [
+111 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/sourcemap-codec'
+111 silly reify ]
+112 silly reify mark retired [
+112 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/trace-mapping'
+112 silly reify ]
+113 silly reify mark retired [
+113 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/env'
+113 silly reify ]
+114 silly reify mark retired [
+114 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/resolve-uri'
+114 silly reify ]
+115 silly reify mark retired [
+115 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-darwin-arm64'
+115 silly reify ]
+116 silly reify mark retired [
+116 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-darwin-x64'
+116 silly reify ]
+117 silly reify mark retired [
+117 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-arm64-gnu'
+117 silly reify ]
+118 silly reify mark retired [
+118 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-x64-gnu'
+118 silly reify ]
+119 silly reify mark retired [
+119 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-arm64-musl'
+119 silly reify ]
+120 silly reify mark retired [
+120 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/auth-js'
+120 silly reify ]
+121 silly reify mark retired [
+121 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/functions-js'
+121 silly reify ]
+122 silly reify mark retired [
+122 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/node-fetch'
+122 silly reify ]
+123 silly reify mark retired [
+123 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-x64-musl'
+123 silly reify ]
+124 silly reify mark retired [
+124 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-win32-x64-msvc'
+124 silly reify ]
+125 silly reify mark retired [
+125 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/postgrest-js'
+125 silly reify ]
+126 silly reify mark retired [
+126 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/realtime-js'
+126 silly reify ]
+127 silly reify mark retired [
+127 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-win32-arm64-msvc'
+127 silly reify ]
+128 silly reify mark retired [
+128 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/supabase-js'
+128 silly reify ]
+129 silly reify mark retired [
+129 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/storage-js'
+129 silly reify ]
+130 silly reify mark retired [
+130 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@swc/helpers'
+130 silly reify ]
+131 silly reify mark retired [
+131 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/node'
+131 silly reify ]
+132 silly reify mark retired [
+132 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide'
+132 silly reify ]
+133 silly reify mark retired [
+133 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-darwin-arm64'
+133 silly reify ]
+134 silly reify mark retired [
+134 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-android-arm64'
+134 silly reify ]
+135 silly reify mark retired [
+135 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-darwin-x64'
+135 silly reify ]
+136 silly reify mark retired [
+136 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-arm-gnueabihf'
+136 silly reify ]
+137 silly reify mark retired [
+137 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-freebsd-x64'
+137 silly reify ]
+138 silly reify mark retired [
+138 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-arm64-musl'
+138 silly reify ]
+139 silly reify mark retired [
+139 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-x64-gnu'
+139 silly reify ]
+140 silly reify mark retired [
+140 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-arm64-gnu'
+140 silly reify ]
+141 silly reify mark retired [
+141 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-wasm32-wasi'
+141 silly reify ]
+142 silly reify mark retired [
+142 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/postcss'
+142 silly reify ]
+143 silly reify mark retired [
+143 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-array'
+143 silly reify ]
+144 silly reify mark retired [
+144 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-x64-musl'
+144 silly reify ]
+145 silly reify mark retired [
+145 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-color'
+145 silly reify ]
+146 silly reify mark retired [
+146 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-win32-x64-msvc'
+146 silly reify ]
+147 silly reify mark retired [
+147 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-ease'
+147 silly reify ]
+148 silly reify mark retired [
+148 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-interpolate'
+148 silly reify ]
+149 silly reify mark retired [
+149 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-path'
+149 silly reify ]
+150 silly reify mark retired [
+150 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-scale'
+150 silly reify ]
+151 silly reify mark retired [
+151 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-shape'
+151 silly reify ]
+152 silly reify mark retired [
+152 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-win32-arm64-msvc'
+152 silly reify ]
+153 silly reify mark retired [
+153 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-time'
+153 silly reify ]
+154 silly reify mark retired [
+154 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-timer'
+154 silly reify ]
+155 silly reify mark retired [
+155 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/node'
+155 silly reify ]
+156 silly reify mark retired [
+156 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/phoenix'
+156 silly reify ]
+157 silly reify mark retired [
+157 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/react'
+157 silly reify ]
+158 silly reify mark retired [
+158 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/react-dom'
+158 silly reify ]
+159 silly reify moves {
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/bin-links': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.bin-links-aywCQzaS',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/client-only': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.client-only-EaOzsN0E',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/clsx': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.clsx-tvlrv3wu',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/cmd-shim': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.cmd-shim-8QiNall4',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/csstype': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.csstype-lp8CpYKb',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-array': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.d3-array-4wjgULjt',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-color': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.d3-color-k4BcBMOH',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-ease': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.d3-ease-X7SIS5rH',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-format': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.d3-format-MMBRmOCK',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-path': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.d3-path-qr8lVCvf',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-scale': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.d3-scale-nRki8wK8',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-shape': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.d3-shape-eENBlwJY',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-interpolate': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.d3-interpolate-mxfWZJIr',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-time': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.d3-time-nqHTLC6d',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/caniuse-lite': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.caniuse-lite-KDZtMySC',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-timer': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.d3-timer-Gz6PLVFu',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/decimal.js-light': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.decimal.js-light-sfSMMPK2',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/dom-helpers': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.dom-helpers-Dd3NGd2M',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/dotenv': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.dotenv-AGUS3dn0',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/enhanced-resolve': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.enhanced-resolve-XlF2gnzW',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/fast-equals': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.fast-equals-ifu68UQf',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/imurmurhash': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.imurmurhash-Kqkq8pJq',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/internmap': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.internmap-W6o5CYBX',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/jiti': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.jiti-ylLSd4fT',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lightningcss-zKnYwBb2',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-darwin-arm64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lightningcss-darwin-arm64-ricMg0hw',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-darwin-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lightningcss-darwin-x64-cvBrN8hD',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-time-format': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.d3-time-format-6iSiUdPH',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-arm-gnueabihf': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lightningcss-linux-arm-gnueabihf-PkYPJqh4',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-arm64-gnu': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lightningcss-linux-arm64-gnu-S2EaJRxg',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-x64-musl': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lightningcss-linux-x64-musl-z2447Dpf',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-arm64-musl': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lightningcss-linux-arm64-musl-HqCbn19n',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-freebsd-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lightningcss-freebsd-x64-Y619G7wz',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/js-tokens': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.js-tokens-F96Cfntn',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-win32-x64-msvc': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lightningcss-win32-x64-msvc-84XkwqYe',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-x64-gnu': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lightningcss-linux-x64-gnu-AmLfYHLk',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lucide-react': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lucide-react-pDo8zICr',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lodash': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lodash-jCS1B2lI',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/magic-string': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.magic-string-PmG02wzg',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-win32-arm64-msvc': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lightningcss-win32-arm64-msvc-miJINHkc',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/nanoid': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.nanoid-oISI3uzV',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/minipass': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.minipass-6jScg950',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/next': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.next-AWXNTHkS',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/npm-normalize-package-bin': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.npm-normalize-package-bin-qhcUkkGc',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/postcss': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.postcss-BWvtIdyZ',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/proc-log': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.proc-log-VQ0ENLhb',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/loose-envify': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.loose-envify-cPb0HJoI',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/prop-types': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.prop-types-e8oSrmuy',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/react': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.react-0ucbB0oK',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/react-dom': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.react-dom-D3QnF70Z',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/react-smooth': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.react-smooth-0PGJL6s7',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/react-transition-group': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.react-transition-group-BCTp3MP6',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/recharts': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.recharts-ZGFGhpBH',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/read-cmd-shim': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.read-cmd-shim-z6ro1LNo',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/recharts-scale': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.recharts-scale-8I09lBIr',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/react-is': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.react-is-EtGyuecj',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/semver': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.semver-c53GiiAl',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/scheduler': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.scheduler-pBO4zCh3',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/source-map-js': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.source-map-js-viM1wMPQ',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/supabase': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.supabase-evlF9lha',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/tailwindcss': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.tailwindcss-iXde3mqj',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/tapable': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.tapable-k9cDv4al',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/tar': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.tar-g46ZTrDK',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/typescript': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.typescript-RoC72lMc',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/styled-jsx': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.styled-jsx-x6QsJ1cv',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/undici-types': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.undici-types-nD4GGKX2',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/tiny-invariant': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.tiny-invariant-x2jIX2l2',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/victory-vendor': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.victory-vendor-9dMl1cOa',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/write-file-atomic': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.write-file-atomic-a8y0Jum9',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/ws': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.ws-dLhTi6Be',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@ampproject/remapping': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@ampproject/.remapping-GyFXpfGH',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@alloc/quick-lru': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@alloc/.quick-lru-Vs9Ltitz',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@babel/runtime': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@babel/.runtime-GB7NATpp',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-darwin-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-darwin-x64-7u8HUkGy',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-darwin-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-libvips-darwin-x64-SBaTqVUU',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-arm': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-libvips-linux-arm-fsJH4VaW',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-arm64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-libvips-linux-arm64-zNHNd2gr',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-ppc64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-libvips-linux-ppc64-jBPayIgC',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-riscv64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-libvips-linux-riscv64-tRJcqf5Q',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-s390x': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-libvips-linux-s390x-Xgq0sf0x',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-libvips-linux-x64-goIm767R',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linuxmusl-arm64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-libvips-linuxmusl-arm64-KEYK9thk',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linuxmusl-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-libvips-linuxmusl-x64-Hyx9sYIx',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-ppc64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-linux-ppc64-UlI6r9LG',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-arm': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-linux-arm-ceRmfLm2',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-arm64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-linux-arm64-GnFzwRcn',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-riscv64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-linux-riscv64-PLBENBRW',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-linux-x64-DoEEPin9',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-s390x': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-linux-s390x-HoJDpoeM',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linuxmusl-arm64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-linuxmusl-arm64-k42G5t93',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linuxmusl-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-linuxmusl-x64-UOQTRsp7',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-wasm32': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-wasm32-rpYAnNhM',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-win32-ia32': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-win32-ia32-eAi1Mnho',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-win32-arm64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-win32-arm64-2pkYtzHA',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-win32-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-win32-x64-Jk0uoGu8',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/gen-mapping': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/.gen-mapping-xKFPkuNz',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/set-array': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/.set-array-FA6Br54f',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/sourcemap-codec': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/.sourcemap-codec-7F6m2suQ',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/trace-mapping': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/.trace-mapping-xwKfqnRI',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/env': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/.env-i6Bgchpu',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/resolve-uri': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/.resolve-uri-msKHAyM6',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-darwin-arm64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/.swc-darwin-arm64-OV4pfPx9',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-darwin-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/.swc-darwin-x64-pQITUpTw',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-arm64-gnu': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/.swc-linux-arm64-gnu-bcJnS8pQ',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-x64-gnu': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/.swc-linux-x64-gnu-wliBYcP8',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-arm64-musl': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/.swc-linux-arm64-musl-lsqUdUOS',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/auth-js': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/.auth-js-ykBBVTZu',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/functions-js': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/.functions-js-vJSKx8WV',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/node-fetch': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/.node-fetch-l3vPGrXS',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-x64-musl': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/.swc-linux-x64-musl-cdwJQGbk',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-win32-x64-msvc': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/.swc-win32-x64-msvc-j9PdZItm',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/postgrest-js': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/.postgrest-js-tiWRZlds',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/realtime-js': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/.realtime-js-GdnBGd3B',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-win32-arm64-msvc': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/.swc-win32-arm64-msvc-GXBOqdD7',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/supabase-js': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/.supabase-js-lI4WZxHC',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/storage-js': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/.storage-js-Mcczd7ce',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@swc/helpers': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@swc/.helpers-swJqQo3t',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/node': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.node-ZQkNbAxl',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-fz8Xpo2x',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-darwin-arm64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-darwin-arm64-Wc6OQbqm',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-android-arm64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-android-arm64-HP2WYpvD',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-darwin-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-darwin-x64-oJUN76W2',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-arm-gnueabihf': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-linux-arm-gnueabihf-gsj3mmQR',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-freebsd-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-freebsd-x64-SL4T2vgk',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-arm64-musl': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-linux-arm64-musl-NcisG37w',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-x64-gnu': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-linux-x64-gnu-qGUGBDw8',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-arm64-gnu': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-linux-arm64-gnu-O36PKz4e',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-wasm32-wasi': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-wasm32-wasi-jZBRix4m',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/postcss': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.postcss-RIRb9KRe',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-array': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.d3-array-y90ta0GZ',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-x64-musl': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-linux-x64-musl-61HXobGa',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-color': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.d3-color-tnGV2NAt',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-win32-x64-msvc': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-win32-x64-msvc-gD3D7j82',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-ease': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.d3-ease-iA9NUEiQ',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-interpolate': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.d3-interpolate-vJcFpj7x',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-path': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.d3-path-SOq25pDn',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-scale': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.d3-scale-ILmlCwNK',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-shape': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.d3-shape-C92ZoJ1d',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-win32-arm64-msvc': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-win32-arm64-msvc-QUW6QPOF',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-time': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.d3-time-jT6ccf2o',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-timer': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.d3-timer-ly4TdSUc',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/node': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.node-r4hlaV8n',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/phoenix': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.phoenix-tMHXbte5',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/react': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.react-94WOD0s7',
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/react-dom': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.react-dom-aPPOtFoH'
+159 silly reify }
+160 verbose stack Error: ENOTEMPTY: directory not empty, rename '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/next' -> '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.next-AWXNTHkS'
+160 verbose stack     at async Object.rename (node:internal/fs/promises:781:10)
+160 verbose stack     at async moveFile (/Users/Arias/.nvm/versions/node/v22.22.0/lib/node_modules/npm/node_modules/@npmcli/fs/lib/move-file.js:30:5)
+160 verbose stack     at async Promise.allSettled (index 42)
+160 verbose stack     at async [reifyPackages] (/Users/Arias/.nvm/versions/node/v22.22.0/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:325:11)
+160 verbose stack     at async Arborist.reify (/Users/Arias/.nvm/versions/node/v22.22.0/lib/node_modules/npm/node_modules/@npmcli/arborist/lib/arborist/reify.js:142:5)
+160 verbose stack     at async Install.exec (/Users/Arias/.nvm/versions/node/v22.22.0/lib/node_modules/npm/lib/commands/install.js:150:5)
+160 verbose stack     at async Npm.exec (/Users/Arias/.nvm/versions/node/v22.22.0/lib/node_modules/npm/lib/npm.js:207:9)
+160 verbose stack     at async module.exports (/Users/Arias/.nvm/versions/node/v22.22.0/lib/node_modules/npm/lib/cli/entry.js:74:5)
+161 error code ENOTEMPTY
+162 error syscall rename
+163 error path /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/next
+164 error dest /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.next-AWXNTHkS
+165 error errno -66
+166 error ENOTEMPTY: directory not empty, rename '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/next' -> '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.next-AWXNTHkS'
+167 silly unfinished npm timer reify 1771580589095
+168 silly unfinished npm timer reify:retireShallow 1771580589132
+169 verbose cwd /Users/Arias/.openclaw/workspace/Monkey-site
+170 verbose os Darwin 25.2.0
+171 verbose node v22.22.0
+172 verbose npm  v10.9.4
+173 verbose exit -66
+174 verbose code -66
+175 error A complete log of this run can be found in: /Users/Arias/.openclaw/workspace/Monkey-site/.npm-cache/_logs/2026-02-20T09_43_08_842Z-debug-0.log

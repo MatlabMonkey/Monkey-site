@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { ArrowRight, CheckSquare, Plus, BarChart3, Compass, PenLine } from "lucide-react"
+import { BookOpen, CheckSquare } from "lucide-react"
 import { useEffect, useState } from "react"
 
 // Daily nature photo system with dynamic Unsplash API
@@ -440,15 +440,9 @@ export default function Home() {
 
       <div className="relative flex items-center justify-center min-h-screen p-6">
         <div className="text-center space-y-8 max-w-4xl mx-auto">
-          {/* Heading */}
-          <h1 className="text-5xl md:text-7xl font-bold bg-gradient-to-r from-white via-purple-200 to-white bg-clip-text text-transparent leading-tight">
-            Welcome zach
+          <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-white via-slate-200 to-white bg-clip-text text-transparent leading-tight">
+            Home
           </h1>
-
-          {/* Arias test message */}
-          <p className="text-2xl md:text-3xl font-semibold text-green-300">
-            It worked. 🦧
-          </p>
 
           {/* Rotating Quote */}
           <div className="text-xl md:text-2xl text-white/80 max-w-2xl mx-auto leading-relaxed min-h-[60px] flex items-center justify-center">
@@ -461,32 +455,16 @@ export default function Home() {
               href="/dashboard"
               className="group bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 flex flex-col items-center justify-center shadow-lg hover:shadow-xl hover:scale-105"
             >
-              <BarChart3 className="w-8 h-8 text-purple-300 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">Dashboard</h3>
-              <p className="text-white/70 text-sm">View your journal analytics, progress, and reflections</p>
-            </Link>
-            <Link
-              href="/journal/explorer"
-              className="group bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 flex flex-col items-center justify-center shadow-lg hover:shadow-xl hover:scale-105"
-            >
-              <Compass className="w-8 h-8 text-blue-300 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">Journal Explorer</h3>
-              <p className="text-white/70 text-sm">Explore and query your past journal entries</p>
-            </Link>
-            <Link
-              href="/journal"
-              className="group bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 flex flex-col items-center justify-center shadow-lg hover:shadow-xl hover:scale-105"
-            >
-              <PenLine className="w-8 h-8 text-amber-300 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">New Entry</h3>
-              <p className="text-white/70 text-sm">Write today's journal entry</p>
+              <BookOpen className="w-8 h-8 text-purple-300 mb-4" />
+              <h3 className="text-lg font-semibold text-white mb-2">Journal</h3>
+              <p className="text-white/70 text-sm">Open your journal dashboard and entries</p>
             </Link>
             <Link
               href="/todos"
               className="group bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 flex flex-col items-center justify-center shadow-lg hover:shadow-xl hover:scale-105"
             >
               <CheckSquare className="w-8 h-8 text-green-300 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">Todo Inbox</h3>
+              <h3 className="text-lg font-semibold text-white mb-2">Todos</h3>
               <p className="text-white/70 text-sm">Manage your todos and tasks</p>
             </Link>
           </div>

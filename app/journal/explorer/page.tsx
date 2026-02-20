@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
+import type React from "react";
 import Link from "next/link";
 import PinGate from "../../components/PinGate";
 import { ArrowLeft, Loader2, Calendar, List, Filter, BarChart3, Users, Search, Activity, Dumbbell, CheckSquare, FileText, CalendarDays, TrendingUp, X } from "lucide-react";
@@ -399,7 +400,7 @@ function FilterForm({
 }: {
   queryType: QueryType;
   numericQuestions: typeof JOURNAL_QUESTION_SET;
-  onParamsChange: (params: Record<string, any>) => void;
+  onParamsChange: React.Dispatch<React.SetStateAction<Record<string, any>>>;
   onRunQuery: () => void;
   loading: boolean;
 }) {

@@ -1,0 +1,1246 @@
+0 verbose cli /Users/Arias/.nvm/versions/node/v22.22.0/bin/node /Users/Arias/.nvm/versions/node/v22.22.0/bin/npm
+1 info using npm@10.9.4
+2 info using node@v22.22.0
+3 silly config load:file:/Users/Arias/.nvm/versions/node/v22.22.0/lib/node_modules/npm/npmrc
+4 silly config load:file:/Users/Arias/.openclaw/workspace/Monkey-site/.npmrc
+5 silly config load:file:/Users/Arias/.npmrc
+6 silly config load:file:/Users/Arias/.nvm/versions/node/v22.22.0/etc/npmrc
+7 verbose title npm install
+8 verbose argv "install" "--cache" ".npm-cache" "--loglevel" "warn"
+9 verbose logfile logs-max:10 dir:/Users/Arias/.openclaw/workspace/Monkey-site/.npm-cache/_logs/2026-02-20T09_39_05_191Z-
+10 verbose logfile /Users/Arias/.openclaw/workspace/Monkey-site/.npm-cache/_logs/2026-02-20T09_39_05_191Z-debug-0.log
+11 silly logfile done cleaning log files
+12 silly packumentCache heap:4345298944 maxSize:1086324736 maxEntrySize:543162368
+13 http fetch GET https://registry.npmjs.org/npm attempt 1 failed with ENOTFOUND
+14 silly idealTree buildDeps
+15 silly reify mark retired [
+15 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/bin-links'
+15 silly reify ]
+16 silly reify mark retired [
+16 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/caniuse-lite'
+16 silly reify ]
+17 silly reify mark retired [
+17 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/client-only'
+17 silly reify ]
+18 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/clsx' ]
+19 silly reify mark retired [
+19 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/cmd-shim'
+19 silly reify ]
+20 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/csstype' ]
+21 silly reify mark retired [
+21 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-array'
+21 silly reify ]
+22 silly reify mark retired [
+22 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-color'
+22 silly reify ]
+23 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-ease' ]
+24 silly reify mark retired [
+24 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-format'
+24 silly reify ]
+25 silly reify mark retired [
+25 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-interpolate'
+25 silly reify ]
+26 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-path' ]
+27 silly reify mark retired [
+27 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-scale'
+27 silly reify ]
+28 silly reify mark retired [
+28 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-shape'
+28 silly reify ]
+29 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-time' ]
+30 silly reify mark retired [
+30 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-time-format'
+30 silly reify ]
+31 silly reify mark retired [
+31 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-timer'
+31 silly reify ]
+32 silly reify mark retired [
+32 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/decimal.js-light'
+32 silly reify ]
+33 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/dotenv' ]
+34 silly reify mark retired [
+34 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/dom-helpers'
+34 silly reify ]
+35 silly reify mark retired [
+35 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/enhanced-resolve'
+35 silly reify ]
+36 silly reify mark retired [
+36 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/fast-equals'
+36 silly reify ]
+37 silly reify mark retired [
+37 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/imurmurhash'
+37 silly reify ]
+38 silly reify mark retired [
+38 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/internmap'
+38 silly reify ]
+39 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/jiti' ]
+40 silly reify mark retired [
+40 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/js-tokens'
+40 silly reify ]
+41 silly reify mark retired [
+41 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss'
+41 silly reify ]
+42 silly reify mark retired [
+42 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-darwin-arm64'
+42 silly reify ]
+43 silly reify mark retired [
+43 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-darwin-x64'
+43 silly reify ]
+44 silly reify mark retired [
+44 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-freebsd-x64'
+44 silly reify ]
+45 silly reify mark retired [
+45 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-arm-gnueabihf'
+45 silly reify ]
+46 silly reify mark retired [
+46 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-arm64-gnu'
+46 silly reify ]
+47 silly reify mark retired [
+47 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-arm64-musl'
+47 silly reify ]
+48 silly reify mark retired [
+48 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-x64-gnu'
+48 silly reify ]
+49 silly reify mark retired [
+49 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-x64-musl'
+49 silly reify ]
+50 silly reify mark retired [
+50 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-win32-arm64-msvc'
+50 silly reify ]
+51 silly reify mark retired [
+51 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-win32-x64-msvc'
+51 silly reify ]
+52 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lodash' ]
+53 silly reify mark retired [
+53 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/loose-envify'
+53 silly reify ]
+54 silly reify mark retired [
+54 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lucide-react'
+54 silly reify ]
+55 silly reify mark retired [
+55 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/magic-string'
+55 silly reify ]
+56 silly reify mark retired [
+56 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/minipass'
+56 silly reify ]
+57 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/nanoid' ]
+58 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/next' ]
+59 silly reify mark retired [
+59 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/npm-normalize-package-bin'
+59 silly reify ]
+60 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/postcss' ]
+61 silly reify mark retired [
+61 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/proc-log'
+61 silly reify ]
+62 silly reify mark retired [
+62 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/prop-types'
+62 silly reify ]
+63 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/react' ]
+64 silly reify mark retired [
+64 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/react-dom'
+64 silly reify ]
+65 silly reify mark retired [
+65 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/react-is'
+65 silly reify ]
+66 silly reify mark retired [
+66 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/react-smooth'
+66 silly reify ]
+67 silly reify mark retired [
+67 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/react-transition-group'
+67 silly reify ]
+68 silly reify mark retired [
+68 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/read-cmd-shim'
+68 silly reify ]
+69 silly reify mark retired [
+69 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/recharts'
+69 silly reify ]
+70 silly reify mark retired [
+70 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/scheduler'
+70 silly reify ]
+71 silly reify mark retired [
+71 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/recharts-scale'
+71 silly reify ]
+72 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/semver' ]
+73 silly reify mark retired [
+73 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/source-map-js'
+73 silly reify ]
+74 silly reify mark retired [
+74 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/styled-jsx'
+74 silly reify ]
+75 silly reify mark retired [
+75 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/tailwindcss'
+75 silly reify ]
+76 silly reify mark retired [
+76 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/supabase'
+76 silly reify ]
+77 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/tapable' ]
+78 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/tar' ]
+79 silly reify mark retired [
+79 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/tiny-invariant'
+79 silly reify ]
+80 silly reify mark retired [
+80 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/typescript'
+80 silly reify ]
+81 silly reify mark retired [
+81 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/undici-types'
+81 silly reify ]
+82 silly reify mark retired [
+82 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/victory-vendor'
+82 silly reify ]
+83 silly reify mark retired [
+83 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/write-file-atomic'
+83 silly reify ]
+84 silly reify mark retired [ '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/ws' ]
+85 silly reify mark retired [
+85 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@alloc/quick-lru'
+85 silly reify ]
+86 silly reify mark retired [
+86 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@ampproject/remapping'
+86 silly reify ]
+87 silly reify mark retired [
+87 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@babel/runtime'
+87 silly reify ]
+88 silly reify mark retired [
+88 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-darwin-x64'
+88 silly reify ]
+89 silly reify mark retired [
+89 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-darwin-x64'
+89 silly reify ]
+90 silly reify mark retired [
+90 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-arm'
+90 silly reify ]
+91 silly reify mark retired [
+91 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-arm64'
+91 silly reify ]
+92 silly reify mark retired [
+92 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-ppc64'
+92 silly reify ]
+93 silly reify mark retired [
+93 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-riscv64'
+93 silly reify ]
+94 silly reify mark retired [
+94 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-s390x'
+94 silly reify ]
+95 silly reify mark retired [
+95 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-x64'
+95 silly reify ]
+96 silly reify mark retired [
+96 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linuxmusl-arm64'
+96 silly reify ]
+97 silly reify mark retired [
+97 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linuxmusl-x64'
+97 silly reify ]
+98 silly reify mark retired [
+98 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-arm'
+98 silly reify ]
+99 silly reify mark retired [
+99 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-arm64'
+99 silly reify ]
+100 silly reify mark retired [
+100 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-ppc64'
+100 silly reify ]
+101 silly reify mark retired [
+101 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-riscv64'
+101 silly reify ]
+102 silly reify mark retired [
+102 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-s390x'
+102 silly reify ]
+103 silly reify mark retired [
+103 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-x64'
+103 silly reify ]
+104 silly reify mark retired [
+104 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linuxmusl-x64'
+104 silly reify ]
+105 silly reify mark retired [
+105 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linuxmusl-arm64'
+105 silly reify ]
+106 silly reify mark retired [
+106 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-wasm32'
+106 silly reify ]
+107 silly reify mark retired [
+107 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-win32-arm64'
+107 silly reify ]
+108 silly reify mark retired [
+108 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-win32-ia32'
+108 silly reify ]
+109 silly reify mark retired [
+109 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-win32-x64'
+109 silly reify ]
+110 silly reify mark retired [
+110 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/resolve-uri'
+110 silly reify ]
+111 silly reify mark retired [
+111 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/gen-mapping'
+111 silly reify ]
+112 silly reify mark retired [
+112 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/set-array'
+112 silly reify ]
+113 silly reify mark retired [
+113 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/sourcemap-codec'
+113 silly reify ]
+114 silly reify mark retired [
+114 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/trace-mapping'
+114 silly reify ]
+115 silly reify mark retired [
+115 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/env'
+115 silly reify ]
+116 silly reify mark retired [
+116 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-darwin-arm64'
+116 silly reify ]
+117 silly reify mark retired [
+117 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-darwin-x64'
+117 silly reify ]
+118 silly reify mark retired [
+118 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-arm64-gnu'
+118 silly reify ]
+119 silly reify mark retired [
+119 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-arm64-musl'
+119 silly reify ]
+120 silly reify mark retired [
+120 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-x64-gnu'
+120 silly reify ]
+121 silly reify mark retired [
+121 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-x64-musl'
+121 silly reify ]
+122 silly reify mark retired [
+122 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-win32-arm64-msvc'
+122 silly reify ]
+123 silly reify mark retired [
+123 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-win32-x64-msvc'
+123 silly reify ]
+124 silly reify mark retired [
+124 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/auth-js'
+124 silly reify ]
+125 silly reify mark retired [
+125 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/functions-js'
+125 silly reify ]
+126 silly reify mark retired [
+126 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/node-fetch'
+126 silly reify ]
+127 silly reify mark retired [
+127 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/postgrest-js'
+127 silly reify ]
+128 silly reify mark retired [
+128 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/realtime-js'
+128 silly reify ]
+129 silly reify mark retired [
+129 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/storage-js'
+129 silly reify ]
+130 silly reify mark retired [
+130 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/supabase-js'
+130 silly reify ]
+131 silly reify mark retired [
+131 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@swc/helpers'
+131 silly reify ]
+132 silly reify mark retired [
+132 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/node'
+132 silly reify ]
+133 silly reify mark retired [
+133 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide'
+133 silly reify ]
+134 silly reify mark retired [
+134 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-android-arm64'
+134 silly reify ]
+135 silly reify mark retired [
+135 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-darwin-arm64'
+135 silly reify ]
+136 silly reify mark retired [
+136 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-darwin-x64'
+136 silly reify ]
+137 silly reify mark retired [
+137 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-freebsd-x64'
+137 silly reify ]
+138 silly reify mark retired [
+138 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-arm-gnueabihf'
+138 silly reify ]
+139 silly reify mark retired [
+139 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-arm64-gnu'
+139 silly reify ]
+140 silly reify mark retired [
+140 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-arm64-musl'
+140 silly reify ]
+141 silly reify mark retired [
+141 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-x64-gnu'
+141 silly reify ]
+142 silly reify mark retired [
+142 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-x64-musl'
+142 silly reify ]
+143 silly reify mark retired [
+143 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-wasm32-wasi'
+143 silly reify ]
+144 silly reify mark retired [
+144 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-win32-arm64-msvc'
+144 silly reify ]
+145 silly reify mark retired [
+145 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-win32-x64-msvc'
+145 silly reify ]
+146 silly reify mark retired [
+146 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/postcss'
+146 silly reify ]
+147 silly reify mark retired [
+147 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-array'
+147 silly reify ]
+148 silly reify mark retired [
+148 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-color'
+148 silly reify ]
+149 silly reify mark retired [
+149 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-ease'
+149 silly reify ]
+150 silly reify mark retired [
+150 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-interpolate'
+150 silly reify ]
+151 silly reify mark retired [
+151 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-path'
+151 silly reify ]
+152 silly reify mark retired [
+152 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-scale'
+152 silly reify ]
+153 silly reify mark retired [
+153 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-shape'
+153 silly reify ]
+154 silly reify mark retired [
+154 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-time'
+154 silly reify ]
+155 silly reify mark retired [
+155 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-timer'
+155 silly reify ]
+156 silly reify mark retired [
+156 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/node'
+156 silly reify ]
+157 silly reify mark retired [
+157 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/phoenix'
+157 silly reify ]
+158 silly reify mark retired [
+158 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/react'
+158 silly reify ]
+159 silly reify mark retired [
+159 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/react-dom'
+159 silly reify ]
+160 silly reify moves {
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/bin-links': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.bin-links-aywCQzaS',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/caniuse-lite': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.caniuse-lite-KDZtMySC',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/client-only': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.client-only-EaOzsN0E',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/clsx': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.clsx-tvlrv3wu',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/cmd-shim': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.cmd-shim-8QiNall4',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/csstype': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.csstype-lp8CpYKb',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-array': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.d3-array-4wjgULjt',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-color': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.d3-color-k4BcBMOH',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-ease': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.d3-ease-X7SIS5rH',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-format': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.d3-format-MMBRmOCK',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-interpolate': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.d3-interpolate-mxfWZJIr',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-path': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.d3-path-qr8lVCvf',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-scale': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.d3-scale-nRki8wK8',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-shape': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.d3-shape-eENBlwJY',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-time': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.d3-time-nqHTLC6d',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-time-format': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.d3-time-format-6iSiUdPH',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/d3-timer': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.d3-timer-Gz6PLVFu',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/decimal.js-light': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.decimal.js-light-sfSMMPK2',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/dotenv': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.dotenv-AGUS3dn0',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/dom-helpers': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.dom-helpers-Dd3NGd2M',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/enhanced-resolve': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.enhanced-resolve-XlF2gnzW',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/fast-equals': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.fast-equals-ifu68UQf',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/imurmurhash': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.imurmurhash-Kqkq8pJq',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/internmap': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.internmap-W6o5CYBX',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/jiti': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.jiti-ylLSd4fT',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/js-tokens': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.js-tokens-F96Cfntn',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lightningcss-zKnYwBb2',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-darwin-arm64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lightningcss-darwin-arm64-ricMg0hw',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-darwin-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lightningcss-darwin-x64-cvBrN8hD',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-freebsd-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lightningcss-freebsd-x64-Y619G7wz',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-arm-gnueabihf': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lightningcss-linux-arm-gnueabihf-PkYPJqh4',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-arm64-gnu': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lightningcss-linux-arm64-gnu-S2EaJRxg',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-arm64-musl': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lightningcss-linux-arm64-musl-HqCbn19n',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-x64-gnu': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lightningcss-linux-x64-gnu-AmLfYHLk',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-x64-musl': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lightningcss-linux-x64-musl-z2447Dpf',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-win32-arm64-msvc': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lightningcss-win32-arm64-msvc-miJINHkc',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-win32-x64-msvc': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lightningcss-win32-x64-msvc-84XkwqYe',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lodash': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lodash-jCS1B2lI',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/loose-envify': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.loose-envify-cPb0HJoI',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lucide-react': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.lucide-react-pDo8zICr',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/magic-string': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.magic-string-PmG02wzg',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/minipass': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.minipass-6jScg950',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/nanoid': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.nanoid-oISI3uzV',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/next': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.next-AWXNTHkS',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/npm-normalize-package-bin': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.npm-normalize-package-bin-qhcUkkGc',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/postcss': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.postcss-BWvtIdyZ',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/proc-log': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.proc-log-VQ0ENLhb',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/prop-types': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.prop-types-e8oSrmuy',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/react': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.react-0ucbB0oK',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/react-dom': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.react-dom-D3QnF70Z',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/react-is': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.react-is-EtGyuecj',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/react-smooth': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.react-smooth-0PGJL6s7',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/react-transition-group': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.react-transition-group-BCTp3MP6',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/read-cmd-shim': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.read-cmd-shim-z6ro1LNo',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/recharts': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.recharts-ZGFGhpBH',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/scheduler': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.scheduler-pBO4zCh3',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/recharts-scale': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.recharts-scale-8I09lBIr',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/semver': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.semver-c53GiiAl',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/source-map-js': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.source-map-js-viM1wMPQ',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/styled-jsx': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.styled-jsx-x6QsJ1cv',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/tailwindcss': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.tailwindcss-iXde3mqj',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/supabase': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.supabase-evlF9lha',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/tapable': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.tapable-k9cDv4al',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/tar': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.tar-g46ZTrDK',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/tiny-invariant': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.tiny-invariant-x2jIX2l2',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/typescript': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.typescript-RoC72lMc',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/undici-types': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.undici-types-nD4GGKX2',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/victory-vendor': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.victory-vendor-9dMl1cOa',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/write-file-atomic': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.write-file-atomic-a8y0Jum9',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/ws': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/.ws-dLhTi6Be',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@alloc/quick-lru': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@alloc/.quick-lru-Vs9Ltitz',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@ampproject/remapping': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@ampproject/.remapping-GyFXpfGH',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@babel/runtime': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@babel/.runtime-GB7NATpp',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-darwin-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-darwin-x64-7u8HUkGy',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-darwin-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-libvips-darwin-x64-SBaTqVUU',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-arm': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-libvips-linux-arm-fsJH4VaW',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-arm64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-libvips-linux-arm64-zNHNd2gr',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-ppc64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-libvips-linux-ppc64-jBPayIgC',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-riscv64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-libvips-linux-riscv64-tRJcqf5Q',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-s390x': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-libvips-linux-s390x-Xgq0sf0x',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-libvips-linux-x64-goIm767R',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linuxmusl-arm64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-libvips-linuxmusl-arm64-KEYK9thk',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linuxmusl-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-libvips-linuxmusl-x64-Hyx9sYIx',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-arm': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-linux-arm-ceRmfLm2',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-arm64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-linux-arm64-GnFzwRcn',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-ppc64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-linux-ppc64-UlI6r9LG',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-riscv64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-linux-riscv64-PLBENBRW',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-s390x': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-linux-s390x-HoJDpoeM',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-linux-x64-DoEEPin9',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linuxmusl-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-linuxmusl-x64-UOQTRsp7',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linuxmusl-arm64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-linuxmusl-arm64-k42G5t93',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-wasm32': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-wasm32-rpYAnNhM',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-win32-arm64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-win32-arm64-2pkYtzHA',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-win32-ia32': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-win32-ia32-eAi1Mnho',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-win32-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/.sharp-win32-x64-Jk0uoGu8',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/resolve-uri': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/.resolve-uri-msKHAyM6',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/gen-mapping': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/.gen-mapping-xKFPkuNz',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/set-array': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/.set-array-FA6Br54f',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/sourcemap-codec': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/.sourcemap-codec-7F6m2suQ',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/trace-mapping': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@jridgewell/.trace-mapping-xwKfqnRI',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/env': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/.env-i6Bgchpu',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-darwin-arm64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/.swc-darwin-arm64-OV4pfPx9',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-darwin-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/.swc-darwin-x64-pQITUpTw',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-arm64-gnu': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/.swc-linux-arm64-gnu-bcJnS8pQ',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-arm64-musl': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/.swc-linux-arm64-musl-lsqUdUOS',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-x64-gnu': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/.swc-linux-x64-gnu-wliBYcP8',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-x64-musl': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/.swc-linux-x64-musl-cdwJQGbk',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-win32-arm64-msvc': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/.swc-win32-arm64-msvc-GXBOqdD7',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-win32-x64-msvc': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/.swc-win32-x64-msvc-j9PdZItm',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/auth-js': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/.auth-js-ykBBVTZu',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/functions-js': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/.functions-js-vJSKx8WV',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/node-fetch': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/.node-fetch-l3vPGrXS',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/postgrest-js': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/.postgrest-js-tiWRZlds',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/realtime-js': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/.realtime-js-GdnBGd3B',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/storage-js': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/.storage-js-Mcczd7ce',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/supabase-js': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@supabase/.supabase-js-lI4WZxHC',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@swc/helpers': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@swc/.helpers-swJqQo3t',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/node': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.node-ZQkNbAxl',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-fz8Xpo2x',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-android-arm64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-android-arm64-HP2WYpvD',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-darwin-arm64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-darwin-arm64-Wc6OQbqm',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-darwin-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-darwin-x64-oJUN76W2',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-freebsd-x64': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-freebsd-x64-SL4T2vgk',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-arm-gnueabihf': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-linux-arm-gnueabihf-gsj3mmQR',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-arm64-gnu': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-linux-arm64-gnu-O36PKz4e',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-arm64-musl': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-linux-arm64-musl-NcisG37w',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-x64-gnu': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-linux-x64-gnu-qGUGBDw8',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-x64-musl': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-linux-x64-musl-61HXobGa',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-wasm32-wasi': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-wasm32-wasi-jZBRix4m',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-win32-arm64-msvc': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-win32-arm64-msvc-QUW6QPOF',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-win32-x64-msvc': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.oxide-win32-x64-msvc-gD3D7j82',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/postcss': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/.postcss-RIRb9KRe',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-array': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.d3-array-y90ta0GZ',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-color': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.d3-color-tnGV2NAt',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-ease': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.d3-ease-iA9NUEiQ',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-interpolate': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.d3-interpolate-vJcFpj7x',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-path': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.d3-path-SOq25pDn',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-scale': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.d3-scale-ILmlCwNK',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-shape': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.d3-shape-C92ZoJ1d',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-time': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.d3-time-jT6ccf2o',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/d3-timer': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.d3-timer-ly4TdSUc',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/node': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.node-r4hlaV8n',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/phoenix': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.phoenix-tMHXbte5',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/react': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.react-94WOD0s7',
+160 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/react-dom': '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@types/.react-dom-aPPOtFoH'
+160 silly reify }
+161 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-wasm32-wasi
+162 silly reify mark deleted [
+162 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-wasm32-wasi'
+162 silly reify ]
+163 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@emnapi/core
+164 silly reify mark deleted [
+164 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@emnapi/core'
+164 silly reify ]
+165 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@emnapi/runtime
+166 silly reify mark deleted [
+166 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@emnapi/runtime'
+166 silly reify ]
+167 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@emnapi/wasi-threads
+168 silly reify mark deleted [
+168 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@emnapi/wasi-threads'
+168 silly reify ]
+169 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@napi-rs/wasm-runtime
+170 silly reify mark deleted [
+170 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@napi-rs/wasm-runtime'
+170 silly reify ]
+171 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@tybys/wasm-util
+172 silly reify mark deleted [
+172 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/@tybys/wasm-util'
+172 silly reify ]
+173 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/tslib
+174 silly reify mark deleted [
+174 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-wasm32-wasi/node_modules/tslib'
+174 silly reify ]
+175 silly audit bulk request {
+175 silly audit   '@alloc/quick-lru': [ '5.2.0' ],
+175 silly audit   '@ampproject/remapping': [ '2.3.0' ],
+175 silly audit   '@babel/runtime': [ '7.27.6' ],
+175 silly audit   '@emnapi/runtime': [ '1.8.1', '1.4.3' ],
+175 silly audit   '@img/colour': [ '1.0.0' ],
+175 silly audit   '@img/sharp-darwin-arm64': [ '0.34.5' ],
+175 silly audit   '@img/sharp-darwin-x64': [ '0.34.5' ],
+175 silly audit   '@img/sharp-libvips-darwin-arm64': [ '1.2.4' ],
+175 silly audit   '@img/sharp-libvips-darwin-x64': [ '1.2.4' ],
+175 silly audit   '@img/sharp-libvips-linux-arm': [ '1.2.4' ],
+175 silly audit   '@img/sharp-libvips-linux-arm64': [ '1.2.4' ],
+175 silly audit   '@img/sharp-libvips-linux-ppc64': [ '1.2.4' ],
+175 silly audit   '@img/sharp-libvips-linux-riscv64': [ '1.2.4' ],
+175 silly audit   '@img/sharp-libvips-linux-s390x': [ '1.2.4' ],
+175 silly audit   '@img/sharp-libvips-linux-x64': [ '1.2.4' ],
+175 silly audit   '@img/sharp-libvips-linuxmusl-arm64': [ '1.2.4' ],
+175 silly audit   '@img/sharp-libvips-linuxmusl-x64': [ '1.2.4' ],
+175 silly audit   '@img/sharp-linux-arm': [ '0.34.5' ],
+175 silly audit   '@img/sharp-linux-arm64': [ '0.34.5' ],
+175 silly audit   '@img/sharp-linux-ppc64': [ '0.34.5' ],
+175 silly audit   '@img/sharp-linux-riscv64': [ '0.34.5' ],
+175 silly audit   '@img/sharp-linux-s390x': [ '0.34.5' ],
+175 silly audit   '@img/sharp-linux-x64': [ '0.34.5' ],
+175 silly audit   '@img/sharp-linuxmusl-arm64': [ '0.34.5' ],
+175 silly audit   '@img/sharp-linuxmusl-x64': [ '0.34.5' ],
+175 silly audit   '@img/sharp-wasm32': [ '0.34.5' ],
+175 silly audit   '@img/sharp-win32-arm64': [ '0.34.5' ],
+175 silly audit   '@img/sharp-win32-ia32': [ '0.34.5' ],
+175 silly audit   '@img/sharp-win32-x64': [ '0.34.5' ],
+175 silly audit   '@isaacs/fs-minipass': [ '4.0.1' ],
+175 silly audit   '@jridgewell/gen-mapping': [ '0.3.8' ],
+175 silly audit   '@jridgewell/resolve-uri': [ '3.1.2' ],
+175 silly audit   '@jridgewell/set-array': [ '1.2.1' ],
+175 silly audit   '@jridgewell/sourcemap-codec': [ '1.5.0' ],
+175 silly audit   '@jridgewell/trace-mapping': [ '0.3.25' ],
+175 silly audit   '@next/env': [ '15.5.9' ],
+175 silly audit   '@next/swc-darwin-arm64': [ '15.5.7' ],
+175 silly audit   '@next/swc-darwin-x64': [ '15.5.7' ],
+175 silly audit   '@next/swc-linux-arm64-gnu': [ '15.5.7' ],
+175 silly audit   '@next/swc-linux-arm64-musl': [ '15.5.7' ],
+175 silly audit   '@next/swc-linux-x64-gnu': [ '15.5.7' ],
+175 silly audit   '@next/swc-linux-x64-musl': [ '15.5.7' ],
+175 silly audit   '@next/swc-win32-arm64-msvc': [ '15.5.7' ],
+175 silly audit   '@next/swc-win32-x64-msvc': [ '15.5.7' ],
+175 silly audit   '@supabase/auth-js': [ '2.70.0' ],
+175 silly audit   '@supabase/functions-js': [ '2.4.4' ],
+175 silly audit   '@supabase/node-fetch': [ '2.6.15' ],
+175 silly audit   '@supabase/postgrest-js': [ '1.19.4' ],
+175 silly audit   '@supabase/realtime-js': [ '2.11.10' ],
+175 silly audit   '@supabase/storage-js': [ '2.7.1' ],
+175 silly audit   '@supabase/supabase-js': [ '2.50.0' ],
+175 silly audit   '@swc/helpers': [ '0.5.15' ],
+175 silly audit   '@tailwindcss/node': [ '4.1.8' ],
+175 silly audit   '@tailwindcss/oxide': [ '4.1.8' ],
+175 silly audit   '@tailwindcss/oxide-android-arm64': [ '4.1.8' ],
+175 silly audit   '@tailwindcss/oxide-darwin-arm64': [ '4.1.8' ],
+175 silly audit   '@tailwindcss/oxide-darwin-x64': [ '4.1.8' ],
+175 silly audit   '@tailwindcss/oxide-freebsd-x64': [ '4.1.8' ],
+175 silly audit   '@tailwindcss/oxide-linux-arm-gnueabihf': [ '4.1.8' ],
+175 silly audit   '@tailwindcss/oxide-linux-arm64-gnu': [ '4.1.8' ],
+175 silly audit   '@tailwindcss/oxide-linux-arm64-musl': [ '4.1.8' ],
+175 silly audit   '@tailwindcss/oxide-linux-x64-gnu': [ '4.1.8' ],
+175 silly audit   '@tailwindcss/oxide-linux-x64-musl': [ '4.1.8' ],
+175 silly audit   '@emnapi/core': [ '1.4.3' ],
+175 silly audit   '@emnapi/wasi-threads': [ '1.0.2' ],
+175 silly audit   '@napi-rs/wasm-runtime': [ '0.2.10' ],
+175 silly audit   '@tybys/wasm-util': [ '0.9.0' ],
+175 silly audit   tslib: [ '2.8.0', '2.8.1' ],
+175 silly audit   '@tailwindcss/oxide-win32-arm64-msvc': [ '4.1.8' ],
+175 silly audit   '@tailwindcss/oxide-win32-x64-msvc': [ '4.1.8' ],
+175 silly audit   '@tailwindcss/postcss': [ '4.1.8' ],
+175 silly audit   '@types/d3-array': [ '3.2.1' ],
+175 silly audit   '@types/d3-color': [ '3.1.3' ],
+175 silly audit   '@types/d3-ease': [ '3.0.2' ],
+175 silly audit   '@types/d3-interpolate': [ '3.0.4' ],
+175 silly audit   '@types/d3-path': [ '3.1.1' ],
+175 silly audit   '@types/d3-scale': [ '4.0.9' ],
+175 silly audit   '@types/d3-shape': [ '3.1.7' ],
+175 silly audit   '@types/d3-time': [ '3.0.4' ],
+175 silly audit   '@types/d3-timer': [ '3.0.2' ],
+175 silly audit   '@types/node': [ '20.19.0' ],
+175 silly audit   '@types/phoenix': [ '1.6.6' ],
+175 silly audit   '@types/react': [ '19.1.7' ],
+175 silly audit   '@types/react-dom': [ '19.1.6' ],
+175 silly audit   '@types/ws': [ '8.18.1' ],
+175 silly audit   'agent-base': [ '7.1.4' ],
+175 silly audit   'bin-links': [ '6.0.0' ],
+175 silly audit   'caniuse-lite': [ '1.0.30001721' ],
+175 silly audit   chownr: [ '3.0.0' ],
+175 silly audit   'client-only': [ '0.0.1' ],
+175 silly audit   clsx: [ '2.1.1' ],
+175 silly audit   'cmd-shim': [ '8.0.0' ],
+175 silly audit   csstype: [ '3.1.3' ],
+175 silly audit   'd3-array': [ '3.2.4' ],
+175 silly audit   'd3-color': [ '3.1.0' ],
+175 silly audit   'd3-ease': [ '3.0.1' ],
+175 silly audit   'd3-format': [ '3.1.0' ],
+175 silly audit   'd3-interpolate': [ '3.0.1' ],
+175 silly audit   'd3-path': [ '3.1.0' ],
+175 silly audit   'd3-scale': [ '4.0.2' ],
+175 silly audit   'd3-shape': [ '3.2.0' ],
+175 silly audit   'd3-time': [ '3.1.0' ],
+175 silly audit   'd3-time-format': [ '4.1.0' ],
+175 silly audit   'd3-timer': [ '3.0.1' ],
+175 silly audit   'data-uri-to-buffer': [ '4.0.1' ],
+175 silly audit   debug: [ '4.4.3' ],
+175 silly audit   'decimal.js-light': [ '2.5.1' ],
+175 silly audit   'detect-libc': [ '2.1.2' ],
+175 silly audit   'dom-helpers': [ '5.2.1' ],
+175 silly audit   dotenv: [ '17.2.3' ],
+175 silly audit   'enhanced-resolve': [ '5.18.1' ],
+175 silly audit   eventemitter3: [ '4.0.7' ],
+175 silly audit   'fast-equals': [ '5.2.2' ],
+175 silly audit   'fetch-blob': [ '3.2.0' ],
+175 silly audit   'formdata-polyfill': [ '4.0.10' ],
+175 silly audit   'graceful-fs': [ '4.2.11' ],
+175 silly audit   'https-proxy-agent': [ '7.0.6' ],
+175 silly audit   imurmurhash: [ '0.1.4' ],
+175 silly audit   internmap: [ '2.0.3' ],
+175 silly audit   jiti: [ '2.4.2' ],
+175 silly audit   'js-tokens': [ '4.0.0' ],
+175 silly audit   lightningcss: [ '1.30.1' ],
+175 silly audit   'lightningcss-darwin-arm64': [ '1.30.1' ],
+175 silly audit   'lightningcss-darwin-x64': [ '1.30.1' ],
+175 silly audit   'lightningcss-freebsd-x64': [ '1.30.1' ],
+175 silly audit   'lightningcss-linux-arm-gnueabihf': [ '1.30.1' ],
+175 silly audit   'lightningcss-linux-arm64-gnu': [ '1.30.1' ],
+175 silly audit   'lightningcss-linux-arm64-musl': [ '1.30.1' ],
+175 silly audit   'lightningcss-linux-x64-gnu': [ '1.30.1' ],
+175 silly audit   'lightningcss-linux-x64-musl': [ '1.30.1' ],
+175 silly audit   'lightningcss-win32-arm64-msvc': [ '1.30.1' ],
+175 silly audit   'lightningcss-win32-x64-msvc': [ '1.30.1' ],
+175 silly audit   lodash: [ '4.17.23' ],
+175 silly audit   'loose-envify': [ '1.4.0' ],
+175 silly audit   'lucide-react': [ '0.517.0' ],
+175 silly audit   'magic-string': [ '0.30.17' ],
+175 silly audit   minipass: [ '7.1.2' ],
+175 silly audit   minizlib: [ '3.1.0' ],
+175 silly audit   ms: [ '2.1.3' ],
+175 silly audit   nanoid: [ '3.3.11' ],
+175 silly audit   next: [ '15.5.9' ],
+175 silly audit   postcss: [ '8.4.31', '8.5.4' ],
+175 silly audit   'node-domexception': [ '1.0.0' ],
+175 silly audit   'node-fetch': [ '3.3.2' ],
+175 silly audit   'npm-normalize-package-bin': [ '5.0.0' ],
+175 silly audit   'object-assign': [ '4.1.1' ],
+175 silly audit   picocolors: [ '1.1.1' ],
+175 silly audit   'proc-log': [ '6.1.0' ],
+175 silly audit   'prop-types': [ '15.8.1' ],
+175 silly audit   'react-is': [ '16.13.1', '18.3.1' ],
+175 silly audit   react: [ '19.1.0' ],
+175 silly audit   'react-dom': [ '19.1.0' ],
+175 silly audit   'react-smooth': [ '4.0.4' ],
+175 silly audit   'react-transition-group': [ '4.4.5' ],
+175 silly audit   'read-cmd-shim': [ '6.0.0' ],
+175 silly audit   recharts: [ '2.15.3' ],
+175 silly audit   'recharts-scale': [ '0.4.5' ],
+175 silly audit   scheduler: [ '0.26.0' ],
+175 silly audit   semver: [ '7.7.3' ],
+175 silly audit   sharp: [ '0.34.5' ],
+175 silly audit   'signal-exit': [ '4.1.0' ],
+175 silly audit   'source-map-js': [ '1.2.1' ],
+175 silly audit   'styled-jsx': [ '5.1.6' ],
+175 silly audit   supabase: [ '2.72.8' ],
+175 silly audit   tar: [ '7.5.3', '7.5.6' ],
+175 silly audit   tailwindcss: [ '4.1.8' ],
+175 silly audit   tapable: [ '2.2.2' ],
+175 silly audit   'tiny-invariant': [ '1.3.3' ],
+175 silly audit   tr46: [ '0.0.3' ],
+175 silly audit   typescript: [ '5.8.3' ],
+175 silly audit   'undici-types': [ '6.21.0' ],
+175 silly audit   'victory-vendor': [ '36.9.2' ],
+175 silly audit   'web-streams-polyfill': [ '3.3.3' ],
+175 silly audit   'webidl-conversions': [ '3.0.1' ],
+175 silly audit   'whatwg-url': [ '5.0.0' ],
+175 silly audit   'write-file-atomic': [ '7.0.0' ],
+175 silly audit   ws: [ '8.18.2' ],
+175 silly audit   yallist: [ '5.0.0' ],
+175 silly audit   '@tailwindcss/oxide-wasm32-wasi': [ '4.1.8' ]
+175 silly audit }
+176 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-win32-x64-msvc
+177 silly reify mark deleted [
+177 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-win32-x64-msvc'
+177 silly reify ]
+178 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-win32-arm64-msvc
+179 silly reify mark deleted [
+179 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-win32-arm64-msvc'
+179 silly reify ]
+180 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-x64-musl
+181 silly reify mark deleted [
+181 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-x64-musl'
+181 silly reify ]
+182 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-x64-gnu
+183 silly reify mark deleted [
+183 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-x64-gnu'
+183 silly reify ]
+184 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-arm64-musl
+185 silly reify mark deleted [
+185 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-arm64-musl'
+185 silly reify ]
+186 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-arm64-gnu
+187 silly reify mark deleted [
+187 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-arm64-gnu'
+187 silly reify ]
+188 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-arm-gnueabihf
+189 silly reify mark deleted [
+189 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-linux-arm-gnueabihf'
+189 silly reify ]
+190 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-freebsd-x64
+191 silly reify mark deleted [
+191 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-freebsd-x64'
+191 silly reify ]
+192 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-darwin-x64
+193 silly reify mark deleted [
+193 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-darwin-x64'
+193 silly reify ]
+194 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-android-arm64
+195 silly reify mark deleted [
+195 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-android-arm64'
+195 silly reify ]
+196 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-win32-x64-msvc
+197 silly reify mark deleted [
+197 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-win32-x64-msvc'
+197 silly reify ]
+198 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-win32-arm64-msvc
+199 silly reify mark deleted [
+199 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-win32-arm64-msvc'
+199 silly reify ]
+200 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-x64-musl
+201 silly reify mark deleted [
+201 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-x64-musl'
+201 silly reify ]
+202 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-x64-gnu
+203 silly reify mark deleted [
+203 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-x64-gnu'
+203 silly reify ]
+204 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-arm64-musl
+205 silly reify mark deleted [
+205 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-arm64-musl'
+205 silly reify ]
+206 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-arm64-gnu
+207 silly reify mark deleted [
+207 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-linux-arm64-gnu'
+207 silly reify ]
+208 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-darwin-x64
+209 silly reify mark deleted [
+209 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@next/swc-darwin-x64'
+209 silly reify ]
+210 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-win32-x64
+211 silly reify mark deleted [
+211 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-win32-x64'
+211 silly reify ]
+212 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-win32-ia32
+213 silly reify mark deleted [
+213 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-win32-ia32'
+213 silly reify ]
+214 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-win32-arm64
+215 silly reify mark deleted [
+215 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-win32-arm64'
+215 silly reify ]
+216 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-wasm32
+217 silly reify mark deleted [
+217 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-wasm32'
+217 silly reify ]
+218 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@emnapi/runtime
+219 silly reify mark deleted [
+219 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@emnapi/runtime'
+219 silly reify ]
+220 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linuxmusl-arm64
+221 silly reify mark deleted [
+221 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linuxmusl-arm64'
+221 silly reify ]
+222 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linuxmusl-x64
+223 silly reify mark deleted [
+223 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linuxmusl-x64'
+223 silly reify ]
+224 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-x64
+225 silly reify mark deleted [
+225 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-x64'
+225 silly reify ]
+226 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-s390x
+227 silly reify mark deleted [
+227 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-s390x'
+227 silly reify ]
+228 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-riscv64
+229 silly reify mark deleted [
+229 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-riscv64'
+229 silly reify ]
+230 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-ppc64
+231 silly reify mark deleted [
+231 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-ppc64'
+231 silly reify ]
+232 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-arm64
+233 silly reify mark deleted [
+233 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-arm64'
+233 silly reify ]
+234 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-arm
+235 silly reify mark deleted [
+235 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-linux-arm'
+235 silly reify ]
+236 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linuxmusl-x64
+237 silly reify mark deleted [
+237 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linuxmusl-x64'
+237 silly reify ]
+238 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linuxmusl-arm64
+239 silly reify mark deleted [
+239 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linuxmusl-arm64'
+239 silly reify ]
+240 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-x64
+241 silly reify mark deleted [
+241 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-x64'
+241 silly reify ]
+242 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-s390x
+243 silly reify mark deleted [
+243 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-s390x'
+243 silly reify ]
+244 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-riscv64
+245 silly reify mark deleted [
+245 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-riscv64'
+245 silly reify ]
+246 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-ppc64
+247 silly reify mark deleted [
+247 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-ppc64'
+247 silly reify ]
+248 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-arm64
+249 silly reify mark deleted [
+249 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-arm64'
+249 silly reify ]
+250 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-arm
+251 silly reify mark deleted [
+251 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-linux-arm'
+251 silly reify ]
+252 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-darwin-x64
+253 silly reify mark deleted [
+253 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-libvips-darwin-x64'
+253 silly reify ]
+254 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-darwin-x64
+255 silly reify mark deleted [
+255 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@img/sharp-darwin-x64'
+255 silly reify ]
+256 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-win32-x64-msvc
+257 silly reify mark deleted [
+257 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-win32-x64-msvc'
+257 silly reify ]
+258 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-win32-arm64-msvc
+259 silly reify mark deleted [
+259 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-win32-arm64-msvc'
+259 silly reify ]
+260 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-x64-musl
+261 silly reify mark deleted [
+261 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-x64-musl'
+261 silly reify ]
+262 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-x64-gnu
+263 silly reify mark deleted [
+263 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-x64-gnu'
+263 silly reify ]
+264 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-arm64-musl
+265 silly reify mark deleted [
+265 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-arm64-musl'
+265 silly reify ]
+266 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-arm64-gnu
+267 silly reify mark deleted [
+267 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-arm64-gnu'
+267 silly reify ]
+268 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-arm-gnueabihf
+269 silly reify mark deleted [
+269 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-linux-arm-gnueabihf'
+269 silly reify ]
+270 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-freebsd-x64
+271 silly reify mark deleted [
+271 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-freebsd-x64'
+271 silly reify ]
+272 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-darwin-x64
+273 silly reify mark deleted [
+273 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/lightningcss-darwin-x64'
+273 silly reify ]
+274 silly audit bulk request failed undefined
+275 verbose audit error FetchError: request to https://registry.npmjs.org/-/npm/v1/security/audits/quick failed, reason: getaddrinfo ENOTFOUND registry.npmjs.org
+275 verbose audit error     at ClientRequest.<anonymous> (/Users/Arias/.nvm/versions/node/v22.22.0/lib/node_modules/npm/node_modules/minipass-fetch/lib/index.js:130:14)
+275 verbose audit error     at ClientRequest.emit (node:events:519:28)
+275 verbose audit error     at emitErrorEvent (node:_http_client:107:11)
+275 verbose audit error     at _destroy (node:_http_client:954:9)
+275 verbose audit error     at onSocketNT (node:_http_client:974:5)
+275 verbose audit error     at process.processTicksAndRejections (node:internal/process/task_queues:91:21) {
+275 verbose audit error   code: 'ENOTFOUND',
+275 verbose audit error   errno: 'ENOTFOUND',
+275 verbose audit error   syscall: 'getaddrinfo',
+275 verbose audit error   hostname: 'registry.npmjs.org',
+275 verbose audit error   type: 'system'
+275 verbose audit error }
+276 silly audit error undefined
+277 silly audit report null
+278 http cache @types/react@https://registry.npmjs.org/@types/react/-/react-19.1.7.tgz 0ms (cache hit)
+279 http cache @types/phoenix@https://registry.npmjs.org/@types/phoenix/-/phoenix-1.6.6.tgz 0ms (cache hit)
+280 http cache @types/react-dom@https://registry.npmjs.org/@types/react-dom/-/react-dom-19.1.6.tgz 0ms (cache hit)
+281 http cache @types/d3-timer@https://registry.npmjs.org/@types/d3-timer/-/d3-timer-3.0.2.tgz 0ms (cache hit)
+282 http cache @types/d3-time@https://registry.npmjs.org/@types/d3-time/-/d3-time-3.0.4.tgz 0ms (cache hit)
+283 http cache @types/node@https://registry.npmjs.org/@types/node/-/node-20.19.0.tgz 0ms (cache hit)
+284 http cache @types/d3-shape@https://registry.npmjs.org/@types/d3-shape/-/d3-shape-3.1.7.tgz 0ms (cache hit)
+285 http cache @types/d3-scale@https://registry.npmjs.org/@types/d3-scale/-/d3-scale-4.0.9.tgz 0ms (cache hit)
+286 http cache @types/d3-path@https://registry.npmjs.org/@types/d3-path/-/d3-path-3.1.1.tgz 0ms (cache hit)
+287 http cache @types/d3-ease@https://registry.npmjs.org/@types/d3-ease/-/d3-ease-3.0.2.tgz 0ms (cache hit)
+288 http cache @types/d3-interpolate@https://registry.npmjs.org/@types/d3-interpolate/-/d3-interpolate-3.0.4.tgz 0ms (cache hit)
+289 http cache @types/d3-color@https://registry.npmjs.org/@types/d3-color/-/d3-color-3.1.3.tgz 0ms (cache hit)
+290 http cache @types/d3-array@https://registry.npmjs.org/@types/d3-array/-/d3-array-3.2.1.tgz 0ms (cache hit)
+291 http cache @tailwindcss/postcss@https://registry.npmjs.org/@tailwindcss/postcss/-/postcss-4.1.8.tgz 0ms (cache hit)
+292 http cache @tailwindcss/oxide-darwin-arm64@https://registry.npmjs.org/@tailwindcss/oxide-darwin-arm64/-/oxide-darwin-arm64-4.1.8.tgz 0ms (cache hit)
+293 http cache @tailwindcss/oxide@https://registry.npmjs.org/@tailwindcss/oxide/-/oxide-4.1.8.tgz 0ms (cache hit)
+294 http cache @tailwindcss/node@https://registry.npmjs.org/@tailwindcss/node/-/node-4.1.8.tgz 0ms (cache hit)
+295 http cache @supabase/supabase-js@https://registry.npmjs.org/@supabase/supabase-js/-/supabase-js-2.50.0.tgz 0ms (cache hit)
+296 http cache @swc/helpers@https://registry.npmjs.org/@swc/helpers/-/helpers-0.5.15.tgz 0ms (cache hit)
+297 http cache @supabase/storage-js@https://registry.npmjs.org/@supabase/storage-js/-/storage-js-2.7.1.tgz 0ms (cache hit)
+298 http cache @supabase/realtime-js@https://registry.npmjs.org/@supabase/realtime-js/-/realtime-js-2.11.10.tgz 0ms (cache hit)
+299 http cache @supabase/postgrest-js@https://registry.npmjs.org/@supabase/postgrest-js/-/postgrest-js-1.19.4.tgz 0ms (cache hit)
+300 http cache @supabase/node-fetch@https://registry.npmjs.org/@supabase/node-fetch/-/node-fetch-2.6.15.tgz 0ms (cache hit)
+301 http cache @next/swc-darwin-arm64@https://registry.npmjs.org/@next/swc-darwin-arm64/-/swc-darwin-arm64-15.5.7.tgz 0ms (cache hit)
+302 http cache @next/env@https://registry.npmjs.org/@next/env/-/env-15.5.9.tgz 0ms (cache hit)
+303 http cache @supabase/functions-js@https://registry.npmjs.org/@supabase/functions-js/-/functions-js-2.4.4.tgz 0ms (cache hit)
+304 http cache @jridgewell/trace-mapping@https://registry.npmjs.org/@jridgewell/trace-mapping/-/trace-mapping-0.3.25.tgz 0ms (cache hit)
+305 http cache @jridgewell/gen-mapping@https://registry.npmjs.org/@jridgewell/gen-mapping/-/gen-mapping-0.3.8.tgz 0ms (cache hit)
+306 http cache @supabase/auth-js@https://registry.npmjs.org/@supabase/auth-js/-/auth-js-2.70.0.tgz 0ms (cache hit)
+307 http cache @babel/runtime@https://registry.npmjs.org/@babel/runtime/-/runtime-7.27.6.tgz 0ms (cache hit)
+308 http cache @jridgewell/resolve-uri@https://registry.npmjs.org/@jridgewell/resolve-uri/-/resolve-uri-3.1.2.tgz 0ms (cache hit)
+309 http cache @jridgewell/sourcemap-codec@https://registry.npmjs.org/@jridgewell/sourcemap-codec/-/sourcemap-codec-1.5.0.tgz 0ms (cache hit)
+310 http cache ws@https://registry.npmjs.org/ws/-/ws-8.18.2.tgz 0ms (cache hit)
+311 http cache @jridgewell/set-array@https://registry.npmjs.org/@jridgewell/set-array/-/set-array-1.2.1.tgz 0ms (cache hit)
+312 http cache @ampproject/remapping@https://registry.npmjs.org/@ampproject/remapping/-/remapping-2.3.0.tgz 0ms (cache hit)
+313 http cache @alloc/quick-lru@https://registry.npmjs.org/@alloc/quick-lru/-/quick-lru-5.2.0.tgz 0ms (cache hit)
+314 http cache victory-vendor@https://registry.npmjs.org/victory-vendor/-/victory-vendor-36.9.2.tgz 0ms (cache hit)
+315 http cache undici-types@https://registry.npmjs.org/undici-types/-/undici-types-6.21.0.tgz 0ms (cache hit)
+316 http cache tapable@https://registry.npmjs.org/tapable/-/tapable-2.2.2.tgz 0ms (cache hit)
+317 http cache tar@https://registry.npmjs.org/tar/-/tar-7.5.6.tgz 0ms (cache hit)
+318 http cache typescript@https://registry.npmjs.org/typescript/-/typescript-5.8.3.tgz 0ms (cache hit)
+319 http cache tiny-invariant@https://registry.npmjs.org/tiny-invariant/-/tiny-invariant-1.3.3.tgz 0ms (cache hit)
+320 http cache tailwindcss@https://registry.npmjs.org/tailwindcss/-/tailwindcss-4.1.8.tgz 0ms (cache hit)
+321 http cache supabase@https://registry.npmjs.org/supabase/-/supabase-2.72.8.tgz 0ms (cache hit)
+322 http cache styled-jsx@https://registry.npmjs.org/styled-jsx/-/styled-jsx-5.1.6.tgz 0ms (cache hit)
+323 http cache semver@https://registry.npmjs.org/semver/-/semver-7.7.3.tgz 0ms (cache hit)
+324 http cache recharts-scale@https://registry.npmjs.org/recharts-scale/-/recharts-scale-0.4.5.tgz 0ms (cache hit)
+325 http cache source-map-js@https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.1.tgz 0ms (cache hit)
+326 http cache recharts@https://registry.npmjs.org/recharts/-/recharts-2.15.3.tgz 0ms (cache hit)
+327 http cache write-file-atomic@https://registry.npmjs.org/write-file-atomic/-/write-file-atomic-7.0.0.tgz 0ms (cache hit)
+328 http cache react-smooth@https://registry.npmjs.org/react-smooth/-/react-smooth-4.0.4.tgz 0ms (cache hit)
+329 http cache react-is@https://registry.npmjs.org/react-is/-/react-is-18.3.1.tgz 0ms (cache hit)
+330 http cache read-cmd-shim@https://registry.npmjs.org/read-cmd-shim/-/read-cmd-shim-6.0.0.tgz 0ms (cache hit)
+331 http cache react-transition-group@https://registry.npmjs.org/react-transition-group/-/react-transition-group-4.4.5.tgz 0ms (cache hit)
+332 http cache scheduler@https://registry.npmjs.org/scheduler/-/scheduler-0.26.0.tgz 0ms (cache hit)
+333 http cache proc-log@https://registry.npmjs.org/proc-log/-/proc-log-6.1.0.tgz 0ms (cache hit)
+334 http cache react@https://registry.npmjs.org/react/-/react-19.1.0.tgz 0ms (cache hit)
+335 http cache prop-types@https://registry.npmjs.org/prop-types/-/prop-types-15.8.1.tgz 0ms (cache hit)
+336 http cache postcss@https://registry.npmjs.org/postcss/-/postcss-8.5.4.tgz 0ms (cache hit)
+337 http cache npm-normalize-package-bin@https://registry.npmjs.org/npm-normalize-package-bin/-/npm-normalize-package-bin-5.0.0.tgz 0ms (cache hit)
+338 http cache next@https://registry.npmjs.org/next/-/next-15.5.9.tgz 0ms (cache hit)
+339 http cache nanoid@https://registry.npmjs.org/nanoid/-/nanoid-3.3.11.tgz 0ms (cache hit)
+340 http cache minipass@https://registry.npmjs.org/minipass/-/minipass-7.1.2.tgz 0ms (cache hit)
+341 http cache lodash@https://registry.npmjs.org/lodash/-/lodash-4.17.23.tgz 0ms (cache hit)
+342 http cache magic-string@https://registry.npmjs.org/magic-string/-/magic-string-0.30.17.tgz 0ms (cache hit)
+343 http cache loose-envify@https://registry.npmjs.org/loose-envify/-/loose-envify-1.4.0.tgz 0ms (cache hit)
+344 http cache lucide-react@https://registry.npmjs.org/lucide-react/-/lucide-react-0.517.0.tgz 0ms (cache hit)
+345 http cache lightningcss@https://registry.npmjs.org/lightningcss/-/lightningcss-1.30.1.tgz 0ms (cache hit)
+346 http cache js-tokens@https://registry.npmjs.org/js-tokens/-/js-tokens-4.0.0.tgz 0ms (cache hit)
+347 http cache imurmurhash@https://registry.npmjs.org/imurmurhash/-/imurmurhash-0.1.4.tgz 0ms (cache hit)
+348 http cache internmap@https://registry.npmjs.org/internmap/-/internmap-2.0.3.tgz 0ms (cache hit)
+349 http cache jiti@https://registry.npmjs.org/jiti/-/jiti-2.4.2.tgz 0ms (cache hit)
+350 http cache react-dom@https://registry.npmjs.org/react-dom/-/react-dom-19.1.0.tgz 0ms (cache hit)
+351 http cache lightningcss-darwin-arm64@https://registry.npmjs.org/lightningcss-darwin-arm64/-/lightningcss-darwin-arm64-1.30.1.tgz 0ms (cache hit)
+352 http cache enhanced-resolve@https://registry.npmjs.org/enhanced-resolve/-/enhanced-resolve-5.18.1.tgz 0ms (cache hit)
+353 http cache decimal.js-light@https://registry.npmjs.org/decimal.js-light/-/decimal.js-light-2.5.1.tgz 0ms (cache hit)
+354 http cache d3-timer@https://registry.npmjs.org/d3-timer/-/d3-timer-3.0.1.tgz 0ms (cache hit)
+355 http cache d3-time-format@https://registry.npmjs.org/d3-time-format/-/d3-time-format-4.1.0.tgz 0ms (cache hit)
+356 http cache dotenv@https://registry.npmjs.org/dotenv/-/dotenv-17.2.3.tgz 0ms (cache hit)
+357 http cache fast-equals@https://registry.npmjs.org/fast-equals/-/fast-equals-5.2.2.tgz 0ms (cache hit)
+358 http cache d3-scale@https://registry.npmjs.org/d3-scale/-/d3-scale-4.0.2.tgz 0ms (cache hit)
+359 http cache d3-shape@https://registry.npmjs.org/d3-shape/-/d3-shape-3.2.0.tgz 0ms (cache hit)
+360 http cache d3-time@https://registry.npmjs.org/d3-time/-/d3-time-3.1.0.tgz 0ms (cache hit)
+361 http cache d3-path@https://registry.npmjs.org/d3-path/-/d3-path-3.1.0.tgz 0ms (cache hit)
+362 http cache d3-format@https://registry.npmjs.org/d3-format/-/d3-format-3.1.0.tgz 0ms (cache hit)
+363 http cache d3-ease@https://registry.npmjs.org/d3-ease/-/d3-ease-3.0.1.tgz 0ms (cache hit)
+364 http cache d3-interpolate@https://registry.npmjs.org/d3-interpolate/-/d3-interpolate-3.0.1.tgz 0ms (cache hit)
+365 http cache d3-color@https://registry.npmjs.org/d3-color/-/d3-color-3.1.0.tgz 0ms (cache hit)
+366 http cache d3-array@https://registry.npmjs.org/d3-array/-/d3-array-3.2.4.tgz 0ms (cache hit)
+367 http cache csstype@https://registry.npmjs.org/csstype/-/csstype-3.1.3.tgz 0ms (cache hit)
+368 http cache cmd-shim@https://registry.npmjs.org/cmd-shim/-/cmd-shim-8.0.0.tgz 0ms (cache hit)
+369 http cache client-only@https://registry.npmjs.org/client-only/-/client-only-0.0.1.tgz 0ms (cache hit)
+370 http cache clsx@https://registry.npmjs.org/clsx/-/clsx-2.1.1.tgz 0ms (cache hit)
+371 http cache caniuse-lite@https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001721.tgz 0ms (cache hit)
+372 http cache bin-links@https://registry.npmjs.org/bin-links/-/bin-links-6.0.0.tgz 0ms (cache hit)
+373 http cache tar@https://registry.npmjs.org/tar/-/tar-7.5.3.tgz 0ms (cache hit)
+374 http cache postcss@https://registry.npmjs.org/postcss/-/postcss-8.4.31.tgz 0ms (cache hit)
+375 http cache dom-helpers@https://registry.npmjs.org/dom-helpers/-/dom-helpers-5.2.1.tgz 0ms (cache hit)
+376 silly tarball no local data for @types/react@https://registry.npmjs.org/@types/react/-/react-19.1.7.tgz. Extracting by manifest.
+377 silly tarball no local data for @types/phoenix@https://registry.npmjs.org/@types/phoenix/-/phoenix-1.6.6.tgz. Extracting by manifest.
+378 silly tarball no local data for @types/react-dom@https://registry.npmjs.org/@types/react-dom/-/react-dom-19.1.6.tgz. Extracting by manifest.
+379 silly tarball no local data for @types/d3-timer@https://registry.npmjs.org/@types/d3-timer/-/d3-timer-3.0.2.tgz. Extracting by manifest.
+380 silly tarball no local data for @types/d3-time@https://registry.npmjs.org/@types/d3-time/-/d3-time-3.0.4.tgz. Extracting by manifest.
+381 silly tarball no local data for @types/node@https://registry.npmjs.org/@types/node/-/node-20.19.0.tgz. Extracting by manifest.
+382 silly tarball no local data for @types/d3-shape@https://registry.npmjs.org/@types/d3-shape/-/d3-shape-3.1.7.tgz. Extracting by manifest.
+383 http cache react-is@https://registry.npmjs.org/react-is/-/react-is-16.13.1.tgz 0ms (cache hit)
+384 silly tarball no local data for @types/d3-scale@https://registry.npmjs.org/@types/d3-scale/-/d3-scale-4.0.9.tgz. Extracting by manifest.
+385 silly tarball no local data for @types/d3-path@https://registry.npmjs.org/@types/d3-path/-/d3-path-3.1.1.tgz. Extracting by manifest.
+386 silly tarball no local data for @types/d3-ease@https://registry.npmjs.org/@types/d3-ease/-/d3-ease-3.0.2.tgz. Extracting by manifest.
+387 silly tarball no local data for @types/d3-interpolate@https://registry.npmjs.org/@types/d3-interpolate/-/d3-interpolate-3.0.4.tgz. Extracting by manifest.
+388 silly tarball no local data for @types/d3-color@https://registry.npmjs.org/@types/d3-color/-/d3-color-3.1.3.tgz. Extracting by manifest.
+389 silly tarball no local data for @types/d3-array@https://registry.npmjs.org/@types/d3-array/-/d3-array-3.2.1.tgz. Extracting by manifest.
+390 silly tarball no local data for @tailwindcss/postcss@https://registry.npmjs.org/@tailwindcss/postcss/-/postcss-4.1.8.tgz. Extracting by manifest.
+391 silly tarball no local data for @tailwindcss/oxide-darwin-arm64@https://registry.npmjs.org/@tailwindcss/oxide-darwin-arm64/-/oxide-darwin-arm64-4.1.8.tgz. Extracting by manifest.
+392 silly tarball no local data for @tailwindcss/oxide@https://registry.npmjs.org/@tailwindcss/oxide/-/oxide-4.1.8.tgz. Extracting by manifest.
+393 silly tarball no local data for @tailwindcss/node@https://registry.npmjs.org/@tailwindcss/node/-/node-4.1.8.tgz. Extracting by manifest.
+394 silly tarball no local data for @supabase/supabase-js@https://registry.npmjs.org/@supabase/supabase-js/-/supabase-js-2.50.0.tgz. Extracting by manifest.
+395 silly tarball no local data for @swc/helpers@https://registry.npmjs.org/@swc/helpers/-/helpers-0.5.15.tgz. Extracting by manifest.
+396 silly tarball no local data for @supabase/storage-js@https://registry.npmjs.org/@supabase/storage-js/-/storage-js-2.7.1.tgz. Extracting by manifest.
+397 silly tarball no local data for @supabase/realtime-js@https://registry.npmjs.org/@supabase/realtime-js/-/realtime-js-2.11.10.tgz. Extracting by manifest.
+398 silly tarball no local data for @supabase/postgrest-js@https://registry.npmjs.org/@supabase/postgrest-js/-/postgrest-js-1.19.4.tgz. Extracting by manifest.
+399 silly tarball no local data for @supabase/node-fetch@https://registry.npmjs.org/@supabase/node-fetch/-/node-fetch-2.6.15.tgz. Extracting by manifest.
+400 silly tarball no local data for @next/swc-darwin-arm64@https://registry.npmjs.org/@next/swc-darwin-arm64/-/swc-darwin-arm64-15.5.7.tgz. Extracting by manifest.
+401 silly tarball no local data for @next/env@https://registry.npmjs.org/@next/env/-/env-15.5.9.tgz. Extracting by manifest.
+402 silly tarball no local data for @supabase/functions-js@https://registry.npmjs.org/@supabase/functions-js/-/functions-js-2.4.4.tgz. Extracting by manifest.
+403 silly tarball no local data for @jridgewell/trace-mapping@https://registry.npmjs.org/@jridgewell/trace-mapping/-/trace-mapping-0.3.25.tgz. Extracting by manifest.
+404 silly tarball no local data for @jridgewell/gen-mapping@https://registry.npmjs.org/@jridgewell/gen-mapping/-/gen-mapping-0.3.8.tgz. Extracting by manifest.
+405 silly tarball no local data for @supabase/auth-js@https://registry.npmjs.org/@supabase/auth-js/-/auth-js-2.70.0.tgz. Extracting by manifest.
+406 silly tarball no local data for @babel/runtime@https://registry.npmjs.org/@babel/runtime/-/runtime-7.27.6.tgz. Extracting by manifest.
+407 silly tarball no local data for @jridgewell/resolve-uri@https://registry.npmjs.org/@jridgewell/resolve-uri/-/resolve-uri-3.1.2.tgz. Extracting by manifest.
+408 silly tarball no local data for @jridgewell/sourcemap-codec@https://registry.npmjs.org/@jridgewell/sourcemap-codec/-/sourcemap-codec-1.5.0.tgz. Extracting by manifest.
+409 silly tarball no local data for ws@https://registry.npmjs.org/ws/-/ws-8.18.2.tgz. Extracting by manifest.
+410 silly tarball no local data for @jridgewell/set-array@https://registry.npmjs.org/@jridgewell/set-array/-/set-array-1.2.1.tgz. Extracting by manifest.
+411 silly tarball no local data for @ampproject/remapping@https://registry.npmjs.org/@ampproject/remapping/-/remapping-2.3.0.tgz. Extracting by manifest.
+412 silly tarball no local data for @alloc/quick-lru@https://registry.npmjs.org/@alloc/quick-lru/-/quick-lru-5.2.0.tgz. Extracting by manifest.
+413 silly tarball no local data for victory-vendor@https://registry.npmjs.org/victory-vendor/-/victory-vendor-36.9.2.tgz. Extracting by manifest.
+414 silly tarball no local data for undici-types@https://registry.npmjs.org/undici-types/-/undici-types-6.21.0.tgz. Extracting by manifest.
+415 silly tarball no local data for tapable@https://registry.npmjs.org/tapable/-/tapable-2.2.2.tgz. Extracting by manifest.
+416 silly tarball no local data for tar@https://registry.npmjs.org/tar/-/tar-7.5.6.tgz. Extracting by manifest.
+417 silly tarball no local data for typescript@https://registry.npmjs.org/typescript/-/typescript-5.8.3.tgz. Extracting by manifest.
+418 silly tarball no local data for tiny-invariant@https://registry.npmjs.org/tiny-invariant/-/tiny-invariant-1.3.3.tgz. Extracting by manifest.
+419 silly tarball no local data for tailwindcss@https://registry.npmjs.org/tailwindcss/-/tailwindcss-4.1.8.tgz. Extracting by manifest.
+420 silly tarball no local data for supabase@https://registry.npmjs.org/supabase/-/supabase-2.72.8.tgz. Extracting by manifest.
+421 silly tarball no local data for styled-jsx@https://registry.npmjs.org/styled-jsx/-/styled-jsx-5.1.6.tgz. Extracting by manifest.
+422 silly tarball no local data for semver@https://registry.npmjs.org/semver/-/semver-7.7.3.tgz. Extracting by manifest.
+423 silly tarball no local data for recharts-scale@https://registry.npmjs.org/recharts-scale/-/recharts-scale-0.4.5.tgz. Extracting by manifest.
+424 silly tarball no local data for source-map-js@https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.1.tgz. Extracting by manifest.
+425 silly tarball no local data for recharts@https://registry.npmjs.org/recharts/-/recharts-2.15.3.tgz. Extracting by manifest.
+426 silly tarball no local data for write-file-atomic@https://registry.npmjs.org/write-file-atomic/-/write-file-atomic-7.0.0.tgz. Extracting by manifest.
+427 silly tarball no local data for react-smooth@https://registry.npmjs.org/react-smooth/-/react-smooth-4.0.4.tgz. Extracting by manifest.
+428 silly tarball no local data for react-is@https://registry.npmjs.org/react-is/-/react-is-18.3.1.tgz. Extracting by manifest.
+429 silly tarball no local data for read-cmd-shim@https://registry.npmjs.org/read-cmd-shim/-/read-cmd-shim-6.0.0.tgz. Extracting by manifest.
+430 silly tarball no local data for react-transition-group@https://registry.npmjs.org/react-transition-group/-/react-transition-group-4.4.5.tgz. Extracting by manifest.
+431 silly tarball no local data for scheduler@https://registry.npmjs.org/scheduler/-/scheduler-0.26.0.tgz. Extracting by manifest.
+432 silly tarball no local data for proc-log@https://registry.npmjs.org/proc-log/-/proc-log-6.1.0.tgz. Extracting by manifest.
+433 silly tarball no local data for react@https://registry.npmjs.org/react/-/react-19.1.0.tgz. Extracting by manifest.
+434 silly tarball no local data for prop-types@https://registry.npmjs.org/prop-types/-/prop-types-15.8.1.tgz. Extracting by manifest.
+435 silly tarball no local data for postcss@https://registry.npmjs.org/postcss/-/postcss-8.5.4.tgz. Extracting by manifest.
+436 silly tarball no local data for npm-normalize-package-bin@https://registry.npmjs.org/npm-normalize-package-bin/-/npm-normalize-package-bin-5.0.0.tgz. Extracting by manifest.
+437 silly tarball no local data for next@https://registry.npmjs.org/next/-/next-15.5.9.tgz. Extracting by manifest.
+438 silly tarball no local data for nanoid@https://registry.npmjs.org/nanoid/-/nanoid-3.3.11.tgz. Extracting by manifest.
+439 silly tarball no local data for minipass@https://registry.npmjs.org/minipass/-/minipass-7.1.2.tgz. Extracting by manifest.
+440 silly tarball no local data for lodash@https://registry.npmjs.org/lodash/-/lodash-4.17.23.tgz. Extracting by manifest.
+441 silly tarball no local data for magic-string@https://registry.npmjs.org/magic-string/-/magic-string-0.30.17.tgz. Extracting by manifest.
+442 silly tarball no local data for loose-envify@https://registry.npmjs.org/loose-envify/-/loose-envify-1.4.0.tgz. Extracting by manifest.
+443 silly tarball no local data for lucide-react@https://registry.npmjs.org/lucide-react/-/lucide-react-0.517.0.tgz. Extracting by manifest.
+444 silly tarball no local data for lightningcss@https://registry.npmjs.org/lightningcss/-/lightningcss-1.30.1.tgz. Extracting by manifest.
+445 silly tarball no local data for js-tokens@https://registry.npmjs.org/js-tokens/-/js-tokens-4.0.0.tgz. Extracting by manifest.
+446 silly tarball no local data for imurmurhash@https://registry.npmjs.org/imurmurhash/-/imurmurhash-0.1.4.tgz. Extracting by manifest.
+447 silly tarball no local data for internmap@https://registry.npmjs.org/internmap/-/internmap-2.0.3.tgz. Extracting by manifest.
+448 silly tarball no local data for jiti@https://registry.npmjs.org/jiti/-/jiti-2.4.2.tgz. Extracting by manifest.
+449 silly tarball no local data for react-dom@https://registry.npmjs.org/react-dom/-/react-dom-19.1.0.tgz. Extracting by manifest.
+450 silly tarball no local data for lightningcss-darwin-arm64@https://registry.npmjs.org/lightningcss-darwin-arm64/-/lightningcss-darwin-arm64-1.30.1.tgz. Extracting by manifest.
+451 silly tarball no local data for enhanced-resolve@https://registry.npmjs.org/enhanced-resolve/-/enhanced-resolve-5.18.1.tgz. Extracting by manifest.
+452 silly tarball no local data for decimal.js-light@https://registry.npmjs.org/decimal.js-light/-/decimal.js-light-2.5.1.tgz. Extracting by manifest.
+453 silly tarball no local data for d3-timer@https://registry.npmjs.org/d3-timer/-/d3-timer-3.0.1.tgz. Extracting by manifest.
+454 silly tarball no local data for d3-time-format@https://registry.npmjs.org/d3-time-format/-/d3-time-format-4.1.0.tgz. Extracting by manifest.
+455 silly tarball no local data for dotenv@https://registry.npmjs.org/dotenv/-/dotenv-17.2.3.tgz. Extracting by manifest.
+456 silly tarball no local data for fast-equals@https://registry.npmjs.org/fast-equals/-/fast-equals-5.2.2.tgz. Extracting by manifest.
+457 silly tarball no local data for d3-scale@https://registry.npmjs.org/d3-scale/-/d3-scale-4.0.2.tgz. Extracting by manifest.
+458 silly tarball no local data for d3-shape@https://registry.npmjs.org/d3-shape/-/d3-shape-3.2.0.tgz. Extracting by manifest.
+459 silly tarball no local data for d3-time@https://registry.npmjs.org/d3-time/-/d3-time-3.1.0.tgz. Extracting by manifest.
+460 silly tarball no local data for d3-path@https://registry.npmjs.org/d3-path/-/d3-path-3.1.0.tgz. Extracting by manifest.
+461 silly tarball no local data for d3-format@https://registry.npmjs.org/d3-format/-/d3-format-3.1.0.tgz. Extracting by manifest.
+462 silly tarball no local data for d3-ease@https://registry.npmjs.org/d3-ease/-/d3-ease-3.0.1.tgz. Extracting by manifest.
+463 silly tarball no local data for d3-interpolate@https://registry.npmjs.org/d3-interpolate/-/d3-interpolate-3.0.1.tgz. Extracting by manifest.
+464 silly tarball no local data for d3-color@https://registry.npmjs.org/d3-color/-/d3-color-3.1.0.tgz. Extracting by manifest.
+465 silly tarball no local data for d3-array@https://registry.npmjs.org/d3-array/-/d3-array-3.2.4.tgz. Extracting by manifest.
+466 silly tarball no local data for csstype@https://registry.npmjs.org/csstype/-/csstype-3.1.3.tgz. Extracting by manifest.
+467 silly tarball no local data for cmd-shim@https://registry.npmjs.org/cmd-shim/-/cmd-shim-8.0.0.tgz. Extracting by manifest.
+468 silly tarball no local data for client-only@https://registry.npmjs.org/client-only/-/client-only-0.0.1.tgz. Extracting by manifest.
+469 silly tarball no local data for clsx@https://registry.npmjs.org/clsx/-/clsx-2.1.1.tgz. Extracting by manifest.
+470 silly tarball no local data for caniuse-lite@https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001721.tgz. Extracting by manifest.
+471 silly tarball no local data for bin-links@https://registry.npmjs.org/bin-links/-/bin-links-6.0.0.tgz. Extracting by manifest.
+472 silly tarball no local data for tar@https://registry.npmjs.org/tar/-/tar-7.5.3.tgz. Extracting by manifest.
+473 silly tarball no local data for postcss@https://registry.npmjs.org/postcss/-/postcss-8.4.31.tgz. Extracting by manifest.
+474 silly tarball no local data for dom-helpers@https://registry.npmjs.org/dom-helpers/-/dom-helpers-5.2.1.tgz. Extracting by manifest.
+475 silly tarball no local data for react-is@https://registry.npmjs.org/react-is/-/react-is-16.13.1.tgz. Extracting by manifest.
+476 http fetch GET https://registry.npmjs.org/@types/react/-/react-19.1.7.tgz attempt 1 failed with ENOTFOUND
+477 http fetch GET https://registry.npmjs.org/@types/phoenix/-/phoenix-1.6.6.tgz attempt 1 failed with ENOTFOUND
+478 http fetch GET https://registry.npmjs.org/@types/react-dom/-/react-dom-19.1.6.tgz attempt 1 failed with ENOTFOUND
+479 http fetch GET https://registry.npmjs.org/@types/d3-timer/-/d3-timer-3.0.2.tgz attempt 1 failed with ENOTFOUND
+480 http fetch GET https://registry.npmjs.org/@types/d3-time/-/d3-time-3.0.4.tgz attempt 1 failed with ENOTFOUND
+481 http fetch GET https://registry.npmjs.org/@types/node/-/node-20.19.0.tgz attempt 1 failed with ENOTFOUND
+482 http fetch GET https://registry.npmjs.org/@types/d3-shape/-/d3-shape-3.1.7.tgz attempt 1 failed with ENOTFOUND
+483 http fetch GET https://registry.npmjs.org/@types/d3-scale/-/d3-scale-4.0.9.tgz attempt 1 failed with ENOTFOUND
+484 http fetch GET https://registry.npmjs.org/@types/d3-path/-/d3-path-3.1.1.tgz attempt 1 failed with ENOTFOUND
+485 http fetch GET https://registry.npmjs.org/@types/d3-ease/-/d3-ease-3.0.2.tgz attempt 1 failed with ENOTFOUND
+486 http fetch GET https://registry.npmjs.org/@types/d3-interpolate/-/d3-interpolate-3.0.4.tgz attempt 1 failed with ENOTFOUND
+487 http fetch GET https://registry.npmjs.org/@types/d3-color/-/d3-color-3.1.3.tgz attempt 1 failed with ENOTFOUND
+488 http fetch GET https://registry.npmjs.org/@types/d3-array/-/d3-array-3.2.1.tgz attempt 1 failed with ENOTFOUND
+489 http fetch GET https://registry.npmjs.org/@tailwindcss/postcss/-/postcss-4.1.8.tgz attempt 1 failed with ENOTFOUND
+490 http fetch GET https://registry.npmjs.org/@tailwindcss/oxide-darwin-arm64/-/oxide-darwin-arm64-4.1.8.tgz attempt 1 failed with ENOTFOUND
+491 http fetch GET https://registry.npmjs.org/react-is/-/react-is-16.13.1.tgz attempt 1 failed with ENOTFOUND
+492 http fetch GET https://registry.npmjs.org/npm attempt 2 failed with ENOTFOUND
+493 http fetch GET https://registry.npmjs.org/@types/react/-/react-19.1.7.tgz attempt 2 failed with ENOTFOUND
+494 http fetch GET https://registry.npmjs.org/@types/phoenix/-/phoenix-1.6.6.tgz attempt 2 failed with ENOTFOUND
+495 http fetch GET https://registry.npmjs.org/@types/react-dom/-/react-dom-19.1.6.tgz attempt 2 failed with ENOTFOUND
+496 http fetch GET https://registry.npmjs.org/@types/d3-timer/-/d3-timer-3.0.2.tgz attempt 2 failed with ENOTFOUND
+497 http fetch GET https://registry.npmjs.org/@types/d3-time/-/d3-time-3.0.4.tgz attempt 2 failed with ENOTFOUND
+498 http fetch GET https://registry.npmjs.org/@types/node/-/node-20.19.0.tgz attempt 2 failed with ENOTFOUND
+499 http fetch GET https://registry.npmjs.org/@types/d3-shape/-/d3-shape-3.1.7.tgz attempt 2 failed with ENOTFOUND
+500 http fetch GET https://registry.npmjs.org/@types/d3-scale/-/d3-scale-4.0.9.tgz attempt 2 failed with ENOTFOUND
+501 http fetch GET https://registry.npmjs.org/@types/d3-path/-/d3-path-3.1.1.tgz attempt 2 failed with ENOTFOUND
+502 http fetch GET https://registry.npmjs.org/@types/d3-ease/-/d3-ease-3.0.2.tgz attempt 2 failed with ENOTFOUND
+503 http fetch GET https://registry.npmjs.org/@types/d3-interpolate/-/d3-interpolate-3.0.4.tgz attempt 2 failed with ENOTFOUND
+504 http fetch GET https://registry.npmjs.org/@types/d3-color/-/d3-color-3.1.3.tgz attempt 2 failed with ENOTFOUND
+505 http fetch GET https://registry.npmjs.org/@types/d3-array/-/d3-array-3.2.1.tgz attempt 2 failed with ENOTFOUND
+506 http fetch GET https://registry.npmjs.org/@tailwindcss/postcss/-/postcss-4.1.8.tgz attempt 2 failed with ENOTFOUND
+507 http fetch GET https://registry.npmjs.org/@tailwindcss/oxide-darwin-arm64/-/oxide-darwin-arm64-4.1.8.tgz attempt 2 failed with ENOTFOUND
+508 http fetch GET https://registry.npmjs.org/npm attempt 3 failed with ENOTFOUND
+509 http fetch GET https://registry.npmjs.org/@types/react/-/react-19.1.7.tgz attempt 3 failed with ENOTFOUND
+510 http fetch GET https://registry.npmjs.org/@types/phoenix/-/phoenix-1.6.6.tgz attempt 3 failed with ENOTFOUND
+511 http fetch GET https://registry.npmjs.org/@types/react-dom/-/react-dom-19.1.6.tgz attempt 3 failed with ENOTFOUND
+512 http fetch GET https://registry.npmjs.org/@types/d3-timer/-/d3-timer-3.0.2.tgz attempt 3 failed with ENOTFOUND
+513 http fetch GET https://registry.npmjs.org/@types/d3-time/-/d3-time-3.0.4.tgz attempt 3 failed with ENOTFOUND
+514 http fetch GET https://registry.npmjs.org/@types/node/-/node-20.19.0.tgz attempt 3 failed with ENOTFOUND
+515 http fetch GET https://registry.npmjs.org/@types/d3-shape/-/d3-shape-3.1.7.tgz attempt 3 failed with ENOTFOUND
+516 http fetch GET https://registry.npmjs.org/@types/d3-scale/-/d3-scale-4.0.9.tgz attempt 3 failed with ENOTFOUND
+517 http fetch GET https://registry.npmjs.org/@types/d3-path/-/d3-path-3.1.1.tgz attempt 3 failed with ENOTFOUND
+518 http fetch GET https://registry.npmjs.org/@types/d3-ease/-/d3-ease-3.0.2.tgz attempt 3 failed with ENOTFOUND
+519 http fetch GET https://registry.npmjs.org/@types/d3-interpolate/-/d3-interpolate-3.0.4.tgz attempt 3 failed with ENOTFOUND
+520 http fetch GET https://registry.npmjs.org/@types/d3-color/-/d3-color-3.1.3.tgz attempt 3 failed with ENOTFOUND
+521 http fetch GET https://registry.npmjs.org/@types/d3-array/-/d3-array-3.2.1.tgz attempt 3 failed with ENOTFOUND
+522 http fetch GET https://registry.npmjs.org/@tailwindcss/postcss/-/postcss-4.1.8.tgz attempt 3 failed with ENOTFOUND
+523 http fetch GET https://registry.npmjs.org/@tailwindcss/oxide-darwin-arm64/-/oxide-darwin-arm64-4.1.8.tgz attempt 3 failed with ENOTFOUND
+524 verbose reify failed optional dependency /Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-darwin-arm64
+525 silly reify mark deleted [
+525 silly reify   '/Users/Arias/.openclaw/workspace/Monkey-site/node_modules/@tailwindcss/oxide-darwin-arm64'
+525 silly reify ]
+526 verbose cwd /Users/Arias/.openclaw/workspace/Monkey-site
+527 verbose os Darwin 25.2.0
+528 verbose node v22.22.0
+529 verbose npm  v10.9.4
+530 error Exit handler never called!
+531 error This is an error with npm itself. Please report this error at:
+532 error   <https://github.com/npm/cli/issues>
+533 verbose exit 1
+534 verbose code 1
+535 error A complete log of this run can be found in: /Users/Arias/.openclaw/workspace/Monkey-site/.npm-cache/_logs/2026-02-20T09_39_05_191Z-debug-0.log

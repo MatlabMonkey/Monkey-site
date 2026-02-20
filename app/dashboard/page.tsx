@@ -1,10 +1,11 @@
 "use client"
 
+import type React from "react"
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts"
 import PinGate from "../components/PinGate"
-import { Calendar, Heart, Zap, Activity, Brain, Target, Sparkles, ArrowRight } from "lucide-react"
+import { Calendar, Heart, Zap, Activity, Brain, Target, Sparkles, ArrowRight, Compass } from "lucide-react"
 
 type QuestionType = "text" | "number" | "rating" | "boolean" | "multiselect" | "date"
 
@@ -90,15 +91,19 @@ function formatDateLabel(dateStr: string): string {
 export default function Dashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
       setLoading(true)
+      setError(null)
       try {
         const res = await fetch("/api/journal/dashboard")
         if (!res.ok) {
           const err = await res.json().catch(() => ({}))
-          console.error("Dashboard: API error", err.error || res.statusText)
+          const message = err.error || res.statusText || "Failed to load dashboard"
+          console.error("Dashboard: API error", message)
+          setError(message)
           setStats(null)
           return
         }
@@ -235,6 +240,11 @@ export default function Dashboard() {
           lastEntryStr,
           chartData,
         })
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to load dashboard"
+        console.error("Dashboard: unexpected error", message)
+        setError(message)
+        setStats(null)
       } finally {
         setLoading(false)
       }
@@ -243,7 +253,7 @@ export default function Dashboard() {
     load()
   }, [])
 
-  if (loading || !stats) {
+  if (loading) {
     return (
       <PinGate>
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center text-slate-100">
@@ -255,6 +265,35 @@ export default function Dashboard() {
             <div className="space-y-2">
               <h2 className="text-2xl font-bold text-slate-50">Loading dashboard</h2>
               <p className="text-slate-300">Fetching your journal insights…</p>
+            </div>
+          </div>
+        </div>
+      </PinGate>
+    )
+  }
+
+  if (error || !stats) {
+    return (
+      <PinGate>
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100 flex items-center justify-center p-6">
+          <div className="max-w-md w-full rounded-2xl border border-slate-800 bg-slate-900/80 p-6 space-y-4 text-center">
+            <h2 className="text-2xl font-bold text-slate-50">Dashboard unavailable</h2>
+            <p className="text-slate-300 text-sm">{error || "Unable to load dashboard data."}</p>
+            <div className="flex items-center justify-center gap-3">
+              <Link
+                href="/journal"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 text-sm font-medium hover:from-purple-400 hover:to-indigo-400 transition-all"
+              >
+                <ArrowRight className="w-4 h-4" />
+                New Entry
+              </Link>
+              <Link
+                href="/journal/explorer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-slate-700 bg-slate-900 text-sm font-medium hover:bg-slate-800 transition-all"
+              >
+                <Compass className="w-4 h-4" />
+                Explorer
+              </Link>
             </div>
           </div>
         </div>
@@ -288,7 +327,14 @@ export default function Dashboard() {
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 text-sm font-medium shadow-md hover:from-purple-400 hover:to-indigo-400 transition-all"
               >
                 <ArrowRight className="w-4 h-4" />
-                New entry
+                New Entry
+              </Link>
+              <Link
+                href="/journal/explorer"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-slate-700 bg-slate-900/70 text-sm font-medium hover:bg-slate-800 transition-all"
+              >
+                <Compass className="w-4 h-4" />
+                Explorer
               </Link>
               <div className="px-4 py-2 rounded-full border border-slate-700 bg-slate-900/70 text-xs font-medium">
                 {stats.daysBehind === 0
@@ -641,4 +687,3 @@ function FieldBlock({
     </div>
   )
 }
-
