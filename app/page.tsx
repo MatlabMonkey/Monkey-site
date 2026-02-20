@@ -445,6 +445,11 @@ export default function Home() {
             Welcome zach
           </h1>
 
+          {/* Arias test message */}
+          <p className="text-2xl md:text-3xl font-semibold text-green-300">
+            It worked. 🦧
+          </p>
+
           {/* Rotating Quote */}
           <div className="text-xl md:text-2xl text-white/80 max-w-2xl mx-auto leading-relaxed min-h-[60px] flex items-center justify-center">
             <span className="italic">{quotes[quoteIndex]}</span>
