@@ -28,9 +28,26 @@ function toValue(row: AnswerRow, questionType: string): unknown {
   return row.value_text ?? null;
 }
 
+// Supabase .in() uses GET params — large arrays exceed URL limits and return 400.
+// Batch into chunks to avoid this.
+async function fetchAnswersInBatches(ids: string[], chunkSize = 50): Promise<{ data: AnswerRow[] | null; error: Error | null }> {
+  const allRows: AnswerRow[] = [];
+  for (let i = 0; i < ids.length; i += chunkSize) {
+    const chunk = ids.slice(i, i + chunkSize);
+    const { data, error } = await supabase
+      .from("journal_answer")
+      .select("entry_id, question_id, value_text, value_number, value_boolean, value_json")
+      .in("entry_id", chunk);
+    if (error) return { data: null, error: new Error(error.message) };
+    if (data) allRows.push(...(data as AnswerRow[]));
+  }
+  return { data: allRows, error: null };
+}
+
 /**
  * GET /api/journal/dashboard
  * Returns submitted journal entries and answers grouped by day.
+ * Batches .in() queries to avoid Supabase 400 URL-length errors.
  */
 export async function GET() {
   try {
@@ -58,10 +75,7 @@ export async function GET() {
       return NextResponse.json({ entries: entryRows, days });
     }
 
-    const { data: answersData, error: answersError } = await supabase
-      .from("journal_answer")
-      .select("entry_id, question_id, value_text, value_number, value_boolean, value_json")
-      .in("entry_id", ids);
+    const { data: answersData, error: answersError } = await fetchAnswersInBatches(ids);
 
     if (answersError) {
       console.error("Dashboard API: journal_answer error", answersError.message);
@@ -93,7 +107,6 @@ export async function GET() {
     for (const answer of answerRows) {
       const question = questionMap.get(answer.question_id);
       if (!question?.key) continue;
-
       const value = toValue(answer, question.question_type);
       const current = byEntry.get(answer.entry_id) ?? {};
       current[question.key] = value;
