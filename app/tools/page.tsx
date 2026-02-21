@@ -47,6 +47,20 @@ export default function ToolsPage() {
               </div>
             </div>
           </Link>
+          <Link
+            href="/tools/yoav"
+            className="group rounded-2xl border border-slate-700/70 bg-slate-900/60 p-5 hover:bg-slate-800/70 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl border border-yellow-700/40 bg-yellow-900/30 p-2">
+                <span className="text-lg">🐐</span>
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Yoav Gillath</h2>
+                <p className="text-sm text-slate-400">USC · NYC · Knows Everyone</p>
+              </div>
+            </div>
+          </Link>
         </div>
       </div>
     </main>
