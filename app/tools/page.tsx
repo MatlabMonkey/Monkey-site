@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ArrowLeft, Calculator } from "lucide-react"
+import { ArrowLeft, Calculator, Swords } from "lucide-react"
 
 export default function ToolsPage() {
   return (
@@ -30,6 +30,21 @@ export default function ToolsPage() {
               <div>
                 <h2 className="text-lg font-semibold">BAC Calculator</h2>
                 <p className="text-sm text-slate-400">Track your session and estimate BAC</p>
+              </div>
+            </div>
+          </Link>
+
+          <Link
+            href="/tools/matt"
+            className="group rounded-2xl border border-slate-700/70 bg-slate-900/60 p-5 hover:bg-slate-800/70 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl border border-rose-700/40 bg-rose-900/30 p-2">
+                <Swords className="w-5 h-5 text-rose-300" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">The Matt Dembiak Report</h2>
+                <p className="text-sm text-slate-400">An evidence-based investigation</p>
               </div>
             </div>
           </Link>
