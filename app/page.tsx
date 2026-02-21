@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { BookOpen, CheckSquare, Wrench } from "lucide-react"
+import { BookOpen, CheckSquare, Wrench, MessageCircle } from "lucide-react"
 import { useEffect, useState } from "react"
 
 // Daily nature photo system with dynamic Unsplash API
@@ -450,7 +450,7 @@ export default function Home() {
           </div>
 
           {/* Feature Buttons */}
-          <div className="grid md:grid-cols-3 gap-6 mt-12">
+          <div className="grid md:grid-cols-2 gap-6 mt-12">
             <Link
               href="/dashboard"
               className="group bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 flex flex-col items-center justify-center shadow-lg hover:shadow-xl hover:scale-105"
@@ -474,6 +474,14 @@ export default function Home() {
               <Wrench className="w-8 h-8 text-amber-300 mb-4" />
               <h3 className="text-lg font-semibold text-white mb-2">Tools</h3>
               <p className="text-white/70 text-sm">Utilities and calculators</p>
+            </Link>
+            <Link
+              href="/questions"
+              className="group bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 flex flex-col items-center justify-center shadow-lg hover:shadow-xl hover:scale-105"
+            >
+              <MessageCircle className="w-8 h-8 text-sky-300 mb-4" />
+              <h3 className="text-lg font-semibold text-white mb-2">Q&A</h3>
+              <p className="text-white/70 text-sm">Ask Zach anything</p>
             </Link>
           </div>
 
