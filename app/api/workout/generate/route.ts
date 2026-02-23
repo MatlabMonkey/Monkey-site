@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { WORKOUT_SYSTEM_PROMPT } from "@/lib/workoutSystemPrompt"
 
-export const runtime = "edge"
-
 const DAY_TYPES = ["Push", "Pull", "Legs", "Upper", "Lower", "Full"] as const
 const MIN_DURATION_MINUTES = 20
 const MAX_DURATION_MINUTES = 180
