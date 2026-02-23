@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Clock, Users, Flame, Check, ShoppingCart, ChefHat } from "lucide-react"
+import { ArrowLeft, Clock, Users, Flame, Check, ShoppingCart, ChefHat, RefreshCw } from "lucide-react"
 
 interface Ingredient {
   item: string
@@ -45,6 +45,7 @@ const categoryLabels: Record<string, string> = {
 export default function MealPrepPage() {
   const [recipe, setRecipe] = useState<Recipe | null>(null)
   const [loading, setLoading] = useState(true)
+  const [generating, setGenerating] = useState(false)
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set())
 
   useEffect(() => {
@@ -61,6 +62,22 @@ export default function MealPrepPage() {
     }
     fetchRecipe()
   }, [])
+
+  const generateRecipe = async () => {
+    setGenerating(true)
+    try {
+      const res = await fetch('/api/meal-prep/generate', { method: 'POST' })
+      const data = await res.json()
+      if (data.recipe) {
+        setRecipe(data.recipe)
+        setCheckedItems(new Set())
+      }
+    } catch (err) {
+      console.error('Failed to generate recipe:', err)
+    } finally {
+      setGenerating(false)
+    }
+  }
 
   const toggleItem = (item: string) => {
     const newChecked = new Set(checkedItems)
@@ -103,10 +120,17 @@ export default function MealPrepPage() {
           <div className="mt-12 text-center">
             <ChefHat className="w-16 h-16 mx-auto text-[rgb(var(--brand))] mb-4" />
             <h1 className="text-3xl font-bold mb-2">No Recipe Yet</h1>
-            <p className="text-[rgb(var(--text-muted))] max-w-md mx-auto">
+            <p className="text-[rgb(var(--text-muted))] max-w-md mx-auto mb-6">
               Your weekly meal prep recipe will appear here Sunday at 9am. 
-              Check back soon!
+              Or generate one now!
             </p>
+            <button
+              onClick={generateRecipe}
+              disabled={generating}
+              className="px-6 py-3 rounded-full bg-[rgb(var(--brand))] text-[rgb(var(--bg))] font-semibold hover:bg-[rgb(var(--brand-strong))] transition-colors disabled:opacity-50"
+            >
+              {generating ? 'Generating...' : 'Generate Recipe'}
+            </button>
           </div>
         </div>
       </main>
@@ -134,7 +158,17 @@ export default function MealPrepPage() {
               Week of {new Date(recipe.week_starting).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
             </span>
           </div>
-          <h1 className="text-4xl font-bold">{recipe.recipe_name}</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-4xl font-bold">{recipe.recipe_name}</h1>
+            <button
+              onClick={generateRecipe}
+              disabled={generating}
+              className="p-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2))] transition-colors disabled:opacity-50"
+              title="Generate new recipe"
+            >
+              <RefreshCw className={`w-5 h-5 text-[rgb(var(--text-muted))] ${generating ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
           
           {/* Stats */}
           <div className="flex flex-wrap gap-4 mt-4">
