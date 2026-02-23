@@ -28,7 +28,6 @@ export interface GenerateWorkoutRequest {
   day_type: DayType
   duration_minutes: number
   notes?: string
-  skiing_tomorrow?: boolean
 }
 
 export interface WorkoutApiResponse {

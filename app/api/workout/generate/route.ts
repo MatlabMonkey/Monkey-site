@@ -9,7 +9,6 @@ type GenerateRequest = {
   day_type: "Push" | "Pull" | "Legs" | "Upper" | "Lower" | "Full"
   duration_minutes: number
   notes?: string
-  skiing_tomorrow?: boolean
 }
 
 type GeneratedExercise = {
@@ -135,7 +134,6 @@ export async function POST(request: NextRequest) {
       day_type: body.day_type,
       duration_minutes: body.duration_minutes,
       notes: body.notes || "",
-      skiing_tomorrow: Boolean(body.skiing_tomorrow),
     }
 
     const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
@@ -146,13 +144,13 @@ export async function POST(request: NextRequest) {
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-3-5-sonnet-20241022",
+        model: "claude-sonnet-4-6",
         max_tokens: 2200,
         system: WORKOUT_SYSTEM_PROMPT,
         messages: [
           {
             role: "user",
-            content: `Generate a ${body.duration_minutes}-minute ${body.day_type} workout. skiing_tomorrow=${Boolean(body.skiing_tomorrow)}. Additional notes: ${body.notes || "none"}. Return JSON only.`,
+            content: `Generate a ${body.duration_minutes}-minute ${body.day_type} workout. Additional notes: ${body.notes || "none"}. Return JSON only.`,
           },
         ],
       }),

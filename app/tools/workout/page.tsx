@@ -28,7 +28,6 @@ export default function WorkoutToolPage() {
   const [dayType, setDayType] = useState<DayType>("Upper")
   const [durationMinutes, setDurationMinutes] = useState(45)
   const [notes, setNotes] = useState("")
-  const [skiingTomorrow, setSkiingTomorrow] = useState(false)
   const [activeWorkout, setActiveWorkout] = useState<Workout | null>(null)
   const [history, setHistory] = useState<Workout[]>([])
   const [loading, setLoading] = useState(true)
@@ -76,7 +75,6 @@ export default function WorkoutToolPage() {
         day_type: dayType,
         duration_minutes: durationMinutes,
         notes: notes.trim() || undefined,
-        skiing_tomorrow: skiingTomorrow,
       }
 
       const res = await fetch("/api/workout/generate", {
@@ -257,15 +255,6 @@ export default function WorkoutToolPage() {
                     onChange={(e) => setDurationMinutes(Number(e.target.value))}
                     className="w-full accent-[rgb(var(--brand))]"
                   />
-                  <label className="mt-4 inline-flex items-center gap-2 text-sm text-[rgb(var(--text-muted))]">
-                    <input
-                      type="checkbox"
-                      checked={skiingTomorrow}
-                      onChange={(e) => setSkiingTomorrow(e.target.checked)}
-                      className="h-4 w-4 accent-[rgb(var(--brand))]"
-                    />
-                    Skiing tomorrow (auto-reduce RPE/volume)
-                  </label>
                 </div>
               </div>
 
