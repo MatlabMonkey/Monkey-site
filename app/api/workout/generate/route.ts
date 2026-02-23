@@ -239,7 +239,7 @@ export async function POST(request: NextRequest) {
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: process.env.ANTHROPIC_WORKOUT_MODEL || "claude-3-5-sonnet-latest",
+        model: process.env.ANTHROPIC_WORKOUT_MODEL || "claude-sonnet-4-5",
         max_tokens: 2200,
         system: WORKOUT_SYSTEM_PROMPT,
         messages: [
@@ -259,7 +259,7 @@ export async function POST(request: NextRequest) {
         {
           provider: "anthropic",
           endpoint: "https://api.anthropic.com/v1/messages",
-          model: process.env.ANTHROPIC_WORKOUT_MODEL || "claude-3-5-sonnet-latest",
+          model: process.env.ANTHROPIC_WORKOUT_MODEL || "claude-sonnet-4-5",
           status: anthropicResponse.status,
           status_text: anthropicResponse.statusText,
           response_body: errorText,
@@ -280,7 +280,7 @@ export async function POST(request: NextRequest) {
       return errorResponse(500, new Error("Anthropic response was empty"), {
         provider: "anthropic",
         endpoint: "https://api.anthropic.com/v1/messages",
-        model: process.env.ANTHROPIC_WORKOUT_MODEL || "claude-3-5-sonnet-latest",
+        model: process.env.ANTHROPIC_WORKOUT_MODEL || "claude-sonnet-4-5",
         raw_response: anthropicData,
       })
     }
