@@ -24,7 +24,6 @@ Exercise library by category:
 
 Programming rules:
 - Default intensity RPE 7-8 with 2-3 RIR.
-- If skiing_tomorrow=true: target RPE 6-7, cut volume, avoid novel/eccentric-heavy work.
 - Match requested day_type and duration.
 - Keep exercises realistic for gym flow and transitions.
 

@@ -7,14 +7,31 @@ import type { DayType, ExerciseMeta, GenerateWorkoutRequest, Workout, WorkoutApi
 
 const DAY_TYPES: DayType[] = ["Push", "Pull", "Legs", "Upper", "Lower", "Full"]
 const USER_ID = "demo-user"
+const MIN_DURATION_MINUTES = 20
+const MAX_DURATION_MINUTES = 180
 
-function parseMeta(notes: string | null): ExerciseMeta {
-  if (!notes) return {}
+function parseMeta(notes: string | null | undefined): ExerciseMeta {
+  if (!notes || typeof notes !== "string") return {}
   try {
-    return JSON.parse(notes) as ExerciseMeta
+    const parsed = JSON.parse(notes) as unknown
+    return parsed && typeof parsed === "object" ? (parsed as ExerciseMeta) : {}
   } catch {
     return {}
   }
+}
+
+async function readJsonSafe(response: Response): Promise<Record<string, unknown>> {
+  const text = await response.text()
+  if (!text) return {}
+  try {
+    return JSON.parse(text) as Record<string, unknown>
+  } catch {
+    return {}
+  }
+}
+
+function pickApiError(data: Record<string, unknown>, fallback: string) {
+  return typeof data.error === "string" && data.error.trim() ? data.error : fallback
 }
 
 function completionPercent(exercises: WorkoutExercise[]) {
@@ -40,10 +57,11 @@ export default function WorkoutToolPage() {
     setError(null)
     try {
       const res = await fetch(`/api/workout?user_id=${USER_ID}`)
-      const data = (await res.json()) as WorkoutApiResponse & { error?: string }
-      if (!res.ok) throw new Error(data.error || "Failed to load workouts")
-      setActiveWorkout(data.activeWorkout)
-      setHistory(data.history || [])
+      const data = await readJsonSafe(res)
+      if (!res.ok) throw new Error(pickApiError(data, "Failed to load workouts"))
+      const typed = data as Partial<WorkoutApiResponse>
+      setActiveWorkout(typed.activeWorkout ?? null)
+      setHistory(Array.isArray(typed.history) ? typed.history : [])
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load workouts")
     } finally {
@@ -63,11 +81,15 @@ export default function WorkoutToolPage() {
 
     try {
       if (activeWorkout) {
-        await fetch("/api/workout", {
+        const archiveRes = await fetch("/api/workout", {
           method: "PATCH",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ workout_id: activeWorkout.id, status: "archived" }),
         })
+        if (!archiveRes.ok) {
+          const archiveData = await readJsonSafe(archiveRes)
+          throw new Error(pickApiError(archiveData, "Failed to archive previous workout"))
+        }
       }
 
       const payload: GenerateWorkoutRequest & { user_id: string } = {
@@ -83,9 +105,9 @@ export default function WorkoutToolPage() {
         body: JSON.stringify(payload),
       })
 
-      const data = await res.json()
+      const data = await readJsonSafe(res)
       if (!res.ok) {
-        throw new Error(data.error || "Failed to generate workout")
+        throw new Error(pickApiError(data, "Failed to generate workout"))
       }
 
       await loadWorkouts()
@@ -118,8 +140,8 @@ export default function WorkoutToolPage() {
         }),
       })
 
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Failed to update exercise")
+      const data = await readJsonSafe(res)
+      if (!res.ok) throw new Error(pickApiError(data, "Failed to update exercise"))
 
       setActiveWorkout((prev) => {
         if (!prev) return prev
@@ -150,8 +172,8 @@ export default function WorkoutToolPage() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ workout_id: activeWorkout.id, status: "completed" }),
       })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || "Failed to complete workout")
+      const data = await readJsonSafe(res)
+      if (!res.ok) throw new Error(pickApiError(data, "Failed to complete workout"))
       await loadWorkouts()
       setTab("history")
     } catch (err) {
@@ -248,8 +270,8 @@ export default function WorkoutToolPage() {
                   <input
                     id="duration"
                     type="range"
-                    min={20}
-                    max={90}
+                    min={MIN_DURATION_MINUTES}
+                    max={MAX_DURATION_MINUTES}
                     step={5}
                     value={durationMinutes}
                     onChange={(e) => setDurationMinutes(Number(e.target.value))}

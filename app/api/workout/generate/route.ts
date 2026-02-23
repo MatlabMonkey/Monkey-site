@@ -4,10 +4,15 @@ import { WORKOUT_SYSTEM_PROMPT } from "@/lib/workoutSystemPrompt"
 
 export const runtime = "edge"
 
+const DAY_TYPES = ["Push", "Pull", "Legs", "Upper", "Lower", "Full"] as const
+const MIN_DURATION_MINUTES = 20
+const MAX_DURATION_MINUTES = 180
+const USER_ID_PATTERN = /^[A-Za-z0-9._:-]{1,128}$/
+
 type GenerateRequest = {
   user_id?: string
-  day_type: "Push" | "Pull" | "Legs" | "Upper" | "Lower" | "Full"
-  duration_minutes: number
+  day_type?: (typeof DAY_TYPES)[number]
+  duration_minutes?: number
   notes?: string
 }
 
@@ -39,6 +44,20 @@ type GeneratedWorkout = {
   notes?: string[]
 }
 
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object"
+}
+
+function normalizeUserId(bodyUserId: unknown, headerUserId: string | null): string | null {
+  const candidate = typeof bodyUserId === "string" ? bodyUserId.trim() : (headerUserId?.trim() ?? "")
+  if (!candidate) return "demo-user"
+  return USER_ID_PATTERN.test(candidate) ? candidate : null
+}
+
+function isValidDayType(dayType: unknown): dayType is (typeof DAY_TYPES)[number] {
+  return typeof dayType === "string" && DAY_TYPES.includes(dayType as (typeof DAY_TYPES)[number])
+}
+
 function sanitizeWorkout(raw: unknown): GeneratedWorkout {
   const fallback: GeneratedWorkout = {
     title: "Generated Workout",
@@ -47,39 +66,42 @@ function sanitizeWorkout(raw: unknown): GeneratedWorkout {
     notes: [],
   }
 
-  if (!raw || typeof raw !== "object") return fallback
+  if (!isObjectRecord(raw)) return fallback
 
-  const parsed = raw as Record<string, unknown>
+  const parsed = raw
   const blocks = Array.isArray(parsed.blocks) ? parsed.blocks : []
 
   return {
     title: typeof parsed.title === "string" ? parsed.title : fallback.title,
     warmup: Array.isArray(parsed.warmup)
       ? parsed.warmup
-          .filter((w) => w && typeof w === "object")
+          .filter(isObjectRecord)
           .map((w) => {
-            const warm = w as Record<string, unknown>
+            const warm = w
+            const duration = Number(warm.duration_minutes)
             return {
               name: String(warm.name ?? "Warm-up"),
-              duration_minutes: typeof warm.duration_minutes === "number" ? warm.duration_minutes : 3,
+              duration_minutes: Number.isFinite(duration) && duration > 0 ? duration : 3,
               cues: Array.isArray(warm.cues) ? warm.cues.map(String) : [],
               substitutions: Array.isArray(warm.substitutions) ? warm.substitutions.map(String) : [],
             }
           })
       : [],
     blocks: blocks
-      .filter((b) => b && typeof b === "object")
+      .filter(isObjectRecord)
       .map((b, index) => {
-        const block = b as Record<string, unknown>
+        const block = b
         const exercises = Array.isArray(block.exercises) ? block.exercises : []
+        const startMinute = Number(block.start_minute)
+        const endMinute = Number(block.end_minute)
         return {
           name: typeof block.name === "string" ? block.name : `Block ${index + 1}`,
-          start_minute: typeof block.start_minute === "number" ? block.start_minute : index * 10,
-          end_minute: typeof block.end_minute === "number" ? block.end_minute : index * 10 + 10,
+          start_minute: Number.isFinite(startMinute) ? startMinute : index * 10,
+          end_minute: Number.isFinite(endMinute) ? endMinute : index * 10 + 10,
           exercises: exercises
-            .filter((e) => e && typeof e === "object")
+            .filter(isObjectRecord)
             .map((e, exerciseIndex) => {
-              const ex = e as Record<string, unknown>
+              const ex = e
               const sets = Number(ex.sets)
               const rest = Number(ex.rest_seconds)
               return {
@@ -99,22 +121,52 @@ function sanitizeWorkout(raw: unknown): GeneratedWorkout {
 }
 
 function extractJson(text: string): unknown {
-  const match = text.match(/\{[\s\S]*\}/)
-  if (!match) throw new Error("Claude response did not include JSON")
-  return JSON.parse(match[0])
+  for (let start = 0; start < text.length; start += 1) {
+    if (text[start] !== "{") continue
+    for (let end = text.length - 1; end > start; end -= 1) {
+      if (text[end] !== "}") continue
+      const candidate = text.slice(start, end + 1)
+      try {
+        return JSON.parse(candidate)
+      } catch {
+        // Continue searching for the first parseable JSON object.
+      }
+    }
+  }
+
+  throw new Error("Claude response did not include valid JSON")
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as GenerateRequest
-    const userId = body.user_id?.trim() || request.headers.get("x-user-id") || "demo-user"
-
-    if (!body.day_type) {
-      return NextResponse.json({ error: "day_type is required" }, { status: 400 })
+    const userId = normalizeUserId(body.user_id, request.headers.get("x-user-id"))
+    if (!userId) {
+      return NextResponse.json({ error: "user_id contains invalid characters" }, { status: 400 })
     }
 
-    if (!body.duration_minutes || body.duration_minutes < 20 || body.duration_minutes > 90) {
-      return NextResponse.json({ error: "duration_minutes must be between 20 and 90" }, { status: 400 })
+    if (!isValidDayType(body.day_type)) {
+      return NextResponse.json({ error: "day_type must be one of Push, Pull, Legs, Upper, Lower, Full" }, { status: 400 })
+    }
+    const dayType = body.day_type
+
+    const durationMinutes = body.duration_minutes
+
+    if (
+      typeof durationMinutes !== "number" ||
+      !Number.isFinite(durationMinutes) ||
+      !Number.isInteger(durationMinutes) ||
+      durationMinutes < MIN_DURATION_MINUTES ||
+      durationMinutes > MAX_DURATION_MINUTES
+    ) {
+      return NextResponse.json(
+        { error: `duration_minutes must be an integer between ${MIN_DURATION_MINUTES} and ${MAX_DURATION_MINUTES}` },
+        { status: 400 },
+      )
+    }
+
+    if (body.notes !== undefined && typeof body.notes !== "string") {
+      return NextResponse.json({ error: "notes must be a string when provided" }, { status: 400 })
     }
 
     const anthropicKey = process.env.ANTHROPIC_SECRET_API_KEY || process.env.ANTHROPIC_API_KEY
@@ -123,17 +175,20 @@ export async function POST(request: NextRequest) {
     }
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
     if (!supabaseUrl || !serviceRoleKey) {
       return NextResponse.json({ error: "Supabase credentials are not configured" }, { status: 500 })
     }
 
-    const supabase = createClient(supabaseUrl, serviceRoleKey)
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false, autoRefreshToken: false },
+    })
+    const notes = body.notes?.trim()
 
     const promptPayload = {
-      day_type: body.day_type,
-      duration_minutes: body.duration_minutes,
-      notes: body.notes || "",
+      day_type: dayType,
+      duration_minutes: durationMinutes,
+      notes: notes || "",
     }
 
     const anthropicResponse = await fetch("https://api.anthropic.com/v1/messages", {
@@ -144,13 +199,13 @@ export async function POST(request: NextRequest) {
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-4-6",
+        model: process.env.ANTHROPIC_WORKOUT_MODEL || "claude-3-5-sonnet-latest",
         max_tokens: 2200,
         system: WORKOUT_SYSTEM_PROMPT,
         messages: [
           {
             role: "user",
-            content: `Generate a ${body.duration_minutes}-minute ${body.day_type} workout. Additional notes: ${body.notes || "none"}. Return JSON only.`,
+            content: `Generate a ${durationMinutes}-minute ${dayType} workout. Additional notes: ${notes || "none"}. Return JSON only.`,
           },
         ],
       }),
@@ -162,8 +217,14 @@ export async function POST(request: NextRequest) {
     }
 
     const anthropicData = await anthropicResponse.json()
-    const text = anthropicData?.content?.[0]?.text
-    if (!text || typeof text !== "string") {
+    const textParts = Array.isArray(anthropicData?.content)
+      ? anthropicData.content
+          .filter((part: unknown) => isObjectRecord(part) && typeof part.text === "string")
+          .map((part: Record<string, unknown>) => String(part.text))
+      : []
+
+    const text = textParts.join("\n").trim()
+    if (!text) {
       return NextResponse.json({ error: "Anthropic response was empty" }, { status: 500 })
     }
 
@@ -176,8 +237,8 @@ export async function POST(request: NextRequest) {
       .from("workouts")
       .insert({
         user_id: userId,
-        day_type: body.day_type,
-        duration_minutes: body.duration_minutes,
+        day_type: dayType,
+        duration_minutes: durationMinutes,
         status: "active",
       })
       .select()
