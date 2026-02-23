@@ -4,7 +4,7 @@
  * Fetches last 30 days of usage from Anthropic API and populates Supabase
  */
 
-const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_SECRET_API_KEY || process.env.ANTHROPIC_API_KEY;
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
