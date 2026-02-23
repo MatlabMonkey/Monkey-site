@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { BookOpen, CheckSquare, Wrench, MessageCircle } from "lucide-react"
+import { BookOpen, CheckSquare, Wrench, MessageCircle, BarChart3 } from "lucide-react"
 import { useEffect, useState } from "react"
 
 // Daily nature photo system with dynamic Unsplash API
@@ -450,7 +450,7 @@ export default function Home() {
           </div>
 
           {/* Feature Buttons */}
-          <div className="grid md:grid-cols-2 gap-6 mt-12">
+          <div className="grid gap-6 mt-12 md:grid-cols-3">
             <Link
               href="/dashboard"
               className="group bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 flex flex-col items-center justify-center shadow-lg hover:shadow-xl hover:scale-105"
@@ -482,6 +482,14 @@ export default function Home() {
               <MessageCircle className="w-8 h-8 text-sky-300 mb-4" />
               <h3 className="text-lg font-semibold text-white mb-2">Q&A</h3>
               <p className="text-white/70 text-sm">Ask Zach anything</p>
+            </Link>
+            <Link
+              href="/arias"
+              className="group bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 flex flex-col items-center justify-center shadow-lg hover:shadow-xl hover:scale-105"
+            >
+              <BarChart3 className="w-8 h-8 text-amber-200 mb-4" />
+              <h3 className="text-lg font-semibold text-white mb-2">Arias</h3>
+              <p className="text-white/70 text-sm">View OpenClaw usage dashboard</p>
             </Link>
           </div>
 
