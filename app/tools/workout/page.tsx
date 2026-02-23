@@ -31,7 +31,15 @@ async function readJsonSafe(response: Response): Promise<Record<string, unknown>
 }
 
 function pickApiError(data: Record<string, unknown>, fallback: string) {
-  return typeof data.error === "string" && data.error.trim() ? data.error : fallback
+  const base = typeof data.error === "string" && data.error.trim() ? data.error : fallback
+  const details = data.details
+  if (!details) return base
+  if (typeof details === "string") return `${base}\n${details}`
+  try {
+    return `${base}\n${JSON.stringify(details, null, 2)}`
+  } catch {
+    return base
+  }
 }
 
 function completionPercent(exercises: WorkoutExercise[]) {
@@ -63,6 +71,7 @@ export default function WorkoutToolPage() {
       setActiveWorkout(typed.activeWorkout ?? null)
       setHistory(Array.isArray(typed.history) ? typed.history : [])
     } catch (err) {
+      console.error("[WorkoutToolPage] loadWorkouts failed", err)
       setError(err instanceof Error ? err.message : "Failed to load workouts")
     } finally {
       setLoading(false)
@@ -107,12 +116,19 @@ export default function WorkoutToolPage() {
 
       const data = await readJsonSafe(res)
       if (!res.ok) {
+        console.error("[WorkoutToolPage] generateWorkout API error", {
+          status: res.status,
+          statusText: res.statusText,
+          data,
+          payload,
+        })
         throw new Error(pickApiError(data, "Failed to generate workout"))
       }
 
       await loadWorkouts()
       setTab("generator")
     } catch (err) {
+      console.error("[WorkoutToolPage] generateWorkout failed", err)
       setError(err instanceof Error ? err.message : "Failed to generate workout")
     } finally {
       setGenerating(false)
@@ -155,6 +171,7 @@ export default function WorkoutToolPage() {
         }
       })
     } catch (err) {
+      console.error("[WorkoutToolPage] toggleExercise failed", err)
       setError(err instanceof Error ? err.message : "Failed to update exercise")
     } finally {
       setSaving(false)
@@ -177,6 +194,7 @@ export default function WorkoutToolPage() {
       await loadWorkouts()
       setTab("history")
     } catch (err) {
+      console.error("[WorkoutToolPage] markWorkoutComplete failed", err)
       setError(err instanceof Error ? err.message : "Failed to complete workout")
     } finally {
       setSaving(false)
@@ -234,7 +252,7 @@ export default function WorkoutToolPage() {
         </div>
 
         {error && (
-          <div className="mb-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+          <div className="mb-6 whitespace-pre-wrap break-words rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
             {error}
           </div>
         )}

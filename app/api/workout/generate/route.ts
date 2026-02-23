@@ -44,6 +44,14 @@ type GeneratedWorkout = {
   notes?: string[]
 }
 
+type ErrorDetails = {
+  message: string
+  code?: string
+  cause?: unknown
+  stack?: string
+  context?: Record<string, unknown>
+}
+
 function isObjectRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object"
 }
@@ -137,6 +145,37 @@ function extractJson(text: string): unknown {
   throw new Error("Claude response did not include valid JSON")
 }
 
+function toErrorDetails(error: unknown, context?: Record<string, unknown>): ErrorDetails {
+  if (error instanceof Error) {
+    const base = {
+      message: error.message,
+      cause: error.cause,
+      stack: error.stack,
+      context,
+    }
+
+    if ("code" in error && typeof (error as { code?: unknown }).code === "string") {
+      return { ...base, code: (error as { code: string }).code }
+    }
+
+    return base
+  }
+
+  return {
+    message: typeof error === "string" ? error : "Unknown error",
+    context: {
+      ...(context || {}),
+      raw_error: error,
+    },
+  }
+}
+
+function errorResponse(status: number, error: unknown, context?: Record<string, unknown>) {
+  const details = toErrorDetails(error, context)
+  console.error("[workout/generate] Error", details)
+  return NextResponse.json({ error: details.message, details }, { status })
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as GenerateRequest
@@ -196,6 +235,7 @@ export async function POST(request: NextRequest) {
       headers: {
         "x-api-key": anthropicKey,
         "anthropic-version": "2023-06-01",
+        accept: "application/json",
         "content-type": "application/json",
       },
       body: JSON.stringify({
@@ -213,7 +253,19 @@ export async function POST(request: NextRequest) {
 
     if (!anthropicResponse.ok) {
       const errorText = await anthropicResponse.text()
-      return NextResponse.json({ error: `Anthropic error: ${errorText}` }, { status: 500 })
+      return errorResponse(
+        anthropicResponse.status,
+        new Error(`Anthropic request failed: ${anthropicResponse.status} ${anthropicResponse.statusText}`),
+        {
+          provider: "anthropic",
+          endpoint: "https://api.anthropic.com/v1/messages",
+          model: process.env.ANTHROPIC_WORKOUT_MODEL || "claude-sonnet-4-6",
+          status: anthropicResponse.status,
+          status_text: anthropicResponse.statusText,
+          response_body: errorText,
+          request_id: anthropicResponse.headers.get("request-id") || anthropicResponse.headers.get("x-request-id"),
+        },
+      )
     }
 
     const anthropicData = await anthropicResponse.json()
@@ -225,12 +277,21 @@ export async function POST(request: NextRequest) {
 
     const text = textParts.join("\n").trim()
     if (!text) {
-      return NextResponse.json({ error: "Anthropic response was empty" }, { status: 500 })
+      return errorResponse(500, new Error("Anthropic response was empty"), {
+        provider: "anthropic",
+        endpoint: "https://api.anthropic.com/v1/messages",
+        model: process.env.ANTHROPIC_WORKOUT_MODEL || "claude-sonnet-4-6",
+        raw_response: anthropicData,
+      })
     }
 
     const parsed = sanitizeWorkout(extractJson(text))
     if (!parsed.blocks.length) {
-      return NextResponse.json({ error: "Generated workout had no valid exercises" }, { status: 500 })
+      return errorResponse(500, new Error("Generated workout had no valid exercises"), {
+        provider: "anthropic",
+        parsed_workout: parsed,
+        raw_text: text,
+      })
     }
 
     const { data: workout, error: workoutError } = await supabase
@@ -245,7 +306,11 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (workoutError || !workout) {
-      return NextResponse.json({ error: workoutError?.message || "Failed to insert workout" }, { status: 500 })
+      return errorResponse(500, new Error(workoutError?.message || "Failed to insert workout"), {
+        provider: "supabase",
+        operation: "insert_workout",
+        supabase_error: workoutError,
+      })
     }
 
     const flattened = parsed.blocks.flatMap((block, blockIndex) =>
@@ -276,7 +341,11 @@ export async function POST(request: NextRequest) {
 
     if (exerciseError) {
       await supabase.from("workouts").delete().eq("id", workout.id)
-      return NextResponse.json({ error: exerciseError.message }, { status: 500 })
+      return errorResponse(500, new Error(exerciseError.message), {
+        provider: "supabase",
+        operation: "insert_exercises",
+        supabase_error: exerciseError,
+      })
     }
 
     return NextResponse.json({
@@ -286,9 +355,6 @@ export async function POST(request: NextRequest) {
       request: promptPayload,
     })
   } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Unexpected error" },
-      { status: 500 },
-    )
+    return errorResponse(500, error, { route: "app/api/workout/generate" })
   }
 }
