@@ -311,7 +311,27 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    const flattened = parsed.blocks.flatMap((block, blockIndex) =>
+    // Convert warmup items to exercises (if present)
+    const warmupExercises = (parsed.warmup || []).map((w, idx) => ({
+      workout_id: workout.id,
+      name: w.name,
+      sets: 1,
+      reps: `${w.duration_minutes || 3} min`,
+      rest_seconds: 0,
+      order_index: -100 + idx, // Put warmup before main exercises
+      status: "pending" as const,
+      completed_sets: 0,
+      notes: JSON.stringify({
+        block: "Warmup",
+        start_minute: 0,
+        end_minute: w.duration_minutes || 3,
+        cues: w.cues || [],
+        substitutions: w.substitutions || [],
+      }),
+    }))
+
+    // Convert main blocks to exercises
+    const blockExercises = parsed.blocks.flatMap((block, blockIndex) =>
       block.exercises.map((exercise, exerciseIndex) => ({
         workout_id: workout.id,
         name: exercise.name,
@@ -319,7 +339,7 @@ export async function POST(request: NextRequest) {
         reps: exercise.reps,
         rest_seconds: exercise.rest_seconds,
         order_index: blockIndex * 100 + exerciseIndex,
-        status: "pending",
+        status: "pending" as const,
         completed_sets: 0,
         notes: JSON.stringify({
           block: block.name,
@@ -330,6 +350,8 @@ export async function POST(request: NextRequest) {
         }),
       })),
     )
+
+    const flattened = [...warmupExercises, ...blockExercises]
 
     const { data: exercises, error: exerciseError } = await supabase
       .from("workout_exercises")

@@ -379,7 +379,11 @@ export default function WorkoutToolPage() {
                                 </div>
                               </div>
                               <div className="mt-1 text-xs text-[rgb(var(--text-muted))]">
-                                {[meta.block, timeLabel].filter(Boolean).join(" · ")}
+                                {meta.block === "Warmup" ? (
+                                  <span className="text-[rgb(var(--brand))]">Warmup · {timeLabel}</span>
+                                ) : (
+                                  [meta.block, timeLabel].filter(Boolean).join(" · ")
+                                )}
                               </div>
                               {meta.cues && meta.cues.length > 0 && (
                                 <p className="mt-2 text-xs text-[rgb(var(--text-muted))]">Cue: {meta.cues[0]}</p>
