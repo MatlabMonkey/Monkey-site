@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ArrowLeft, Calculator, User } from "lucide-react"
+import { ArrowLeft, Calculator } from "lucide-react"
 
 export default function ToolsPage() {
   return (
@@ -30,34 +30,6 @@ export default function ToolsPage() {
               <div>
                 <h2 className="text-lg font-semibold">BAC Calculator</h2>
                 <p className="text-sm text-[rgb(var(--text-muted))]">Track your session and estimate BAC</p>
-              </div>
-            </div>
-          </Link>
-          <Link
-            href="/tools/ava"
-            className="group rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.60)] p-5 hover:bg-[rgb(var(--surface-2)_/_0.70)] transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className="rounded-xl border border-[rgb(var(--brand)_/_0.45)] bg-[rgb(var(--brand-weak)_/_0.8)] p-2">
-                <User className="w-5 h-5 text-[rgb(var(--brand))]" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold">Ava Landon</h2>
-                <p className="text-sm text-[rgb(var(--text-muted))]">USC Mech-E · Boeing Engineer</p>
-              </div>
-            </div>
-          </Link>
-          <Link
-            href="/tools/yoav"
-            className="group rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.60)] p-5 hover:bg-[rgb(var(--surface-2)_/_0.70)] transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className="rounded-xl border border-[rgb(var(--brand)_/_0.45)] bg-[rgb(var(--brand-weak)_/_0.8)] p-2">
-                <span className="text-lg">🐐</span>
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold">Yoav Gillath</h2>
-                <p className="text-sm text-[rgb(var(--text-muted))]">USC · NYC · Knows Everyone</p>
               </div>
             </div>
           </Link>
