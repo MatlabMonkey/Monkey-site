@@ -154,10 +154,10 @@ export default function TodosPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-[rgb(var(--bg))] flex items-center justify-center">
         <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-700 border-t-indigo-500 mx-auto"></div>
-          <p className="text-gray-400">Loading todos...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-[rgb(var(--border))] border-t-[rgb(var(--brand))] mx-auto"></div>
+          <p className="text-[rgb(var(--text-muted))]">Loading todos...</p>
         </div>
       </div>
     )
@@ -165,28 +165,28 @@ export default function TodosPage() {
 
   return (
     <PinGate>
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+      <div className="min-h-screen bg-[rgb(var(--bg))]">
         {/* Header */}
-        <div className="bg-gray-800/80 backdrop-blur-sm border-b border-gray-700/50 sticky top-0 z-40">
+        <div className="bg-[rgb(var(--surface-2)_/_0.80)] backdrop-blur-sm border-b border-[rgb(var(--border))] sticky top-0 z-40">
           <div className="max-w-4xl mx-auto px-6 py-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <Link href="/" className="p-2 hover:bg-gray-700 rounded-xl transition-colors">
-                  <ArrowLeft className="w-5 h-5 text-gray-400" />
+                <Link href="/" className="p-2 hover:bg-[rgb(var(--surface-2))] rounded-xl transition-colors">
+                  <ArrowLeft className="w-5 h-5 text-[rgb(var(--text-muted))]" />
                 </Link>
                 <div>
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                  <h1 className="text-4xl font-bold text-[rgb(var(--text))]">
                     Todo Inbox
                   </h1>
-                  <p className="text-gray-400 mt-1">Lightning-fast task management</p>
+                  <p className="text-[rgb(var(--text-muted))] mt-1">Lightning-fast task management</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <div className="px-4 py-2 bg-gradient-to-r from-blue-900/50 to-indigo-900/50 rounded-full border border-blue-700/30">
-                  <span className="text-sm font-medium text-blue-400">{pendingTodos.length} pending</span>
+                <div className="px-4 py-2 bg-[rgb(var(--brand-weak)_/_0.7)] rounded-full border border-[rgb(var(--border))]">
+                  <span className="text-sm font-medium text-[rgb(var(--brand))]">{pendingTodos.length} pending</span>
                 </div>
-                <div className="px-4 py-2 bg-gradient-to-r from-green-900/50 to-emerald-900/50 rounded-full border border-green-700/30">
-                  <span className="text-sm font-medium text-green-400">{completedTodos.length} done</span>
+                <div className="px-4 py-2 bg-[rgb(var(--surface-2)_/_0.9)] rounded-full border border-[rgb(var(--border))]">
+                  <span className="text-sm font-medium text-[rgb(var(--brand))]">{completedTodos.length} done</span>
                 </div>
               </div>
             </div>
@@ -195,12 +195,12 @@ export default function TodosPage() {
 
         <div className="max-w-4xl mx-auto px-6 py-8">
           {/* Quick Add Form */}
-          <div className="bg-gray-800/50 rounded-3xl shadow-lg border border-gray-700/50 p-6 mb-8">
+          <div className="bg-[rgb(var(--surface-2)_/_0.50)] rounded-3xl  border border-[rgb(var(--border))] p-6 mb-8">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 bg-green-900/50 rounded-xl border border-green-700/30">
-                <Plus className="w-5 h-5 text-green-400" />
+              <div className="p-2 bg-[rgb(var(--brand-weak)_/_0.8)] rounded-xl border border-[rgb(var(--brand)_/_0.45)]">
+                <Plus className="w-5 h-5 text-[rgb(var(--brand))]" />
               </div>
-              <h2 className="text-xl font-bold text-gray-100">Quick Add</h2>
+              <h2 className="text-xl font-bold text-[rgb(var(--text))]">Quick Add</h2>
             </div>
 
             <form onSubmit={addTodo} className="flex gap-3">
@@ -209,13 +209,13 @@ export default function TodosPage() {
                 value={newTodo}
                 onChange={(e) => setNewTodo(e.target.value)}
                 placeholder="What needs to be done?"
-                className="flex-1 px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all text-gray-100 placeholder-gray-500"
+                className="flex-1 px-4 py-3 bg-[rgb(var(--surface)_/_0.50)] border border-[rgb(var(--border))] rounded-2xl focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand))] focus:border-transparent transition-all text-[rgb(var(--text))] placeholder:text-[rgb(var(--text-muted))]"
                 disabled={isAdding}
               />
               <button
                 type="submit"
                 disabled={!newTodo.trim() || isAdding}
-                className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl font-semibold hover:from-indigo-500 hover:to-purple-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center gap-2"
+                className="px-6 py-3 bg-[rgb(var(--brand))] text-[rgb(var(--text))] rounded-2xl font-semibold hover:bg-[rgb(var(--brand-strong))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand))] focus:ring-offset-2 focus:ring-offset-[rgb(var(--surface))] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 flex items-center gap-2"
               >
                 {isAdding ? (
                   <>
@@ -233,54 +233,54 @@ export default function TodosPage() {
           </div>
 
           {/* Inbox Section */}
-          <div className="bg-gray-800/50 rounded-3xl shadow-lg border border-gray-700/50 overflow-hidden">
-            <div className="p-6 border-b border-gray-700">
+          <div className="bg-[rgb(var(--surface-2)_/_0.50)] rounded-3xl  border border-[rgb(var(--border))] overflow-hidden">
+            <div className="p-6 border-b border-[rgb(var(--border))]">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-900/50 rounded-xl border border-blue-700/30">
-                  <Inbox className="w-5 h-5 text-blue-400" />
+                <div className="p-2 bg-[rgb(var(--brand-weak)_/_0.8)] rounded-xl border border-[rgb(var(--brand)_/_0.45)]">
+                  <Inbox className="w-5 h-5 text-[rgb(var(--brand))]" />
                 </div>
-                <h2 className="text-xl font-bold text-gray-100">Inbox</h2>
-                <span className="text-sm text-gray-400">
+                <h2 className="text-xl font-bold text-[rgb(var(--text))]">Inbox</h2>
+                <span className="text-sm text-[rgb(var(--text-muted))]">
                   {todos.length} {todos.length === 1 ? "item" : "items"}
                 </span>
               </div>
             </div>
 
-            <div className="divide-y divide-gray-700">
+            <div className="divide-y divide-[rgb(var(--border))]">
               {todos.length === 0 ? (
                 <div className="p-12 text-center">
-                  <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-700">
-                    <Inbox className="w-8 h-8 text-gray-500" />
+                  <div className="w-16 h-16 bg-[rgb(var(--surface-2))] rounded-full flex items-center justify-center mx-auto mb-4 border border-[rgb(var(--border))]">
+                    <Inbox className="w-8 h-8 text-[rgb(var(--text-muted))]" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-200 mb-2">Your inbox is empty</h3>
-                  <p className="text-gray-400">Add your first task above to get started!</p>
+                  <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Your inbox is empty</h3>
+                  <p className="text-[rgb(var(--text-muted))]">Add your first task above to get started!</p>
                 </div>
               ) : (
                 todos.map((todo) => (
                   <div
                     key={todo.id}
-                    className={`p-6 hover:bg-gray-800/30 transition-colors group ${todo.completed ? "opacity-60" : ""}`}
+                    className={`p-6 hover:bg-[rgb(var(--surface-2)_/_0.30)] transition-colors group ${todo.completed ? "opacity-60" : ""}`}
                   >
                     <div className="flex items-center gap-4">
                       <button
                         onClick={() => toggleTodo(todo.id, !todo.completed)}
                         className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
                           todo.completed
-                            ? "bg-green-500 border-green-500 text-white"
-                            : "border-gray-600 hover:border-green-400 hover:bg-green-900/30"
+                            ? "bg-[rgb(var(--brand))] border-[rgb(var(--brand))] text-[rgb(var(--text))]"
+                            : "border-[rgb(var(--border))] hover:border-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-weak)_/_0.7)]"
                         }`}
                       >
                         {todo.completed && <Check className="w-4 h-4" />}
                       </button>
 
                       <div className="flex-1 min-w-0">
-                        <p className={`text-gray-100 ${todo.completed ? "line-through" : ""}`}>{todo.content}</p>
-                        <span className="text-xs text-gray-500 mt-1 block">{formatDate(todo.created_at)}</span>
+                        <p className={`text-[rgb(var(--text))] ${todo.completed ? "line-through" : ""}`}>{todo.content}</p>
+                        <span className="text-xs text-[rgb(var(--text-muted))] mt-1 block">{formatDate(todo.created_at)}</span>
                       </div>
 
                       <button
                         onClick={() => deleteTodo(todo.id)}
-                        className="flex-shrink-0 p-2 text-gray-500 hover:text-red-400 hover:bg-red-900/20 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                        className="flex-shrink-0 p-2 text-[rgb(var(--text-muted))] hover:text-[rgb(239_68_68)] hover:bg-[rgb(127_29_29_/_0.25)] rounded-xl transition-all opacity-0 group-hover:opacity-100"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

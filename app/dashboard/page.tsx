@@ -256,15 +256,15 @@ export default function Dashboard() {
   if (loading) {
     return (
       <PinGate>
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center text-slate-100">
+        <div className="min-h-screen bg-[rgb(var(--bg))] flex items-center justify-center text-[rgb(var(--text))]">
           <div className="text-center space-y-6">
             <div className="relative">
-              <div className="animate-spin rounded-full h-16 w-16 border-4 border-slate-800 border-t-purple-400 mx-auto" />
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 opacity-30 animate-pulse" />
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-[rgb(var(--border))] border-t-[rgb(var(--brand))] mx-auto" />
+              <div className="absolute inset-0 rounded-full bg-[rgb(var(--brand))] opacity-30 animate-pulse" />
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-slate-50">Loading dashboard</h2>
-              <p className="text-slate-300">Fetching your journal insights…</p>
+              <h2 className="text-2xl font-bold text-[rgb(var(--text))]">Loading dashboard</h2>
+              <p className="text-[rgb(var(--text-muted))]">Fetching your journal insights…</p>
             </div>
           </div>
         </div>
@@ -275,21 +275,21 @@ export default function Dashboard() {
   if (error || !stats) {
     return (
       <PinGate>
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100 flex items-center justify-center p-6">
-          <div className="max-w-md w-full rounded-2xl border border-slate-800 bg-slate-900/80 p-6 space-y-4 text-center">
-            <h2 className="text-2xl font-bold text-slate-50">Dashboard unavailable</h2>
-            <p className="text-slate-300 text-sm">{error || "Unable to load dashboard data."}</p>
+        <div className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--text))] flex items-center justify-center p-6">
+          <div className="max-w-md w-full rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.80)] p-6 space-y-4 text-center">
+            <h2 className="text-2xl font-bold text-[rgb(var(--text))]">Dashboard unavailable</h2>
+            <p className="text-[rgb(var(--text-muted))] text-sm">{error || "Unable to load dashboard data."}</p>
             <div className="flex items-center justify-center gap-3">
               <Link
                 href="/journal"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 text-sm font-medium hover:from-purple-400 hover:to-indigo-400 transition-all"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[rgb(var(--brand))] text-sm font-medium hover:bg-[rgb(var(--brand-strong))] transition-all"
               >
                 <ArrowRight className="w-4 h-4" />
                 New Entry
               </Link>
               <Link
                 href="/journal/explorer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-slate-700 bg-slate-900 text-sm font-medium hover:bg-slate-800 transition-all"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-sm font-medium hover:bg-[rgb(var(--surface-2))] transition-all"
               >
                 <Compass className="w-4 h-4" />
                 Explorer
@@ -309,34 +309,34 @@ export default function Dashboard() {
 
   return (
     <PinGate>
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100">
+      <div className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--text))]">
         {/* Header */}
-        <div className="bg-slate-950/80 backdrop-blur-sm border-b border-slate-800/60 sticky top-0 z-40">
+        <div className="bg-[rgb(var(--bg)_/_0.80)] backdrop-blur-sm border-b border-[rgb(var(--border))] sticky top-0 z-40">
           <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-300 via-indigo-300 to-sky-300 bg-clip-text text-transparent">
+              <h1 className="text-4xl font-bold text-[rgb(var(--text))]">
                 Journal dashboard
               </h1>
-              <p className="text-slate-300 mt-1">
+              <p className="text-[rgb(var(--text-muted))] mt-1">
                 Overview of your days, energy, and reflection patterns
               </p>
             </div>
             <div className="flex items-center gap-3">
               <Link
                 href="/journal"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 text-sm font-medium shadow-md hover:from-purple-400 hover:to-indigo-400 transition-all"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[rgb(var(--brand))] text-sm font-medium  hover:bg-[rgb(var(--brand-strong))] transition-all"
               >
                 <ArrowRight className="w-4 h-4" />
                 New Entry
               </Link>
               <Link
                 href="/journal/explorer"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-slate-700 bg-slate-900/70 text-sm font-medium hover:bg-slate-800 transition-all"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.70)] text-sm font-medium hover:bg-[rgb(var(--surface-2))] transition-all"
               >
                 <Compass className="w-4 h-4" />
                 Explorer
               </Link>
-              <div className="px-4 py-2 rounded-full border border-slate-700 bg-slate-900/70 text-xs font-medium">
+              <div className="px-4 py-2 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.70)] text-xs font-medium">
                 {stats.daysBehind === 0
                   ? "Up to date"
                   : `${stats.daysBehind} day${stats.daysBehind === 1 ? "" : "s"} since last entry`}
@@ -353,55 +353,49 @@ export default function Dashboard() {
               value={stats.avgDayQuality7.toFixed(1)}
               subtitle="7‑day avg (0–10)"
               icon={<Heart className="w-5 h-5" />}
-              gradient="from-pink-500 to-rose-500"
             />
             <MetricCard
               title="Productivity"
               value={stats.avgProductivity7.toFixed(1)}
               subtitle="7‑day avg (0–10)"
               icon={<Zap className="w-5 h-5" />}
-              gradient="from-sky-500 to-indigo-500"
             />
             <MetricCard
               title="Energy"
               value={stats.avgEnergy7.toFixed(1)}
               subtitle="7‑day avg (0–10)"
               icon={<Activity className="w-5 h-5" />}
-              gradient="from-emerald-500 to-teal-500"
             />
             <MetricCard
               title="Stress"
               value={stats.avgStress7.toFixed(1)}
               subtitle="7‑day avg (0–10)"
               icon={<Brain className="w-5 h-5" />}
-              gradient="from-amber-500 to-orange-500"
             />
             <MetricCard
               title="Focus"
               value={stats.avgFocus7.toFixed(1)}
               subtitle="7‑day avg (0–10)"
               icon={<Target className="w-5 h-5" />}
-              gradient="from-violet-500 to-purple-500"
             />
             <MetricCard
               title="Social"
               value={stats.avgSocial7.toFixed(1)}
               subtitle="7‑day avg (0–10)"
               icon={<Sparkles className="w-5 h-5" />}
-              gradient="from-fuchsia-500 to-pink-500"
             />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Trends */}
             <div className="lg:col-span-2 space-y-6">
-              <div className="bg-slate-900 rounded-3xl border border-slate-800/70 shadow-lg shadow-black/40 p-6">
+              <div className="bg-[rgb(var(--surface))] rounded-3xl border border-[rgb(var(--border))]  p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <Sparkles className="w-5 h-5 text-purple-300" />
-                    <h2 className="text-lg font-semibold text-slate-50">Trends over time</h2>
+                    <Sparkles className="w-5 h-5 text-[rgb(var(--brand))]" />
+                    <h2 className="text-lg font-semibold text-[rgb(var(--text))]">Trends over time</h2>
                   </div>
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-[rgb(var(--text-muted))]">
                     {stats.totalEntries} entries · latest {stats.lastEntryStr}
                   </span>
                 </div>
@@ -471,13 +465,13 @@ export default function Dashboard() {
 
             {/* Latest entry summary */}
             <div className="space-y-6">
-              <div className="bg-slate-900 rounded-3xl border border-slate-800/70 shadow-lg shadow-black/40 p-6">
+              <div className="bg-[rgb(var(--surface))] rounded-3xl border border-[rgb(var(--border))]  p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5 text-sky-300" />
-                    <h2 className="text-lg font-semibold text-slate-50">Latest entry</h2>
+                    <Calendar className="w-5 h-5 text-[rgb(var(--brand))]" />
+                    <h2 className="text-lg font-semibold text-[rgb(var(--text))]">Latest entry</h2>
                   </div>
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-[rgb(var(--text-muted))]">
                     {latestDay
                       ? new Date(latestDay.date + "T00:00:00").toLocaleDateString("en-US", {
                           weekday: "short",
@@ -512,14 +506,14 @@ export default function Dashboard() {
                     />
                   </div>
                 ) : (
-                  <p className="text-slate-400 text-sm">No entries yet.</p>
+                  <p className="text-[rgb(var(--text-muted))] text-sm">No entries yet.</p>
                 )}
               </div>
 
-              <div className="bg-slate-900 rounded-3xl border border-slate-800/70 shadow-lg shadow-black/40 p-6">
+              <div className="bg-[rgb(var(--surface))] rounded-3xl border border-[rgb(var(--border))]  p-6">
                 <div className="flex items-center gap-2 mb-3">
-                  <Target className="w-5 h-5 text-emerald-300" />
-                  <h2 className="text-lg font-semibold text-slate-50">Tomorrow focus</h2>
+                  <Target className="w-5 h-5 text-[rgb(var(--brand))]" />
+                  <h2 className="text-lg font-semibold text-[rgb(var(--text))]">Tomorrow focus</h2>
                 </div>
                 {latestDay ? (
                   <div className="space-y-3 text-sm">
@@ -535,42 +529,42 @@ export default function Dashboard() {
                     />
                   </div>
                 ) : (
-                  <p className="text-slate-400 text-sm">Fill in today's entry to seed tomorrow.</p>
+                  <p className="text-[rgb(var(--text-muted))] text-sm">Fill in today's entry to seed tomorrow.</p>
                 )}
               </div>
 
               {/* Alcohol */}
-              <div className="bg-slate-900 rounded-3xl border border-slate-800/70 shadow-lg shadow-black/40 p-6">
+              <div className="bg-[rgb(var(--surface))] rounded-3xl border border-[rgb(var(--border))]  p-6">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-amber-300" />
-                    <h2 className="text-lg font-semibold text-slate-50">Alcohol</h2>
+                    <Activity className="w-5 h-5 text-[rgb(var(--brand))]" />
+                    <h2 className="text-lg font-semibold text-[rgb(var(--text))]">Alcohol</h2>
                   </div>
-                  <span className="text-xs text-slate-400">last 7 / 30 days</span>
+                  <span className="text-xs text-[rgb(var(--text-muted))]">last 7 / 30 days</span>
                 </div>
                 <div className="flex items-baseline justify-between text-sm">
                   <div>
-                    <div className="text-xs uppercase tracking-wide text-slate-400">7‑day avg</div>
-                    <div className="text-xl font-semibold text-slate-100">
+                    <div className="text-xs uppercase tracking-wide text-[rgb(var(--text-muted))]">7‑day avg</div>
+                    <div className="text-xl font-semibold font-mono text-[rgb(var(--text))]">
                       {stats.avgAlcohol7.toFixed(1)}
                     </div>
-                    <div className="text-xs text-slate-500 mt-1">drinks per day</div>
+                    <div className="text-xs text-[rgb(var(--text-muted))] mt-1">drinks per day</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xs uppercase tracking-wide text-slate-400">30‑day total</div>
-                    <div className="text-xl font-semibold text-slate-100">
+                    <div className="text-xs uppercase tracking-wide text-[rgb(var(--text-muted))]">30‑day total</div>
+                    <div className="text-xl font-semibold font-mono text-[rgb(var(--text))]">
                       {stats.totalAlcohol30.toFixed(1)}
                     </div>
-                    <div className="text-xs text-slate-500 mt-1">drinks</div>
+                    <div className="text-xs text-[rgb(var(--text-muted))] mt-1">drinks</div>
                   </div>
                 </div>
               </div>
 
               {/* Rose / Bud / Thorn */}
-              <div className="bg-slate-900 rounded-3xl border border-slate-800/70 shadow-lg shadow-black/40 p-6 space-y-4">
+              <div className="bg-[rgb(var(--surface))] rounded-3xl border border-[rgb(var(--border))]  p-6 space-y-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <Sparkles className="w-5 h-5 text-pink-300" />
-                  <h2 className="text-lg font-semibold text-slate-50">Daily highlights</h2>
+                  <Sparkles className="w-5 h-5 text-[rgb(var(--brand))]" />
+                  <h2 className="text-lg font-semibold text-[rgb(var(--text))]">Daily highlights</h2>
                 </div>
                 <div className="space-y-3 text-sm">
                   <FieldBlock
@@ -592,12 +586,12 @@ export default function Dashboard() {
               </div>
 
               {/* Workouts */}
-              <div className="bg-slate-900 rounded-3xl border border-slate-800/70 shadow-lg shadow-black/40 p-6 space-y-3">
+              <div className="bg-[rgb(var(--surface))] rounded-3xl border border-[rgb(var(--border))]  p-6 space-y-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <Activity className="w-5 h-5 text-emerald-300" />
-                  <h2 className="text-lg font-semibold text-slate-50">Workouts (last 14 days)</h2>
+                  <Activity className="w-5 h-5 text-[rgb(var(--brand))]" />
+                  <h2 className="text-lg font-semibold text-[rgb(var(--text))]">Workouts (last 14 days)</h2>
                 </div>
-                <div className="space-y-2 text-xs text-slate-200">
+                <div className="space-y-2 text-xs text-[rgb(var(--text))]">
                   {Object.entries(stats.workoutCounts14).map(([name, count]) => {
                     const n = typeof count === "number" ? count : 0
                     const width = maxWorkoutCount > 0 ? (n / maxWorkoutCount) * 100 : 0
@@ -605,7 +599,7 @@ export default function Dashboard() {
                     return (
                       <div key={name} className="relative h-6 flex items-center">
                         {/* Bar behind text */}
-                        <div className="absolute inset-y-1 left-0 right-0 rounded-full bg-slate-800 overflow-hidden">
+                        <div className="absolute inset-y-1 left-0 right-0 rounded-full bg-[rgb(var(--surface-2))] overflow-hidden">
                           <div
                             className="h-full rounded-full transition-all"
                             style={{
@@ -637,26 +631,23 @@ function MetricCard({
   value,
   subtitle,
   icon,
-  gradient,
 }: {
   title: string
   value: string
   subtitle: string
   icon: React.ReactNode
-  gradient: string
 }) {
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl p-4 bg-gradient-to-br ${gradient} shadow-lg shadow-black/40`}
+      className="rounded-2xl p-4 border border-[rgb(var(--border))] bg-[rgb(var(--surface))]"
     >
-      <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_top,_#fff,_transparent_60%)]" />
-      <div className="relative flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <div>
-          <div className="text-xs uppercase tracking-wide text-white/70 mb-1">{title}</div>
-          <div className="text-2xl font-bold text-white">{value}</div>
-          <div className="text-xs text-white/70 mt-1">{subtitle}</div>
+          <div className="text-xs uppercase tracking-wide text-[rgb(var(--text)_/_0.7)] mb-1">{title}</div>
+          <div className="text-2xl font-bold font-mono text-[rgb(var(--text))]">{value}</div>
+          <div className="text-xs text-[rgb(var(--text)_/_0.7)] mt-1">{subtitle}</div>
         </div>
-        <div className="p-2 bg-black/20 rounded-xl text-white">{icon}</div>
+        <div className="p-2 rounded-xl border border-[rgb(var(--brand)_/_0.45)] bg-[rgb(var(--brand-weak)_/_0.8)] text-[rgb(var(--brand))]">{icon}</div>
       </div>
     </div>
   )
@@ -680,9 +671,9 @@ function FieldBlock({
 
   return (
     <div className="space-y-1">
-      <div className="text-xs uppercase tracking-wide text-slate-400">{label}</div>
-      <div className="text-slate-100 text-sm leading-relaxed">
-        {text ?? <span className="text-slate-500 italic">{placeholder}</span>}
+      <div className="text-xs uppercase tracking-wide text-[rgb(var(--text-muted))]">{label}</div>
+      <div className="text-[rgb(var(--text))] text-sm leading-relaxed">
+        {text ?? <span className="text-[rgb(var(--text-muted))] italic">{placeholder}</span>}
       </div>
     </div>
   )

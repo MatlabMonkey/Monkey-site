@@ -144,24 +144,24 @@ export default function QuestionsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-slate-900 to-gray-900 text-gray-100">
+    <div className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--text))]">
       <div className="max-w-3xl mx-auto px-6 py-10">
         <div className="mb-8 flex items-center gap-4">
-          <Link href="/" className="p-2 rounded-xl hover:bg-gray-800 transition-colors">
-            <ArrowLeft className="w-5 h-5 text-gray-400" />
+          <Link href="/" className="p-2 rounded-xl hover:bg-[rgb(var(--surface-2))] transition-colors">
+            <ArrowLeft className="w-5 h-5 text-[rgb(var(--text-muted))]" />
           </Link>
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-200 via-slate-200 to-blue-100 bg-clip-text text-transparent">
+            <h1 className="text-3xl md:text-4xl font-bold text-[rgb(var(--text))]">
               Questions & Advice for Zach
             </h1>
-            <p className="text-gray-400 mt-1">Got a question or advice? Drop it below. Zach reads everything.</p>
+            <p className="text-[rgb(var(--text-muted))] mt-1">Got a question or advice? Drop it below. Zach reads everything.</p>
           </div>
         </div>
 
-        <div className="bg-gray-800/50 border border-gray-700/50 rounded-3xl p-6 mb-8 shadow-lg">
+        <div className="bg-[rgb(var(--surface-2)_/_0.50)] border border-[rgb(var(--border))] rounded-3xl p-6 mb-8 ">
           <div className="flex items-center gap-3 mb-4">
-            <MessageCircle className="w-5 h-5 text-sky-300" />
-            <h2 className="text-lg font-semibold text-white">Submit a question</h2>
+            <MessageCircle className="w-5 h-5 text-[rgb(var(--brand))]" />
+            <h2 className="text-lg font-semibold text-[rgb(var(--text))]">Submit a question</h2>
           </div>
 
           <form onSubmit={submitQuestion} className="space-y-3">
@@ -171,51 +171,51 @@ export default function QuestionsPage() {
               placeholder="Your question or advice..."
               required
               rows={5}
-              className="w-full rounded-2xl bg-gray-900/70 border border-gray-700 px-4 py-3 text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
+              className="w-full rounded-2xl bg-[rgb(var(--surface)_/_0.70)] border border-[rgb(var(--border))] px-4 py-3 text-[rgb(var(--text))] placeholder:text-[rgb(var(--text-muted))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
             <input
               value={authorLabel}
               onChange={(e) => setAuthorLabel(e.target.value)}
               placeholder="Your name (optional)"
-              className="w-full rounded-2xl bg-gray-900/70 border border-gray-700 px-4 py-3 text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
+              className="w-full rounded-2xl bg-[rgb(var(--surface)_/_0.70)] border border-[rgb(var(--border))] px-4 py-3 text-[rgb(var(--text))] placeholder:text-[rgb(var(--text-muted))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
             <div className="flex items-center gap-3">
               <button
                 type="submit"
                 disabled={!content.trim() || submitting}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-sky-600 hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium transition-colors"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] disabled:opacity-50 disabled:cursor-not-allowed text-[rgb(var(--text))] font-medium transition-colors"
               >
                 <Send className="w-4 h-4" />
                 {submitting ? "Submitting..." : "Submit"}
               </button>
-              {thankYou && <p className="text-green-400 text-sm">{thankYou}</p>}
+              {thankYou && <p className="text-[rgb(var(--brand))] text-sm">{thankYou}</p>}
             </div>
           </form>
         </div>
 
         {error && (
-          <div className="mb-6 rounded-2xl border border-red-800/60 bg-red-950/40 px-4 py-3 text-red-300 text-sm">
+          <div className="mb-6 rounded-2xl border border-[rgb(127_29_29)] bg-[rgb(127_29_29_/_0.35)] px-4 py-3 text-[rgb(239_68_68)] text-sm">
             {error}
           </div>
         )}
 
         <div className="space-y-4">
           {loading ? (
-            <div className="text-gray-400">Loading questions...</div>
+            <div className="text-[rgb(var(--text-muted))]">Loading questions...</div>
           ) : (
             questions.map((question) => (
-              <article key={question.id} className="bg-gray-800/50 border border-gray-700/50 rounded-3xl p-5 shadow-lg">
-                <p className="text-gray-100 whitespace-pre-wrap leading-relaxed">{question.content}</p>
-                <div className="mt-3 flex items-center gap-2 text-xs text-gray-400">
+              <article key={question.id} className="bg-[rgb(var(--surface-2)_/_0.50)] border border-[rgb(var(--border))] rounded-3xl p-5 ">
+                <p className="text-[rgb(var(--text))] whitespace-pre-wrap leading-relaxed">{question.content}</p>
+                <div className="mt-3 flex items-center gap-2 text-xs text-[rgb(var(--text-muted))]">
                   <span>{question.author_label || "Anonymous"}</span>
                   <span>•</span>
                   <span>{formatRelativeTime(question.created_at)}</span>
                 </div>
 
                 {question.response && (
-                  <div className="mt-4 rounded-2xl border border-sky-800/40 bg-sky-950/30 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-sky-300 mb-2">Zach&apos;s response</p>
-                    <p className="text-sky-100 whitespace-pre-wrap">{question.response}</p>
+                  <div className="mt-4 rounded-2xl border border-[rgb(var(--brand)_/_0.45)] bg-[rgb(var(--brand-weak)_/_0.7)] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-[rgb(var(--brand))] mb-2">Zach&apos;s response</p>
+                    <p className="text-[rgb(var(--text))] whitespace-pre-wrap">{question.response}</p>
                   </div>
                 )}
 
@@ -233,7 +233,7 @@ export default function QuestionsPage() {
                         setResponseText("")
                       }
                     }}
-                    className="text-xs px-3 py-1.5 rounded-lg border border-gray-600 text-gray-300 hover:bg-gray-700/60 transition-colors"
+                    className="text-xs px-3 py-1.5 rounded-lg border border-[rgb(var(--border))] text-[rgb(var(--text-muted))] hover:bg-[rgb(var(--surface-2)_/_0.8)] transition-colors"
                   >
                     Respond
                   </button>
@@ -247,7 +247,7 @@ export default function QuestionsPage() {
                       onChange={(e) => setResponsePin(e.target.value)}
                       placeholder="PIN"
                       required
-                      className="w-full rounded-xl bg-gray-900/70 border border-gray-700 px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      className="w-full rounded-xl bg-[rgb(var(--surface)_/_0.70)] border border-[rgb(var(--border))] px-3 py-2 text-sm text-[rgb(var(--text))] placeholder:text-[rgb(var(--text-muted))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand))]"
                     />
                     <textarea
                       value={responseText}
@@ -255,12 +255,12 @@ export default function QuestionsPage() {
                       placeholder="Write Zach's response..."
                       rows={3}
                       required
-                      className="w-full rounded-xl bg-gray-900/70 border border-gray-700 px-3 py-2 text-sm text-gray-100 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                      className="w-full rounded-xl bg-[rgb(var(--surface)_/_0.70)] border border-[rgb(var(--border))] px-3 py-2 text-sm text-[rgb(var(--text))] placeholder:text-[rgb(var(--text-muted))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand))]"
                     />
                     <button
                       type="submit"
                       disabled={responding}
-                      className="px-4 py-2 text-sm rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium"
+                      className="px-4 py-2 text-sm rounded-xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] disabled:opacity-50 disabled:cursor-not-allowed text-[rgb(var(--text))] font-medium"
                     >
                       {responding ? "Saving..." : "Save response"}
                     </button>

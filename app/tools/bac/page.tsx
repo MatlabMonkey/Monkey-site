@@ -130,7 +130,7 @@ function bacColorClasses(bac: number): string {
   if (bac < 0.04) return "text-emerald-400 border-emerald-700/50 bg-emerald-950/30"
   if (bac <= 0.08) return "text-yellow-300 border-yellow-700/50 bg-yellow-950/30"
   if (bac <= 0.15) return "text-orange-300 border-orange-700/50 bg-orange-950/30"
-  return "text-red-300 border-red-700/50 bg-red-950/30"
+  return "text-[rgb(239_68_68)] border-red-700/50 bg-[rgb(127_29_29_/_0.3)]"
 }
 
 function formatDrinkTime(timestamp: string): string {
@@ -237,36 +237,36 @@ export default function BacPage() {
   const isProfileValid = Number.parseFloat(weightInput) > 0
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white">
+    <main className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--text))]">
       <div className="max-w-4xl mx-auto px-6 py-10 space-y-6">
-        <Link href="/tools" className="inline-flex items-center gap-2 text-slate-300 hover:text-white transition-colors">
+        <Link href="/tools" className="inline-flex items-center gap-2 text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))] transition-colors">
           <ArrowLeft className="w-4 h-4" />
           Back to Tools
         </Link>
 
         <section className={`rounded-3xl border p-6 ${bacColorClasses(currentBac)}`}>
-          <p className="text-sm uppercase tracking-wide text-slate-300">Current BAC</p>
-          <p className="text-5xl font-bold mt-2">{currentBac.toFixed(3)}%</p>
-          <div className="mt-4 inline-flex items-center gap-2 rounded-xl border border-slate-700/60 bg-slate-900/40 px-3 py-2 text-sm text-slate-200">
+          <p className="text-sm uppercase tracking-wide text-[rgb(var(--text-muted))]">Current BAC</p>
+          <p className="text-5xl font-bold font-mono mt-2">{currentBac.toFixed(3)}%</p>
+          <div className="mt-4 inline-flex items-center gap-2 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.40)] px-3 py-2 text-sm text-[rgb(var(--text))]">
             <Clock3 className="w-4 h-4" />
             Time until sober: {formatDuration(minutesUntilSober)}
           </div>
         </section>
 
-        <section className="rounded-3xl border border-slate-700/70 bg-slate-900/60 p-6">
+        <section className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.60)] p-6">
           <div className="w-full flex items-center justify-between text-left">
             <div className="flex items-center gap-3">
-              <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-2">
-                <User className="w-5 h-5 text-slate-300" />
+              <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2)_/_0.70)] p-2">
+                <User className="w-5 h-5 text-[rgb(var(--text-muted))]" />
               </div>
               <div>
                 <h2 className="text-xl font-semibold">Profile</h2>
                 {profile ? (
-                  <p className="text-sm text-slate-400">
+                  <p className="text-sm text-[rgb(var(--text-muted))]">
                     {profile.weightLbs} lbs • {profile.gender === "male" ? "Male" : "Female"}
                   </p>
                 ) : (
-                  <p className="text-sm text-slate-400">Set up profile to start calculating BAC</p>
+                  <p className="text-sm text-[rgb(var(--text-muted))]">Set up profile to start calculating BAC</p>
                 )}
               </div>
             </div>
@@ -274,45 +274,45 @@ export default function BacPage() {
               <button
                 type="button"
                 onClick={() => setProfileExpanded((prev) => !prev)}
-                className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-slate-300 hover:bg-slate-800 transition-colors inline-flex items-center gap-2"
+                className="rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-2 text-[rgb(var(--text-muted))] hover:bg-[rgb(var(--surface-2))] transition-colors inline-flex items-center gap-2"
               >
                 {profileExpanded ? "Collapse" : "Edit"}
                 {profileExpanded ? (
-                  <ChevronUp className="w-4 h-4 text-slate-400" />
+                  <ChevronUp className="w-4 h-4 text-[rgb(var(--text-muted))]" />
                 ) : (
-                  <ChevronDown className="w-4 h-4 text-slate-400" />
+                  <ChevronDown className="w-4 h-4 text-[rgb(var(--text-muted))]" />
                 )}
               </button>
             ) : (
-              <span className="text-sm text-slate-400">Required</span>
+              <span className="text-sm text-[rgb(var(--text-muted))]">Required</span>
             )}
           </div>
 
           {profileExpanded && (
             <div className="mt-5 grid gap-4 md:grid-cols-2">
               <label className="space-y-2">
-                <span className="text-sm text-slate-300">Weight (lbs)</span>
+                <span className="text-sm text-[rgb(var(--text-muted))]">Weight (lbs)</span>
                 <input
                   type="number"
                   min="1"
                   step="0.1"
                   value={weightInput}
                   onChange={(event) => setWeightInput(event.target.value)}
-                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--bg))] px-3 py-2 text-[rgb(var(--text))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand))]"
                   placeholder="e.g. 180"
                 />
               </label>
 
               <fieldset className="space-y-2">
-                <legend className="text-sm text-slate-300">Gender</legend>
+                <legend className="text-sm text-[rgb(var(--text-muted))]">Gender</legend>
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={() => setGenderInput("male")}
                     className={`rounded-xl border px-4 py-2 text-sm transition-colors ${
                       genderInput === "male"
-                        ? "border-indigo-500 bg-indigo-900/40 text-indigo-200"
-                        : "border-slate-700 bg-slate-900 text-slate-300"
+                        ? "border-[rgb(var(--brand))] bg-[rgb(var(--brand-weak)_/_0.8)] text-[rgb(var(--text))]"
+                        : "border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-[rgb(var(--text-muted))]"
                     }`}
                   >
                     Male (r=0.73)
@@ -322,8 +322,8 @@ export default function BacPage() {
                     onClick={() => setGenderInput("female")}
                     className={`rounded-xl border px-4 py-2 text-sm transition-colors ${
                       genderInput === "female"
-                        ? "border-indigo-500 bg-indigo-900/40 text-indigo-200"
-                        : "border-slate-700 bg-slate-900 text-slate-300"
+                        ? "border-[rgb(var(--brand))] bg-[rgb(var(--brand-weak)_/_0.8)] text-[rgb(var(--text))]"
+                        : "border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-[rgb(var(--text-muted))]"
                     }`}
                   >
                     Female (r=0.66)
@@ -336,7 +336,7 @@ export default function BacPage() {
                   type="button"
                   onClick={handleSaveProfile}
                   disabled={!isProfileValid}
-                  className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="rounded-xl bg-[rgb(var(--brand))] px-4 py-2 text-sm font-semibold text-[rgb(var(--text))] hover:bg-[rgb(var(--brand-strong))] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   Save Profile
                 </button>
@@ -345,35 +345,35 @@ export default function BacPage() {
           )}
         </section>
 
-        <section className="rounded-3xl border border-slate-700/70 bg-slate-900/60 p-6 space-y-5">
+        <section className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.60)] p-6 space-y-5">
           <button
             type="button"
             onClick={() => setShowPicker((prev) => !prev)}
             disabled={!profile}
-            className="w-full rounded-2xl bg-indigo-600 px-5 py-4 text-lg font-semibold text-white hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors inline-flex items-center justify-center gap-2"
+            className="w-full rounded-2xl bg-[rgb(var(--brand))] px-5 py-4 text-lg font-semibold text-[rgb(var(--text))] hover:bg-[rgb(var(--brand-strong))] disabled:opacity-50 disabled:cursor-not-allowed transition-colors inline-flex items-center justify-center gap-2"
           >
             <Plus className="w-5 h-5" />
             Add a Drink
           </button>
 
           {showPicker && (
-            <div className="rounded-2xl border border-slate-700 bg-slate-950/70 p-4 space-y-3">
-              <p className="text-sm text-slate-400">Quick picker</p>
+            <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--bg)_/_0.70)] p-4 space-y-3">
+              <p className="text-sm text-[rgb(var(--text-muted))]">Quick picker</p>
               <div className="grid gap-2 md:grid-cols-2">
                 {DRINK_PRESETS.map((preset) => (
                   <button
                     key={preset.drinkType}
                     type="button"
                     onClick={() => addDrink(preset.drinkType, preset.alcoholOz)}
-                    className="rounded-xl border border-slate-700 bg-slate-900 px-3 py-3 text-left hover:bg-slate-800 transition-colors"
+                    className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-3 text-left hover:bg-[rgb(var(--surface-2))] transition-colors"
                   >
                     <p className="font-medium">{preset.drinkType}</p>
-                    <p className="text-sm text-slate-400">{preset.note} • {preset.alcoholOz} oz alcohol</p>
+                    <p className="text-sm text-[rgb(var(--text-muted))]">{preset.note} • {preset.alcoholOz} oz alcohol</p>
                   </button>
                 ))}
               </div>
 
-              <div className="rounded-xl border border-slate-700 bg-slate-900 p-3">
+              <div className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-3">
                 <p className="font-medium mb-2">Custom</p>
                 <div className="flex flex-wrap gap-2">
                   <input
@@ -383,12 +383,12 @@ export default function BacPage() {
                     value={customAlcoholInput}
                     onChange={(event) => setCustomAlcoholInput(event.target.value)}
                     placeholder="oz of pure alcohol"
-                    className="flex-1 min-w-[160px] rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="flex-1 min-w-[160px] rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--bg))] px-3 py-2 text-[rgb(var(--text))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand))]"
                   />
                   <button
                     type="button"
                     onClick={handleAddCustom}
-                    className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-semibold hover:bg-indigo-500 transition-colors"
+                    className="rounded-lg bg-[rgb(var(--brand))] px-3 py-2 text-sm font-semibold hover:bg-[rgb(var(--brand-strong))] transition-colors"
                   >
                     Add Custom
                   </button>
@@ -404,33 +404,33 @@ export default function BacPage() {
                 type="button"
                 onClick={clearSession}
                 disabled={session.length === 0}
-                className="rounded-lg border border-slate-700 px-3 py-1.5 text-sm text-slate-300 hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="rounded-lg border border-[rgb(var(--border))] px-3 py-1.5 text-sm text-[rgb(var(--text-muted))] hover:bg-[rgb(var(--surface-2))] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Clear Session
               </button>
             </div>
 
             {!isHydrated ? (
-              <p className="text-slate-400 text-sm">Loading session...</p>
+              <p className="text-[rgb(var(--text-muted))] text-sm">Loading session...</p>
             ) : orderedDrinks.length === 0 ? (
-              <p className="text-slate-400 text-sm">No drinks added yet.</p>
+              <p className="text-[rgb(var(--text-muted))] text-sm">No drinks added yet.</p>
             ) : (
               <ul className="space-y-2">
                 {orderedDrinks.map((drink) => (
                   <li
                     key={drink.id}
-                    className="rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 flex items-center justify-between gap-4"
+                    className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--bg)_/_0.70)] px-4 py-3 flex items-center justify-between gap-4"
                   >
                     <div>
                       <p className="font-medium">{drink.drinkType}</p>
-                      <p className="text-sm text-slate-400">
+                      <p className="text-sm text-[rgb(var(--text-muted))]">
                         {formatDrinkTime(drink.timestamp)} • {drink.alcoholOz.toFixed(2)} oz alcohol
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={() => removeDrink(drink.id)}
-                      className="rounded-lg border border-red-800/70 bg-red-950/30 p-2 text-red-300 hover:bg-red-900/40 transition-colors"
+                      className="rounded-lg border border-[rgb(127_29_29)] bg-[rgb(127_29_29_/_0.3)] p-2 text-[rgb(239_68_68)] hover:bg-[rgb(127_29_29_/_0.4)] transition-colors"
                       aria-label={`Remove ${drink.drinkType}`}
                     >
                       <Trash2 className="w-4 h-4" />

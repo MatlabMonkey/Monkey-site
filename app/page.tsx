@@ -434,18 +434,18 @@ export default function Home() {
             onError={() => setImageLoaded(true)}
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900" />
+          <div className="w-full h-full bg-[rgb(var(--surface-2))]" />
         )}
       </div>
 
       <div className="relative flex items-center justify-center min-h-screen p-6">
         <div className="text-center space-y-8 max-w-4xl mx-auto">
-          <h1 className="text-4xl md:text-6xl font-bold bg-gradient-to-r from-white via-slate-200 to-white bg-clip-text text-transparent leading-tight">
+          <h1 className="text-4xl md:text-6xl font-bold text-[rgb(var(--text))] leading-tight">
             Home
           </h1>
 
           {/* Rotating Quote */}
-          <div className="text-xl md:text-2xl text-white/80 max-w-2xl mx-auto leading-relaxed min-h-[60px] flex items-center justify-center">
+          <div className="text-xl md:text-2xl text-[rgb(var(--text)_/_0.8)] max-w-2xl mx-auto leading-relaxed min-h-[60px] flex items-center justify-center">
             <span className="italic">{quotes[quoteIndex]}</span>
           </div>
 
@@ -453,53 +453,53 @@ export default function Home() {
           <div className="grid gap-6 mt-12 md:grid-cols-3">
             <Link
               href="/dashboard"
-              className="group bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 flex flex-col items-center justify-center shadow-lg hover:shadow-xl hover:scale-105"
+              className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center   hover:scale-105"
             >
-              <BookOpen className="w-8 h-8 text-purple-300 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">Journal</h3>
-              <p className="text-white/70 text-sm">Open your journal dashboard and entries</p>
+              <BookOpen className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
+              <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Journal</h3>
+              <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Open your journal dashboard and entries</p>
             </Link>
             <Link
               href="/todos"
-              className="group bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 flex flex-col items-center justify-center shadow-lg hover:shadow-xl hover:scale-105"
+              className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center   hover:scale-105"
             >
-              <CheckSquare className="w-8 h-8 text-green-300 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">Todos</h3>
-              <p className="text-white/70 text-sm">Manage your todos and tasks</p>
+              <CheckSquare className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
+              <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Todos</h3>
+              <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Manage your todos and tasks</p>
             </Link>
             <Link
               href="/tools"
-              className="group bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 flex flex-col items-center justify-center shadow-lg hover:shadow-xl hover:scale-105"
+              className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center   hover:scale-105"
             >
-              <Wrench className="w-8 h-8 text-amber-300 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">Tools</h3>
-              <p className="text-white/70 text-sm">Utilities and calculators</p>
+              <Wrench className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
+              <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Tools</h3>
+              <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Utilities and calculators</p>
             </Link>
             <Link
               href="/questions"
-              className="group bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 flex flex-col items-center justify-center shadow-lg hover:shadow-xl hover:scale-105"
+              className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center   hover:scale-105"
             >
-              <MessageCircle className="w-8 h-8 text-sky-300 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">Q&A</h3>
-              <p className="text-white/70 text-sm">Ask Zach anything</p>
+              <MessageCircle className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
+              <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Q&A</h3>
+              <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Ask Zach anything</p>
             </Link>
             <Link
               href="/arias"
-              className="group bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 flex flex-col items-center justify-center shadow-lg hover:shadow-xl hover:scale-105"
+              className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center   hover:scale-105"
             >
-              <BarChart3 className="w-8 h-8 text-amber-200 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">Arias</h3>
-              <p className="text-white/70 text-sm">View OpenClaw usage dashboard</p>
+              <BarChart3 className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
+              <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Arias</h3>
+              <p className="text-[rgb(var(--text)_/_0.7)] text-sm">View OpenClaw usage dashboard</p>
             </Link>
           </div>
 
           {/* Daily Photo Credit */}
           <div className="mt-16 text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-black/20 backdrop-blur-sm rounded-full border border-white/10 text-white/60 text-sm">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-[rgb(var(--bg)_/_0.2)] backdrop-blur-sm rounded-full border border-[rgb(var(--border))] text-[rgb(var(--text)_/_0.6)] text-sm">
               Today's view: {dailyPhoto.location}
               {imageData?.photographer && (
-                <span className="text-white/40">
-                  • Photo by <a href={imageData.unsplashLink} target="_blank" rel="noopener noreferrer" className="underline hover:text-white/80">{imageData.photographer}</a> on <a href="https://unsplash.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/80">Unsplash</a>
+                <span className="text-[rgb(var(--text)_/_0.4)]">
+                  • Photo by <a href={imageData.unsplashLink} target="_blank" rel="noopener noreferrer" className="underline hover:text-[rgb(var(--text)_/_0.8)]">{imageData.photographer}</a> on <a href="https://unsplash.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-[rgb(var(--text)_/_0.8)]">Unsplash</a>
                 </span>
               )}
             </div>

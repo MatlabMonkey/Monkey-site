@@ -1,6 +1,5 @@
 "use client"
 
-import { Inter, JetBrains_Mono } from "next/font/google"
 import { useEffect, useMemo, useState } from "react"
 import Card from "../components/Card"
 
@@ -39,9 +38,6 @@ interface ModelDisplay {
 
 type SortKey = "name" | "provider" | "tokensIn" | "tokensOut" | "totalTokens" | "cost"
 type SortDirection = "asc" | "desc"
-
-const inter = Inter({ subsets: ["latin"] })
-const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"] })
 
 // Map API model names to display names
 const DISPLAY_NAMES: Record<string, string> = {
@@ -144,7 +140,7 @@ function OverviewCard({
       gradient="gray"
       className="!rounded-2xl !border !border-[rgb(34_48_66)] !bg-[rgb(11_16_23)] !bg-none !shadow-none [&_h2]:!text-[rgb(180_189_200)] [&_h2]:!text-base [&_h2]:!font-semibold [&_div]:!text-[rgb(233_236_239)]"
     >
-      <p className={`text-3xl leading-tight text-[rgb(233_236_239)] ${mono ? jetbrainsMono.className : ""}`}>{value}</p>
+      <p className={`text-3xl leading-tight text-[rgb(233_236_239)] ${mono ? "font-mono" : ""}`}>{value}</p>
       <p className="mt-2 text-sm text-[rgb(180_189_200)]">{hint}</p>
     </Card>
   )
@@ -219,22 +215,22 @@ function UsageTable({
                     <td className="border-b border-[rgb(34_48_66)] px-3 py-3 text-sm text-[rgb(233_236_239)]">{row.name}</td>
                     <td className="border-b border-[rgb(34_48_66)] px-3 py-3 text-sm text-[rgb(180_189_200)]">{row.provider}</td>
                     <td
-                      className={`border-b border-[rgb(34_48_66)] px-3 py-3 text-right text-sm text-[rgb(233_236_239)] ${jetbrainsMono.className}`}
+                      className={`border-b border-[rgb(34_48_66)] px-3 py-3 text-right text-sm text-[rgb(233_236_239)] font-mono`}
                     >
                       {formatNumber(row.tokensIn)}
                     </td>
                     <td
-                      className={`border-b border-[rgb(34_48_66)] px-3 py-3 text-right text-sm text-[rgb(233_236_239)] ${jetbrainsMono.className}`}
+                      className={`border-b border-[rgb(34_48_66)] px-3 py-3 text-right text-sm text-[rgb(233_236_239)] font-mono`}
                     >
                       {formatNumber(row.tokensOut)}
                     </td>
                     <td
-                      className={`border-b border-[rgb(34_48_66)] px-3 py-3 text-right text-sm text-[rgb(233_236_239)] ${jetbrainsMono.className}`}
+                      className={`border-b border-[rgb(34_48_66)] px-3 py-3 text-right text-sm text-[rgb(233_236_239)] font-mono`}
                     >
                       {formatNumber(total)}
                     </td>
                     <td
-                      className={`border-b border-[rgb(34_48_66)] px-3 py-3 text-right text-sm text-[rgb(212_163_115)] ${jetbrainsMono.className}`}
+                      className={`border-b border-[rgb(34_48_66)] px-3 py-3 text-right text-sm text-[rgb(212_163_115)] font-mono`}
                     >
                       {formatCurrency(row.cost)}
                     </td>
@@ -324,7 +320,7 @@ export default function AriasPage() {
   }
 
   return (
-    <main className={`${inter.className} min-h-screen bg-[rgb(5_7_11)] text-[rgb(233_236_239)] px-4 py-8 md:px-6 md:py-12`}>
+    <main className={`min-h-screen bg-[rgb(5_7_11)] text-[rgb(233_236_239)] px-4 py-8 md:px-6 md:py-12`}>
       <div className="mx-auto flex w-full max-w-[1280px] flex-col gap-8">
         <header className="space-y-3">
           <h1 className="text-4xl font-semibold leading-tight md:text-5xl">Arias</h1>
@@ -364,7 +360,7 @@ export default function AriasPage() {
                       <div key={`chart-${model.name}`} className="space-y-2">
                         <div className="flex items-center justify-between gap-3">
                           <span className="text-sm text-[rgb(180_189_200)]">{model.name}</span>
-                          <span className={`text-sm text-[rgb(233_236_239)] ${jetbrainsMono.className}`}>{formatNumber(total)}</span>
+                          <span className={`text-sm text-[rgb(233_236_239)] font-mono`}>{formatNumber(total)}</span>
                         </div>
                         <div className="h-2 rounded-full bg-[rgb(16_24_36)]">
                           <div className="h-2 rounded-full bg-[rgb(212_163_115)] transition-all duration-200" style={{ width: `${width}%` }} />

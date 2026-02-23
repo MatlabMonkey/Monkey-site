@@ -54,55 +54,55 @@ export default function JournalSearchPage() {
 
   return (
     <PinGate>
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100">
+      <div className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--text))]">
         <div className="max-w-2xl mx-auto px-6 py-8">
           <div className="flex items-center gap-4 mb-6">
             <Link
               href="/journal"
-              className="flex items-center gap-2 text-slate-300 hover:text-slate-50"
+              className="flex items-center gap-2 text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))]"
             >
               <ArrowLeft className="w-5 h-5" />
               <span className="font-medium">Journal</span>
             </Link>
-            <h1 className="text-xl font-bold text-slate-50">Search entries</h1>
+            <h1 className="text-xl font-bold text-[rgb(var(--text))]">Search entries</h1>
           </div>
 
-          <div className="bg-slate-900 rounded-2xl border border-slate-800 p-6 shadow-lg shadow-black/30 space-y-4 mb-8">
+          <div className="bg-[rgb(var(--surface))] rounded-2xl border border-[rgb(var(--border))] p-6  space-y-4 mb-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <label className="flex flex-col gap-1">
-                <span className="text-sm font-medium text-slate-200">From date</span>
+                <span className="text-sm font-medium text-[rgb(var(--text))]">From date</span>
                 <input
                   type="date"
                   value={from}
                   onChange={(e) => setFrom(e.target.value)}
-                  className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))] focus:border-transparent"
                 />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-sm font-medium text-slate-200">To date</span>
+                <span className="text-sm font-medium text-[rgb(var(--text))]">To date</span>
                 <input
                   type="date"
                   value={to}
                   onChange={(e) => setTo(e.target.value)}
-                  className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))] focus:border-transparent"
                 />
               </label>
             </div>
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-slate-200">Text search</span>
+              <span className="text-sm font-medium text-[rgb(var(--text))]">Text search</span>
               <input
                 type="text"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && runSearch()}
                 placeholder="Search in answers…"
-                className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent placeholder:text-slate-500"
+                className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))] focus:border-transparent placeholder:text-[rgb(var(--text-muted))]"
               />
             </label>
             <button
               onClick={runSearch}
               disabled={loading}
-              className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-xl font-medium hover:from-purple-400 hover:to-indigo-400 disabled:opacity-60"
+              className="flex items-center justify-center gap-2 w-full sm:w-auto px-6 py-2.5 bg-[rgb(var(--brand))] text-[rgb(var(--text))] rounded-xl font-medium hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
               Search
@@ -112,16 +112,16 @@ export default function JournalSearchPage() {
           {searched && (
             <div className="space-y-3">
               {entries.length === 0 && !loading && (
-                <p className="text-slate-400 text-center py-8">No entries match your filters.</p>
+                <p className="text-[rgb(var(--text-muted))] text-center py-8">No entries match your filters.</p>
               )}
               {entries.map((e) => (
                 <Link
                   key={e.id}
                   href={"/journal?date=" + e.date}
-                  className="block bg-slate-900 rounded-xl border border-slate-800 p-4 shadow-sm hover:border-purple-400/60 hover:shadow-md transition-all"
+                  className="block bg-[rgb(var(--surface))] rounded-xl border border-[rgb(var(--border))] p-4  hover:border-[rgb(var(--brand))]  transition-all"
                 >
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="flex items-center gap-2 text-slate-100 font-medium">
+                    <span className="flex items-center gap-2 text-[rgb(var(--text))] font-medium">
                       <Calendar className="w-4 h-4" />
                       {new Date(e.date + "T00:00:00").toLocaleDateString("en-US", {
                         weekday: "short",
@@ -131,12 +131,12 @@ export default function JournalSearchPage() {
                       })}
                     </span>
                     {e.is_draft && (
-                      <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-900 text-amber-200">
+                      <span className="px-2 py-0.5 rounded-full text-xs font-medium border border-[rgb(var(--brand)_/_0.45)] bg-[rgb(var(--brand-weak)_/_0.7)] text-[rgb(var(--brand))]">
                         Draft
                       </span>
                     )}
                   </div>
-                  <p className="text-slate-300 text-sm line-clamp-2">{snippet(e.answers) || "—"}</p>
+                  <p className="text-[rgb(var(--text-muted))] text-sm line-clamp-2">{snippet(e.answers) || "—"}</p>
                 </Link>
               ))}
             </div>

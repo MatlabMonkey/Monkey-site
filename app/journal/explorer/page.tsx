@@ -86,21 +86,21 @@ export default function JournalExplorerPage() {
 
   return (
     <PinGate>
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100">
+      <div className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--text))]">
         <div className="flex h-screen overflow-hidden">
           {/* Sidebar */}
           <div
             className={`${
               sidebarOpen ? "w-64" : "w-0"
-            } transition-all duration-300 border-r border-slate-800 bg-slate-900/50 overflow-y-auto flex-shrink-0`}
+            } transition-all duration-300 border-r border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.50)] overflow-y-auto flex-shrink-0`}
           >
             {sidebarOpen && (
               <div className="p-4">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-bold text-slate-100">Query Types</h2>
+                  <h2 className="text-lg font-bold text-[rgb(var(--text))]">Query Types</h2>
                   <button
                     onClick={() => setSidebarOpen(false)}
-                    className="p-1 hover:bg-slate-800 rounded"
+                    className="p-1 hover:bg-[rgb(var(--surface-2))] rounded"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -116,14 +116,14 @@ export default function JournalExplorerPage() {
                       }}
                       className={`w-full flex items-start gap-3 p-3 rounded-lg text-left transition-all ${
                         selectedQueryType === qt.id
-                          ? "bg-purple-600/30 border border-purple-500/50"
-                          : "hover:bg-slate-800/50 border border-transparent"
+                          ? "bg-[rgb(var(--brand-weak)_/_0.75)] border border-[rgb(var(--brand)_/_0.5)]"
+                          : "hover:bg-[rgb(var(--surface-2)_/_0.50)] border border-transparent"
                       }`}
                     >
-                      <div className="mt-0.5 text-slate-400">{qt.icon}</div>
+                      <div className="mt-0.5 text-[rgb(var(--text-muted))]">{qt.icon}</div>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-slate-100">{qt.label}</div>
-                        <div className="text-xs text-slate-400 mt-0.5">{qt.description}</div>
+                        <div className="text-sm font-medium text-[rgb(var(--text))]">{qt.label}</div>
+                        <div className="text-xs text-[rgb(var(--text-muted))] mt-0.5">{qt.description}</div>
                       </div>
                     </button>
                   ))}
@@ -135,35 +135,35 @@ export default function JournalExplorerPage() {
           {/* Main Content */}
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="border-b border-slate-800 bg-slate-900/50 p-4 flex items-center justify-between">
+            <div className="border-b border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.50)] p-4 flex items-center justify-between">
               <div className="flex items-center gap-4">
                 {!sidebarOpen && (
                   <button
                     onClick={() => setSidebarOpen(true)}
-                    className="p-2 hover:bg-slate-800 rounded"
+                    className="p-2 hover:bg-[rgb(var(--surface-2))] rounded"
                   >
                     <Filter className="w-5 h-5" />
                   </button>
                 )}
                 <Link
                   href="/journal"
-                  className="flex items-center gap-2 text-slate-300 hover:text-slate-50"
+                  className="flex items-center gap-2 text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))]"
                 >
                   <ArrowLeft className="w-5 h-5" />
                   <span className="font-medium">Journal</span>
                 </Link>
-                <h1 className="text-xl font-bold text-slate-50">Explorer</h1>
+                <h1 className="text-xl font-bold text-[rgb(var(--text))]">Explorer</h1>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setViewMode("list")}
-                  className={`p-2 rounded ${viewMode === "list" ? "bg-purple-600/30 text-purple-300" : "text-slate-400 hover:bg-slate-800"}`}
+                  className={`p-2 rounded ${viewMode === "list" ? "bg-[rgb(var(--brand-weak)_/_0.75)] text-[rgb(var(--brand))]" : "text-[rgb(var(--text-muted))] hover:bg-[rgb(var(--surface-2))]"}`}
                 >
                   <List className="w-5 h-5" />
                 </button>
                 <button
                   onClick={() => setViewMode("calendar")}
-                  className={`p-2 rounded ${viewMode === "calendar" ? "bg-purple-600/30 text-purple-300" : "text-slate-400 hover:bg-slate-800"}`}
+                  className={`p-2 rounded ${viewMode === "calendar" ? "bg-[rgb(var(--brand-weak)_/_0.75)] text-[rgb(var(--brand))]" : "text-[rgb(var(--text-muted))] hover:bg-[rgb(var(--surface-2))]"}`}
                 >
                   <Calendar className="w-5 h-5" />
                 </button>
@@ -171,7 +171,7 @@ export default function JournalExplorerPage() {
             </div>
 
             {/* Filter Form */}
-            <div className="border-b border-slate-800 bg-slate-900/30 p-6 overflow-y-auto">
+            <div className="border-b border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.30)] p-6 overflow-y-auto">
               <FilterForm
                 queryType={selectedQueryType}
                 numericQuestions={numericQuestions}
@@ -185,7 +185,7 @@ export default function JournalExplorerPage() {
             <div className="flex-1 overflow-y-auto p-6">
               {loading && (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
+                  <Loader2 className="w-8 h-8 animate-spin text-[rgb(var(--brand))]" />
                 </div>
               )}
 
@@ -193,11 +193,11 @@ export default function JournalExplorerPage() {
                 <>
                   {results.length === 0 ? (
                     <div className="text-center py-12">
-                      <p className="text-slate-400">No entries match your filters.</p>
+                      <p className="text-[rgb(var(--text-muted))]">No entries match your filters.</p>
                     </div>
                   ) : (
                     <>
-                      <div className="mb-4 text-sm text-slate-400">
+                      <div className="mb-4 text-sm text-[rgb(var(--text-muted))]">
                         Found {results.length} {results.length === 1 ? "entry" : "entries"}
                       </div>
                       {viewMode === "list" ? (
@@ -212,7 +212,7 @@ export default function JournalExplorerPage() {
 
               {!loading && !searched && (
                 <div className="text-center py-12">
-                  <p className="text-slate-400">Select a query type and set filters to explore your journal entries.</p>
+                  <p className="text-[rgb(var(--text-muted))]">Select a query type and set filters to explore your journal entries.</p>
                 </div>
               )}
             </div>
@@ -252,23 +252,23 @@ function CombinationFiltersForm({
   };
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-semibold text-slate-100">Combination Filters</h3>
+      <h3 className="text-lg font-semibold text-[rgb(var(--text))]">Combination Filters</h3>
       <div className="space-y-4">
         {combinationConditions.map((cond, idx) => {
           const selectedQ = JOURNAL_QUESTION_SET.find((q) => q.key === cond.question_key);
           const isNumeric = selectedQ?.question_type === "number" || selectedQ?.question_type === "rating";
           const isMultiselect = selectedQ?.question_type === "multiselect";
           return (
-            <div key={idx} className="p-4 bg-slate-800/50 rounded-lg border border-slate-700">
+            <div key={idx} className="p-4 bg-[rgb(var(--surface-2)_/_0.50)] rounded-lg border border-[rgb(var(--border))]">
               <div className="flex items-start justify-between mb-3">
-                <span className="text-sm font-medium text-slate-300">Condition {idx + 1}</span>
-                <button onClick={() => removeCondition(idx)} className="text-slate-400 hover:text-red-400">
+                <span className="text-sm font-medium text-[rgb(var(--text-muted))]">Condition {idx + 1}</span>
+                <button onClick={() => removeCondition(idx)} className="text-[rgb(var(--text-muted))] hover:text-[rgb(239_68_68)]">
                   <X className="w-4 h-4" />
                 </button>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                 <label className="flex flex-col gap-1">
-                  <span className="text-xs text-slate-400">Question</span>
+                  <span className="text-xs text-[rgb(var(--text-muted))]">Question</span>
                   <select
                     value={cond.question_key}
                     onChange={(e) => {
@@ -276,7 +276,7 @@ function CombinationFiltersForm({
                       updateCondition(idx, "question_key", e.target.value);
                       updateCondition(idx, "question_type", q?.question_type || "text");
                     }}
-                    className="px-2 py-1.5 text-sm border border-slate-700 bg-slate-950 text-slate-100 rounded focus:ring-2 focus:ring-purple-500"
+                    className="px-2 py-1.5 text-sm border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded focus:ring-2 focus:ring-[rgb(var(--brand))]"
                   >
                     <option value="">Select...</option>
                     {JOURNAL_QUESTION_SET.map((q) => (
@@ -287,11 +287,11 @@ function CombinationFiltersForm({
                   </select>
                 </label>
                 <label className="flex flex-col gap-1">
-                  <span className="text-xs text-slate-400">Operator</span>
+                  <span className="text-xs text-[rgb(var(--text-muted))]">Operator</span>
                   <select
                     value={cond.operator}
                     onChange={(e) => updateCondition(idx, "operator", e.target.value)}
-                    className="px-2 py-1.5 text-sm border border-slate-700 bg-slate-950 text-slate-100 rounded focus:ring-2 focus:ring-purple-500"
+                    className="px-2 py-1.5 text-sm border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded focus:ring-2 focus:ring-[rgb(var(--brand))]"
                   >
                     <option value="">Select...</option>
                     {isNumeric && (
@@ -311,12 +311,12 @@ function CombinationFiltersForm({
                   </select>
                 </label>
                 <label className="flex flex-col gap-1">
-                  <span className="text-xs text-slate-400">Value</span>
+                  <span className="text-xs text-[rgb(var(--text-muted))]">Value</span>
                   {isMultiselect ? (
                     <select
                       value={cond.value}
                       onChange={(e) => updateCondition(idx, "value", e.target.value)}
-                      className="px-2 py-1.5 text-sm border border-slate-700 bg-slate-950 text-slate-100 rounded focus:ring-2 focus:ring-purple-500"
+                      className="px-2 py-1.5 text-sm border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded focus:ring-2 focus:ring-[rgb(var(--brand))]"
                     >
                       <option value="">Select...</option>
                       {((selectedQ?.metadata?.options as string[]) || []).map((opt) => (
@@ -331,7 +331,7 @@ function CombinationFiltersForm({
                       value={cond.value}
                       onChange={(e) => updateCondition(idx, "value", e.target.value)}
                       placeholder="Enter value..."
-                      className="px-2 py-1.5 text-sm border border-slate-700 bg-slate-950 text-slate-100 rounded focus:ring-2 focus:ring-purple-500"
+                      className="px-2 py-1.5 text-sm border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded focus:ring-2 focus:ring-[rgb(var(--brand))]"
                     />
                   )}
                 </label>
@@ -341,7 +341,7 @@ function CombinationFiltersForm({
         })}
         <button
           onClick={addCondition}
-          className="px-4 py-2 text-sm border border-slate-700 bg-slate-800 text-slate-300 rounded-lg hover:bg-slate-700"
+          className="px-4 py-2 text-sm border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] text-[rgb(var(--text-muted))] rounded-lg hover:bg-[rgb(var(--surface-2))]"
         >
           + Add Condition
         </button>
@@ -349,32 +349,32 @@ function CombinationFiltersForm({
       {combinationConditions.length > 0 && (
         <div className="flex items-center gap-4">
           <label className="flex items-center gap-2">
-            <span className="text-sm text-slate-300">Logic:</span>
+            <span className="text-sm text-[rgb(var(--text-muted))]">Logic:</span>
             <select
               value={localParams.logic || "AND"}
               onChange={(e) => updateParam("logic", e.target.value)}
-              className="px-3 py-1.5 border border-slate-700 bg-slate-950 text-slate-100 rounded focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-1.5 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded focus:ring-2 focus:ring-[rgb(var(--brand))]"
             >
               <option value="AND">AND (all conditions)</option>
               <option value="OR">OR (any condition)</option>
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">From Date (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">From Date (optional)</span>
             <input
               type="date"
               value={localParams.from || ""}
               onChange={(e) => updateParam("from", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">To Date (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">To Date (optional)</span>
             <input
               type="date"
               value={localParams.to || ""}
               onChange={(e) => updateParam("to", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
         </div>
@@ -382,7 +382,7 @@ function CombinationFiltersForm({
       <button
         onClick={handleRun}
         disabled={loading || combinationConditions.length === 0 || combinationConditions.some((c) => !c.question_key || !c.operator || !c.value)}
-        className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-xl font-medium hover:from-purple-400 hover:to-indigo-400 disabled:opacity-60 disabled:cursor-not-allowed"
+        className="px-6 py-2.5 bg-[rgb(var(--brand))] text-[rgb(var(--text))] rounded-xl font-medium hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {loading ? <Loader2 className="w-4 h-4 animate-spin inline" /> : "Run Query"}
       </button>
@@ -460,14 +460,14 @@ function FilterForm({
   if (queryType === "numeric") {
     return (
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-slate-100">Numeric Filter</h3>
+        <h3 className="text-lg font-semibold text-[rgb(var(--text))]">Numeric Filter</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">Question</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">Question</span>
             <select
               value={localParams.question_key || ""}
               onChange={(e) => updateParam("question_key", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             >
               <option value="">Select question...</option>
               {numericQuestions.map((q) => (
@@ -478,11 +478,11 @@ function FilterForm({
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">Operator</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">Operator</span>
             <select
               value={localParams.operator || ""}
               onChange={(e) => updateParam("operator", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             >
               <option value="">Select operator...</option>
               <option value=">=">Greater than or equal (≥)</option>
@@ -494,58 +494,58 @@ function FilterForm({
           {localParams.operator === "between" ? (
             <>
               <label className="flex flex-col gap-1">
-                <span className="text-sm font-medium text-slate-200">Min Value</span>
+                <span className="text-sm font-medium text-[rgb(var(--text))]">Min Value</span>
                 <input
                   type="number"
                   value={localParams.value || ""}
                   onChange={(e) => updateParam("value", e.target.value ? Number(e.target.value) : undefined)}
-                  className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
                 />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="text-sm font-medium text-slate-200">Max Value</span>
+                <span className="text-sm font-medium text-[rgb(var(--text))]">Max Value</span>
                 <input
                   type="number"
                   value={localParams.value2 || ""}
                   onChange={(e) => updateParam("value2", e.target.value ? Number(e.target.value) : undefined)}
-                  className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+                  className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
                 />
               </label>
             </>
           ) : (
             <label className="flex flex-col gap-1">
-              <span className="text-sm font-medium text-slate-200">Value</span>
+              <span className="text-sm font-medium text-[rgb(var(--text))]">Value</span>
               <input
                 type="number"
                 value={localParams.value || ""}
                 onChange={(e) => updateParam("value", e.target.value ? Number(e.target.value) : undefined)}
-                className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
               />
             </label>
           )}
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">From Date (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">From Date (optional)</span>
             <input
               type="date"
               value={localParams.from || ""}
               onChange={(e) => updateParam("from", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">To Date (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">To Date (optional)</span>
             <input
               type="date"
               value={localParams.to || ""}
               onChange={(e) => updateParam("to", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
         </div>
         <button
           onClick={handleRun}
           disabled={loading || !localParams.question_key || !localParams.operator || localParams.value === undefined}
-          className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-xl font-medium hover:from-purple-400 hover:to-indigo-400 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="px-6 py-2.5 bg-[rgb(var(--brand))] text-[rgb(var(--text))] rounded-xl font-medium hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin inline" /> : "Run Query"}
         </button>
@@ -556,41 +556,41 @@ function FilterForm({
   if (queryType === "people" || queryType === "people_count") {
     return (
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-slate-100">{queryType === "people_count" ? "People Count" : "People Search"}</h3>
+        <h3 className="text-lg font-semibold text-[rgb(var(--text))]">{queryType === "people_count" ? "People Count" : "People Search"}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">Person Name</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">Person Name</span>
             <input
               type="text"
               value={localParams.person_name || ""}
               onChange={(e) => updateParam("person_name", e.target.value)}
               placeholder="Enter person name..."
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">From Date (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">From Date (optional)</span>
             <input
               type="date"
               value={localParams.from || ""}
               onChange={(e) => updateParam("from", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">To Date (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">To Date (optional)</span>
             <input
               type="date"
               value={localParams.to || ""}
               onChange={(e) => updateParam("to", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
         </div>
         <button
           onClick={handleRun}
           disabled={loading || !localParams.person_name?.trim()}
-          className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-xl font-medium hover:from-purple-400 hover:to-indigo-400 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="px-6 py-2.5 bg-[rgb(var(--brand))] text-[rgb(var(--text))] rounded-xl font-medium hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin inline" /> : queryType === "people_count" ? "Count Days" : "Search"}
         </button>
@@ -601,41 +601,41 @@ function FilterForm({
   if (queryType === "activity") {
     return (
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-slate-100">Activity Search</h3>
+        <h3 className="text-lg font-semibold text-[rgb(var(--text))]">Activity Search</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">Search Text</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">Search Text</span>
             <input
               type="text"
               value={localParams.search_text || ""}
               onChange={(e) => updateParam("search_text", e.target.value)}
               placeholder="e.g., surfing, beach, meeting..."
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">From Date (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">From Date (optional)</span>
             <input
               type="date"
               value={localParams.from || ""}
               onChange={(e) => updateParam("from", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">To Date (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">To Date (optional)</span>
             <input
               type="date"
               value={localParams.to || ""}
               onChange={(e) => updateParam("to", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
         </div>
         <button
           onClick={handleRun}
           disabled={loading || !localParams.search_text?.trim()}
-          className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-xl font-medium hover:from-purple-400 hover:to-indigo-400 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="px-6 py-2.5 bg-[rgb(var(--brand))] text-[rgb(var(--text))] rounded-xl font-medium hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin inline" /> : "Search"}
         </button>
@@ -647,10 +647,10 @@ function FilterForm({
     const workoutOptions = (JOURNAL_QUESTION_SET.find((q) => q.key === "workouts")?.metadata?.options as string[] | undefined) || [];
     return (
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-slate-100">Workout Filter</h3>
+        <h3 className="text-lg font-semibold text-[rgb(var(--text))]">Workout Filter</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="flex flex-col gap-1 md:col-span-2">
-            <span className="text-sm font-medium text-slate-200">Workout Types</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">Workout Types</span>
             <div className="flex flex-wrap gap-2 mt-2">
               {workoutOptions.map((opt) => (
                 <label key={opt} className="flex items-center gap-2 cursor-pointer">
@@ -662,36 +662,36 @@ function FilterForm({
                       const updated = e.target.checked ? [...current, opt] : current.filter((w: string) => w !== opt);
                       updateParam("workout_types", updated);
                     }}
-                    className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-purple-500 focus:ring-purple-500"
+                    className="w-4 h-4 rounded border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--brand))] focus:ring-[rgb(var(--brand))]"
                   />
-                  <span className="text-sm text-slate-300">{opt}</span>
+                  <span className="text-sm text-[rgb(var(--text-muted))]">{opt}</span>
                 </label>
               ))}
             </div>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">From Date (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">From Date (optional)</span>
             <input
               type="date"
               value={localParams.from || ""}
               onChange={(e) => updateParam("from", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">To Date (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">To Date (optional)</span>
             <input
               type="date"
               value={localParams.to || ""}
               onChange={(e) => updateParam("to", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
         </div>
         <button
           onClick={handleRun}
           disabled={loading || !localParams.workout_types || localParams.workout_types.length === 0}
-          className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-xl font-medium hover:from-purple-400 hover:to-indigo-400 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="px-6 py-2.5 bg-[rgb(var(--brand))] text-[rgb(var(--text))] rounded-xl font-medium hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin inline" /> : "Filter"}
         </button>
@@ -703,10 +703,10 @@ function FilterForm({
     const habitOptions = (JOURNAL_QUESTION_SET.find((q) => q.key === "daily_habits")?.metadata?.options as string[] | undefined) || [];
     return (
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-slate-100">Habit Filter</h3>
+        <h3 className="text-lg font-semibold text-[rgb(var(--text))]">Habit Filter</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="flex flex-col gap-1 md:col-span-2">
-            <span className="text-sm font-medium text-slate-200">Daily Habits</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">Daily Habits</span>
             <div className="flex flex-wrap gap-2 mt-2">
               {habitOptions.map((opt) => (
                 <label key={opt} className="flex items-center gap-2 cursor-pointer">
@@ -718,36 +718,36 @@ function FilterForm({
                       const updated = e.target.checked ? [...current, opt] : current.filter((h: string) => h !== opt);
                       updateParam("habit_types", updated);
                     }}
-                    className="w-4 h-4 rounded border-slate-700 bg-slate-950 text-purple-500 focus:ring-purple-500"
+                    className="w-4 h-4 rounded border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--brand))] focus:ring-[rgb(var(--brand))]"
                   />
-                  <span className="text-sm text-slate-300">{opt}</span>
+                  <span className="text-sm text-[rgb(var(--text-muted))]">{opt}</span>
                 </label>
               ))}
             </div>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">From Date (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">From Date (optional)</span>
             <input
               type="date"
               value={localParams.from || ""}
               onChange={(e) => updateParam("from", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">To Date (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">To Date (optional)</span>
             <input
               type="date"
               value={localParams.to || ""}
               onChange={(e) => updateParam("to", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
         </div>
         <button
           onClick={handleRun}
           disabled={loading || !localParams.habit_types || localParams.habit_types.length === 0}
-          className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-xl font-medium hover:from-purple-400 hover:to-indigo-400 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="px-6 py-2.5 bg-[rgb(var(--brand))] text-[rgb(var(--text))] rounded-xl font-medium hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin inline" /> : "Filter"}
         </button>
@@ -758,41 +758,41 @@ function FilterForm({
   if (queryType === "text_search") {
     return (
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-slate-100">Advanced Text Search</h3>
+        <h3 className="text-lg font-semibold text-[rgb(var(--text))]">Advanced Text Search</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">Search Text</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">Search Text</span>
             <input
               type="text"
               value={localParams.search_text || ""}
               onChange={(e) => updateParam("search_text", e.target.value)}
               placeholder="Enter search term..."
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">From Date (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">From Date (optional)</span>
             <input
               type="date"
               value={localParams.from || ""}
               onChange={(e) => updateParam("from", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">To Date (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">To Date (optional)</span>
             <input
               type="date"
               value={localParams.to || ""}
               onChange={(e) => updateParam("to", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
         </div>
         <button
           onClick={handleRun}
           disabled={loading || !localParams.search_text?.trim()}
-          className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-xl font-medium hover:from-purple-400 hover:to-indigo-400 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="px-6 py-2.5 bg-[rgb(var(--brand))] text-[rgb(var(--text))] rounded-xl font-medium hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin inline" /> : "Search"}
         </button>
@@ -803,14 +803,14 @@ function FilterForm({
   if (queryType === "rbt") {
     return (
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-slate-100">Rose / Bud / Thorn</h3>
+        <h3 className="text-lg font-semibold text-[rgb(var(--text))]">Rose / Bud / Thorn</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">Field</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">Field</span>
             <select
               value={localParams.rbt_field || ""}
               onChange={(e) => updateParam("rbt_field", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             >
               <option value="">Select field...</option>
               <option value="rose">Rose (highlight)</option>
@@ -819,38 +819,38 @@ function FilterForm({
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">Search Text (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">Search Text (optional)</span>
             <input
               type="text"
               value={localParams.rbt_search || ""}
               onChange={(e) => updateParam("rbt_search", e.target.value)}
               placeholder="Filter by text..."
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">From Date (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">From Date (optional)</span>
             <input
               type="date"
               value={localParams.from || ""}
               onChange={(e) => updateParam("from", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">To Date (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">To Date (optional)</span>
             <input
               type="date"
               value={localParams.to || ""}
               onChange={(e) => updateParam("to", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
         </div>
         <button
           onClick={handleRun}
           disabled={loading || !localParams.rbt_field}
-          className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-xl font-medium hover:from-purple-400 hover:to-indigo-400 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="px-6 py-2.5 bg-[rgb(var(--brand))] text-[rgb(var(--text))] rounded-xl font-medium hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin inline" /> : "Search"}
         </button>
@@ -861,14 +861,14 @@ function FilterForm({
   if (queryType === "date_pattern") {
     return (
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-slate-100">Date Pattern</h3>
+        <h3 className="text-lg font-semibold text-[rgb(var(--text))]">Date Pattern</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">Day of Week (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">Day of Week (optional)</span>
             <select
               value={localParams.day_of_week ?? ""}
               onChange={(e) => updateParam("day_of_week", e.target.value ? Number(e.target.value) : undefined)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             >
               <option value="">Any day</option>
               <option value="0">Sunday</option>
@@ -881,11 +881,11 @@ function FilterForm({
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">Month (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">Month (optional)</span>
             <select
               value={localParams.month ?? ""}
               onChange={(e) => updateParam("month", e.target.value ? Number(e.target.value) : undefined)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             >
               <option value="">Any month</option>
               {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
@@ -896,38 +896,38 @@ function FilterForm({
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">Year (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">Year (optional)</span>
             <input
               type="number"
               value={localParams.year || ""}
               onChange={(e) => updateParam("year", e.target.value ? Number(e.target.value) : undefined)}
               placeholder="e.g., 2024"
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">From Date (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">From Date (optional)</span>
             <input
               type="date"
               value={localParams.from || ""}
               onChange={(e) => updateParam("from", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">To Date (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">To Date (optional)</span>
             <input
               type="date"
               value={localParams.to || ""}
               onChange={(e) => updateParam("to", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
         </div>
         <button
           onClick={handleRun}
           disabled={loading}
-          className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-xl font-medium hover:from-purple-400 hover:to-indigo-400 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="px-6 py-2.5 bg-[rgb(var(--brand))] text-[rgb(var(--text))] rounded-xl font-medium hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin inline" /> : "Find Entries"}
         </button>
@@ -977,15 +977,15 @@ function FilterForm({
 
     return (
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-slate-100">Streak Detection</h3>
-        <p className="text-sm text-slate-400">Find consecutive days matching a condition</p>
+        <h3 className="text-lg font-semibold text-[rgb(var(--text))]">Streak Detection</h3>
+        <p className="text-sm text-[rgb(var(--text-muted))]">Find consecutive days matching a condition</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">Question</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">Question</span>
             <select
               value={streakCondition.question_key}
               onChange={(e) => updateStreakField("question_key", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             >
               <option value="">Select question...</option>
               {JOURNAL_QUESTION_SET.map((q) => (
@@ -996,11 +996,11 @@ function FilterForm({
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">Operator</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">Operator</span>
             <select
               value={streakCondition.operator}
               onChange={(e) => updateStreakField("operator", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             >
               <option value="">Select operator...</option>
               {isNumeric && (
@@ -1020,12 +1020,12 @@ function FilterForm({
             </select>
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">Value</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">Value</span>
             {isMultiselect ? (
               <select
                 value={streakCondition.value}
                 onChange={(e) => updateStreakField("value", e.target.value)}
-                className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
               >
                 <option value="">Select...</option>
                 {((selectedQ?.metadata?.options as string[]) || []).map((opt) => (
@@ -1040,33 +1040,33 @@ function FilterForm({
                 value={streakCondition.value}
                 onChange={(e) => updateStreakField("value", e.target.value)}
                 placeholder="Enter value..."
-                className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+                className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
               />
             )}
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">From Date (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">From Date (optional)</span>
             <input
               type="date"
               value={localParams.from || ""}
               onChange={(e) => updateParam("from", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
           <label className="flex flex-col gap-1">
-            <span className="text-sm font-medium text-slate-200">To Date (optional)</span>
+            <span className="text-sm font-medium text-[rgb(var(--text))]">To Date (optional)</span>
             <input
               type="date"
               value={localParams.to || ""}
               onChange={(e) => updateParam("to", e.target.value)}
-              className="px-3 py-2 border border-slate-700 bg-slate-950 text-slate-100 rounded-lg focus:ring-2 focus:ring-purple-500"
+              className="px-3 py-2 border border-[rgb(var(--border))] bg-[rgb(var(--bg))] text-[rgb(var(--text))] rounded-lg focus:ring-2 focus:ring-[rgb(var(--brand))]"
             />
           </label>
         </div>
         <button
           onClick={handleRun}
           disabled={loading || !streakCondition.question_key || !streakCondition.operator || !streakCondition.value}
-          className="px-6 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-xl font-medium hover:from-purple-400 hover:to-indigo-400 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="px-6 py-2.5 bg-[rgb(var(--brand))] text-[rgb(var(--text))] rounded-xl font-medium hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin inline" /> : "Find Streaks"}
         </button>
@@ -1096,10 +1096,10 @@ function ResultsList({ results }: { results: SearchResultItem[] }) {
         <Link
           key={e.id}
           href={"/journal?date=" + e.date}
-          className="block bg-slate-900 rounded-xl border border-slate-800 p-4 shadow-sm hover:border-purple-400/60 hover:shadow-md transition-all"
+          className="block bg-[rgb(var(--surface))] rounded-xl border border-[rgb(var(--border))] p-4  hover:border-[rgb(var(--brand))]  transition-all"
         >
           <div className="flex items-center justify-between gap-2 mb-2">
-            <span className="flex items-center gap-2 text-slate-100 font-medium">
+            <span className="flex items-center gap-2 text-[rgb(var(--text))] font-medium">
               <Calendar className="w-4 h-4" />
               {new Date(e.date + "T00:00:00").toLocaleDateString("en-US", {
                 weekday: "short",
@@ -1109,10 +1109,12 @@ function ResultsList({ results }: { results: SearchResultItem[] }) {
               })}
             </span>
             {e.is_draft && (
-              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-amber-900 text-amber-200">Draft</span>
+              <span className="px-2 py-0.5 rounded-full text-xs font-medium border border-[rgb(var(--brand)_/_0.45)] bg-[rgb(var(--brand-weak)_/_0.7)] text-[rgb(var(--brand))]">
+                Draft
+              </span>
             )}
           </div>
-          <p className="text-slate-300 text-sm line-clamp-2">{snippet(e.answers) || "—"}</p>
+          <p className="text-[rgb(var(--text-muted))] text-sm line-clamp-2">{snippet(e.answers) || "—"}</p>
         </Link>
       ))}
     </div>
@@ -1142,27 +1144,27 @@ function ResultsCalendar({ results }: { results: SearchResultItem[] }) {
   const formatDate = (d: Date) => d.toISOString().split("T")[0];
 
   return (
-    <div className="bg-slate-900 rounded-xl border border-slate-800 p-6">
+    <div className="bg-[rgb(var(--surface))] rounded-xl border border-[rgb(var(--border))] p-6">
       <div className="flex items-center justify-between mb-6">
         <button
           onClick={() => setCurrentMonth(new Date(year, month - 1, 1))}
-          className="p-2 hover:bg-slate-800 rounded"
+          className="p-2 hover:bg-[rgb(var(--surface-2))] rounded"
         >
           ←
         </button>
-        <h3 className="text-lg font-semibold text-slate-100">
+        <h3 className="text-lg font-semibold text-[rgb(var(--text))]">
           {currentMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}
         </h3>
         <button
           onClick={() => setCurrentMonth(new Date(year, month + 1, 1))}
-          className="p-2 hover:bg-slate-800 rounded"
+          className="p-2 hover:bg-[rgb(var(--surface-2))] rounded"
         >
           →
         </button>
       </div>
       <div className="grid grid-cols-7 gap-1">
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-          <div key={day} className="text-center text-sm font-medium text-slate-400 py-2">
+          <div key={day} className="text-center text-sm font-medium text-[rgb(var(--text-muted))] py-2">
             {day}
           </div>
         ))}
@@ -1178,12 +1180,12 @@ function ResultsCalendar({ results }: { results: SearchResultItem[] }) {
               href={"/journal?date=" + dateStr}
               className={`p-2 text-center rounded transition-all ${
                 !isCurrentMonth
-                  ? "text-slate-600"
+                  ? "text-[rgb(var(--text-muted))]"
                   : isResult
-                    ? "bg-purple-600/30 border border-purple-500/50 text-purple-200 hover:bg-purple-600/50"
+                    ? "bg-[rgb(var(--brand-weak)_/_0.75)] border border-[rgb(var(--brand)_/_0.5)] text-[rgb(var(--text))] hover:bg-[rgb(var(--brand-weak))]"
                     : isToday
-                      ? "bg-slate-800 text-slate-100 border border-slate-700"
-                      : "text-slate-300 hover:bg-slate-800"
+                      ? "bg-[rgb(var(--surface-2))] text-[rgb(var(--text))] border border-[rgb(var(--border))]"
+                      : "text-[rgb(var(--text-muted))] hover:bg-[rgb(var(--surface-2))]"
               }`}
             >
               {day.getDate()}
