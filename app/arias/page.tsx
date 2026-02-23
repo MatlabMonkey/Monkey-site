@@ -1,22 +1,40 @@
 "use client"
 
 import { Inter, JetBrains_Mono } from "next/font/google"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Card from "../components/Card"
 
 type TimePeriod = "daily" | "weekly" | "monthly"
 
-interface UsageData {
-  period: TimePeriod
-  models: {
-    name: string
+interface UsageRecord {
+  date: string
+  provider: string
+  model: string
+  tokens_in: number
+  tokens_out: number
+  cost_usd: number
+}
+
+interface UsageApiResponse {
+  daily: UsageRecord[]
+  summary: {
     provider: string
-    tokensIn: number
-    tokensOut: number
-    cost: number
+    model: string
+    tokens_in: number
+    tokens_out: number
+    cost_usd: number
   }[]
-  totalTokens: number
-  totalCost: number
+  total_tokens_in: number
+  total_tokens_out: number
+  total_cost: number
+}
+
+interface ModelDisplay {
+  name: string
+  provider: string
+  tokensIn: number
+  tokensOut: number
+  cost: number
 }
 
 type SortKey = "name" | "provider" | "tokensIn" | "tokensOut" | "totalTokens" | "cost"
@@ -25,40 +43,12 @@ type SortDirection = "asc" | "desc"
 const inter = Inter({ subsets: ["latin"] })
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"] })
 
-const usageDataByPeriod: Record<TimePeriod, UsageData> = {
-  daily: {
-    period: "daily",
-    models: [
-      { name: "Kimi K2.5", provider: "Moonshot", tokensIn: 920000, tokensOut: 1460000, cost: 16.24 },
-      { name: "Sonnet 4.6", provider: "Anthropic", tokensIn: 760000, tokensOut: 1090000, cost: 22.95 },
-      { name: "Opus 4.6", provider: "Anthropic", tokensIn: 330000, tokensOut: 510000, cost: 29.44 },
-      { name: "Ollama", provider: "Local", tokensIn: 640000, tokensOut: 780000, cost: 0 },
-    ],
-    totalTokens: 6490000,
-    totalCost: 68.63,
-  },
-  weekly: {
-    period: "weekly",
-    models: [
-      { name: "Kimi K2.5", provider: "Moonshot", tokensIn: 6040000, tokensOut: 9220000, cost: 108.37 },
-      { name: "Sonnet 4.6", provider: "Anthropic", tokensIn: 4870000, tokensOut: 7310000, cost: 151.64 },
-      { name: "Opus 4.6", provider: "Anthropic", tokensIn: 2110000, tokensOut: 3190000, cost: 191.22 },
-      { name: "Ollama", provider: "Local", tokensIn: 4520000, tokensOut: 5670000, cost: 0 },
-    ],
-    totalTokens: 42930000,
-    totalCost: 451.23,
-  },
-  monthly: {
-    period: "monthly",
-    models: [
-      { name: "Kimi K2.5", provider: "Moonshot", tokensIn: 26100000, tokensOut: 40200000, cost: 451.12 },
-      { name: "Sonnet 4.6", provider: "Anthropic", tokensIn: 20800000, tokensOut: 31600000, cost: 682.04 },
-      { name: "Opus 4.6", provider: "Anthropic", tokensIn: 9640000, tokensOut: 14500000, cost: 882.2 },
-      { name: "Ollama", provider: "Local", tokensIn: 19200000, tokensOut: 24800000, cost: 0 },
-    ],
-    totalTokens: 186840000,
-    totalCost: 2015.36,
-  },
+// Map API model names to display names
+const DISPLAY_NAMES: Record<string, string> = {
+  'claude-sonnet-4-6': 'Sonnet 4.6',
+  'claude-opus-4-6': 'Opus 4.6',
+  'kimi-k2.5': 'Kimi K2.5',
+  'qwen2.5-coder:7b': 'Ollama',
 }
 
 function formatNumber(value: number) {
@@ -72,6 +62,37 @@ function formatCurrency(value: number) {
 function getNextSortDirection(currentKey: SortKey, nextKey: SortKey, direction: SortDirection): SortDirection {
   if (currentKey === nextKey) return direction === "asc" ? "desc" : "asc"
   return "desc"
+}
+
+function aggregateByPeriod(data: UsageRecord[], period: TimePeriod): ModelDisplay[] {
+  const now = new Date()
+  const cutoff = new Date()
+  
+  if (period === "daily") cutoff.setDate(now.getDate() - 1)
+  else if (period === "weekly") cutoff.setDate(now.getDate() - 7)
+  else cutoff.setDate(now.getDate() - 30)
+
+  const filtered = data.filter(r => new Date(r.date) >= cutoff)
+  
+  // Aggregate by model
+  const grouped = filtered.reduce((acc, r) => {
+    const key = `${r.provider}/${r.model}`
+    if (!acc[key]) {
+      acc[key] = {
+        name: DISPLAY_NAMES[r.model] || r.model,
+        provider: r.provider === 'anthropic' ? 'Anthropic' : r.provider === 'moonshot' ? 'Moonshot' : 'Local',
+        tokensIn: 0,
+        tokensOut: 0,
+        cost: 0,
+      }
+    }
+    acc[key].tokensIn += r.tokens_in
+    acc[key].tokensOut += r.tokens_out
+    acc[key].cost += r.cost_usd
+    return acc
+  }, {} as Record<string, ModelDisplay>)
+
+  return Object.values(grouped)
 }
 
 function TimePeriodToggle({
@@ -135,7 +156,7 @@ function UsageTable({
   sortDirection,
   onSort,
 }: {
-  data: UsageData["models"]
+  data: ModelDisplay[]
   sortKey: SortKey
   sortDirection: SortDirection
   onSort: (key: SortKey) => void
@@ -146,7 +167,7 @@ function UsageTable({
     { label: "Input Tokens", key: "tokensIn", align: "right" },
     { label: "Output Tokens", key: "tokensOut", align: "right" },
     { label: "Total Tokens", key: "totalTokens", align: "right" },
-    { label: "Estimated Cost", key: "cost", align: "right" },
+    { label: "Cost", key: "cost", align: "right" },
   ]
 
   return (
@@ -187,7 +208,7 @@ function UsageTable({
             {data.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-3 py-6 text-center text-sm text-[rgb(180_189_200)]">
-                  No data yet.
+                  No data yet. Run the backfill script to populate historical usage.
                 </td>
               </tr>
             ) : (
@@ -232,19 +253,39 @@ export default function AriasPage() {
   const [period, setPeriod] = useState<TimePeriod>("daily")
   const [sortKey, setSortKey] = useState<SortKey>("cost")
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc")
+  const [usageData, setUsageData] = useState<UsageApiResponse | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const usage = usageDataByPeriod[period]
+  useEffect(() => {
+    async function fetchUsage() {
+      try {
+        const response = await fetch('/api/usage?days=30')
+        if (!response.ok) throw new Error('Failed to fetch usage data')
+        const data = await response.json()
+        setUsageData(data)
+      } catch (err: any) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchUsage()
+  }, [])
+
+  const models = useMemo(() => {
+    if (!usageData?.daily) return []
+    return aggregateByPeriod(usageData.daily, period)
+  }, [usageData, period])
 
   const sortedModels = useMemo(() => {
-    const copy = [...usage.models]
+    const copy = [...models]
     copy.sort((a, b) => {
       const aTotal = a.tokensIn + a.tokensOut
       const bTotal = b.tokensIn + b.tokensOut
 
-      const aValue =
-        sortKey === "totalTokens" ? aTotal : sortKey === "name" || sortKey === "provider" ? a[sortKey] : a[sortKey]
-      const bValue =
-        sortKey === "totalTokens" ? bTotal : sortKey === "name" || sortKey === "provider" ? b[sortKey] : b[sortKey]
+      const aValue = sortKey === "totalTokens" ? aTotal : sortKey === "name" || sortKey === "provider" ? a[sortKey] : a[sortKey]
+      const bValue = sortKey === "totalTokens" ? bTotal : sortKey === "name" || sortKey === "provider" ? b[sortKey] : b[sortKey]
 
       if (typeof aValue === "string" && typeof bValue === "string") {
         const result = aValue.localeCompare(bValue)
@@ -254,12 +295,27 @@ export default function AriasPage() {
       return sortDirection === "asc" ? result : -result
     })
     return copy
-  }, [usage.models, sortDirection, sortKey])
+  }, [models, sortDirection, sortKey])
+
+  const totals = useMemo(() => {
+    if (!usageData) return { tokens: 0, cost: 0, count: 4 }
+    const cutoff = new Date()
+    if (period === "daily") cutoff.setDate(cutoff.getDate() - 1)
+    else if (period === "weekly") cutoff.setDate(cutoff.getDate() - 7)
+    else cutoff.setDate(cutoff.getDate() - 30)
+
+    const filtered = usageData.daily?.filter(r => new Date(r.date) >= cutoff) || []
+    return {
+      tokens: filtered.reduce((sum, r) => sum + r.tokens_in + r.tokens_out, 0),
+      cost: filtered.reduce((sum, r) => sum + r.cost_usd, 0),
+      count: new Set(filtered.map(r => r.model)).size || 4,
+    }
+  }, [usageData, period])
 
   const maxModelTokens = useMemo(() => {
-    if (!usage.models.length) return 1
-    return Math.max(...usage.models.map((model) => model.tokensIn + model.tokensOut))
-  }, [usage.models])
+    if (!models.length) return 1
+    return Math.max(...models.map((m) => m.tokensIn + m.tokensOut))
+  }, [models])
 
   function handleSort(nextKey: SortKey) {
     const nextDirection = getNextSortDirection(sortKey, nextKey, sortDirection)
@@ -280,39 +336,47 @@ export default function AriasPage() {
           <TimePeriodToggle period={period} onChange={setPeriod} />
         </section>
 
-        <section className="grid gap-4 md:grid-cols-3">
-          <OverviewCard title="Total Tokens" value={formatNumber(usage.totalTokens)} hint={`${period} token spend`} mono />
-          <OverviewCard title="Total Cost" value={formatCurrency(usage.totalCost)} hint="Estimated at placeholder rates" mono />
-          <OverviewCard title="Active Models" value={String(usage.models.length)} hint="Kimi K2.5, Sonnet 4.6, Opus 4.6, Ollama" mono />
-        </section>
+        {loading ? (
+          <div className="text-center py-12 text-[rgb(180_189_200)]">Loading usage data...</div>
+        ) : error ? (
+          <div className="text-center py-12 text-red-400">Error: {error}</div>
+        ) : (
+          <>
+            <section className="grid gap-4 md:grid-cols-3">
+              <OverviewCard title="Total Tokens" value={formatNumber(totals.tokens)} hint={`${period} token spend`} mono />
+              <OverviewCard title="Total Cost" value={formatCurrency(totals.cost)} hint="From Anthropic API" mono />
+              <OverviewCard title="Active Models" value={String(totals.count)} hint="Sonnet, Opus, Kimi, Ollama" mono />
+            </section>
 
-        <section className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-          <UsageTable data={sortedModels} sortKey={sortKey} sortDirection={sortDirection} onSort={handleSort} />
+            <section className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+              <UsageTable data={sortedModels} sortKey={sortKey} sortDirection={sortDirection} onSort={handleSort} />
 
-          <Card
-            title="Token Distribution"
-            gradient="gray"
-            className="!rounded-2xl !border !border-[rgb(34_48_66)] !bg-[rgb(11_16_23)] !bg-none !shadow-none [&_h2]:!text-[rgb(233_236_239)] [&_h2]:!text-lg [&_h2]:!font-semibold [&_div]:!text-[rgb(233_236_239)]"
-          >
-            <div className="space-y-4">
-              {usage.models.map((model) => {
-                const total = model.tokensIn + model.tokensOut
-                const width = Math.max(8, (total / maxModelTokens) * 100)
-                return (
-                  <div key={`chart-${model.name}`} className="space-y-2">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm text-[rgb(180_189_200)]">{model.name}</span>
-                      <span className={`text-sm text-[rgb(233_236_239)] ${jetbrainsMono.className}`}>{formatNumber(total)}</span>
-                    </div>
-                    <div className="h-2 rounded-full bg-[rgb(16_24_36)]">
-                      <div className="h-2 rounded-full bg-[rgb(212_163_115)] transition-all duration-200" style={{ width: `${width}%` }} />
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </Card>
-        </section>
+              <Card
+                title="Token Distribution"
+                gradient="gray"
+                className="!rounded-2xl !border !border-[rgb(34_48_66)] !bg-[rgb(11_16_23)] !bg-none !shadow-none [&_h2]:!text-[rgb(233_236_239)] [&_h2]:!text-lg [&_h2]:!font-semibold [&_div]:!text-[rgb(233_236_239)]"
+              >
+                <div className="space-y-4">
+                  {sortedModels.map((model) => {
+                    const total = model.tokensIn + model.tokensOut
+                    const width = Math.max(8, (total / maxModelTokens) * 100)
+                    return (
+                      <div key={`chart-${model.name}`} className="space-y-2">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-sm text-[rgb(180_189_200)]">{model.name}</span>
+                          <span className={`text-sm text-[rgb(233_236_239)] ${jetbrainsMono.className}`}>{formatNumber(total)}</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-[rgb(16_24_36)]">
+                          <div className="h-2 rounded-full bg-[rgb(212_163_115)] transition-all duration-200" style={{ width: `${width}%` }} />
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </Card>
+            </section>
+          </>
+        )}
       </div>
     </main>
   )
