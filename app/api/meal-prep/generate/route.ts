@@ -80,6 +80,23 @@ export async function POST() {
 
   const protein = pickProtein();
 
+  // Fetch last 2 recipes to avoid repeats
+  let avoidClause = '';
+  try {
+    const { data: recent } = await supabase
+      .from('meal_prep_weekly')
+      .select('recipe_name, protein_source')
+      .order('week_starting', { ascending: false })
+      .limit(2);
+
+    if (recent && recent.length > 0) {
+      const names = recent.map(r => `"${r.recipe_name}"`).join(', ');
+      avoidClause = `\n\nDo NOT repeat these recent recipes: ${names}. Make something distinctly different.`;
+    }
+  } catch (e) {
+    // Non-critical, continue without avoidance
+  }
+
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -91,7 +108,7 @@ export async function POST() {
       body: JSON.stringify({
         model: 'claude-3-haiku-20240307',
         max_tokens: 2000,
-        system: getMealPrepPrompt(protein),
+        system: getMealPrepPrompt(protein) + avoidClause,
         messages: [{ role: 'user', content: `Generate this week's ${protein} meal prep recipe.` }],
       }),
     });
