@@ -1,0 +1,242 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import Link from "next/link"
+import { ArrowLeft, Clock, Users, Flame, Check, ShoppingCart, ChefHat } from "lucide-react"
+
+interface Ingredient {
+  item: string
+  amount: string
+  category: "protein" | "veg" | "carb" | "pantry"
+}
+
+interface Macros {
+  protein_g: number
+  carbs_g: number
+  fat_g: number
+  calories: number
+}
+
+interface Recipe {
+  week_starting: string
+  recipe_name: string
+  protein_source: string
+  meals_yield: number
+  cook_time_minutes: number
+  ingredients: Ingredient[]
+  instructions: string[]
+  macros: Macros
+}
+
+const categoryColors: Record<string, string> = {
+  protein: "border-[rgb(var(--brand)_/_0.45)] bg-[rgb(var(--brand-weak)_/_0.7)] text-[rgb(var(--brand))]",
+  veg: "border-emerald-500/30 bg-emerald-900/20 text-emerald-300",
+  carb: "border-amber-500/30 bg-amber-900/20 text-amber-300",
+  pantry: "border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] text-[rgb(var(--text-muted))]",
+}
+
+const categoryLabels: Record<string, string> = {
+  protein: "Protein",
+  veg: "Vegetables",
+  carb: "Carbs",
+  pantry: "Pantry",
+}
+
+export default function MealPrepPage() {
+  const [recipe, setRecipe] = useState<Recipe | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    async function fetchRecipe() {
+      try {
+        const res = await fetch('/api/meal-prep')
+        const data = await res.json()
+        if (data.recipe) setRecipe(data.recipe)
+      } catch (err) {
+        console.error('Failed to fetch recipe:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchRecipe()
+  }, [])
+
+  const toggleItem = (item: string) => {
+    const newChecked = new Set(checkedItems)
+    if (newChecked.has(item)) newChecked.delete(item)
+    else newChecked.add(item)
+    setCheckedItems(newChecked)
+  }
+
+  const groupedIngredients = recipe?.ingredients.reduce((acc, ing) => {
+    if (!acc[ing.category]) acc[ing.category] = []
+    acc[ing.category].push(ing)
+    return acc
+  }, {} as Record<string, Ingredient[]>)
+
+  if (loading) {
+    return (
+      <main className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--text))]">
+        <div className="max-w-4xl mx-auto px-6 py-10">
+          <div className="animate-pulse space-y-4">
+            <div className="h-8 w-32 bg-[rgb(var(--surface-2))] rounded" />
+            <div className="h-12 w-3/4 bg-[rgb(var(--surface-2))] rounded" />
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  if (!recipe) {
+    return (
+      <main className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--text))]">
+        <div className="max-w-4xl mx-auto px-6 py-10">
+          <Link
+            href="/tools"
+            className="inline-flex items-center gap-2 text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))] transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Tools
+          </Link>
+
+          <div className="mt-12 text-center">
+            <ChefHat className="w-16 h-16 mx-auto text-[rgb(var(--brand))] mb-4" />
+            <h1 className="text-3xl font-bold mb-2">No Recipe Yet</h1>
+            <p className="text-[rgb(var(--text-muted))] max-w-md mx-auto">
+              Your weekly meal prep recipe will appear here Sunday at 9am. 
+              Check back soon!
+            </p>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  return (
+    <main className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--text))]">
+      <div className="max-w-4xl mx-auto px-6 py-10">
+        {/* Header */}
+        <Link
+          href="/tools"
+          className="inline-flex items-center gap-2 text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))] transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Tools
+        </Link>
+
+        <header className="mt-6 mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <span className={`px-3 py-1 rounded-full text-xs font-medium uppercase tracking-wide border ${categoryColors[recipe.protein_source] || categoryColors.pantry}`}>
+              {recipe.protein_source}
+            </span>
+            <span className="text-[rgb(var(--text-muted))] text-sm">
+              Week of {new Date(recipe.week_starting).toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}
+            </span>
+          </div>
+          <h1 className="text-4xl font-bold">{recipe.recipe_name}</h1>
+          
+          {/* Stats */}
+          <div className="flex flex-wrap gap-4 mt-4">
+            <div className="flex items-center gap-2 text-[rgb(var(--text-muted))]">
+              <Clock className="w-4 h-4" />
+              <span>{recipe.cook_time_minutes} min cook</span>
+            </div>
+            <div className="flex items-center gap-2 text-[rgb(var(--text-muted))]">
+              <Users className="w-4 h-4" />
+              <span>{recipe.meals_yield} meals</span>
+            </div>
+            <div className="flex items-center gap-2 text-[rgb(var(--text-muted))]">
+              <Flame className="w-4 h-4" />
+              <span>{recipe.macros.calories} cal/serving</span>
+            </div>
+          </div>
+
+          {/* Macros */}
+          <div className="flex gap-6 mt-4 text-sm">
+            <div>
+              <span className="text-[rgb(var(--text-muted))]">Protein</span>
+              <p className="font-mono font-semibold">{recipe.macros.protein_g}g</p>
+            </div>
+            <div>
+              <span className="text-[rgb(var(--text-muted))]">Carbs</span>
+              <p className="font-mono font-semibold">{recipe.macros.carbs_g}g</p>
+            </div>
+            <div>
+              <span className="text-[rgb(var(--text-muted))]">Fat</span>
+              <p className="font-mono font-semibold">{recipe.macros.fat_g}g</p>
+            </div>
+          </div>
+        </header>
+
+        {/* Shopping List */}
+        <section className="mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <ShoppingCart className="w-5 h-5 text-[rgb(var(--brand))]" />
+            <h2 className="text-xl font-semibold">Shopping List</h2>
+            <span className="text-sm text-[rgb(var(--text-muted))]">
+              ({checkedItems.size}/{recipe.ingredients.length} checked)
+            </span>
+          </div>
+
+          <div className="space-y-4">
+            {groupedIngredients && Object.entries(groupedIngredients).map(([category, items]) => (
+              <div key={category} className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4">
+                <h3 className="text-xs uppercase tracking-wide text-[rgb(var(--text-muted))] mb-3">
+                  {categoryLabels[category]}
+                </h3>
+                <ul className="space-y-2">
+                  {items.map((ing, i) => {
+                    const key = `${category}-${i}`
+                    const isChecked = checkedItems.has(key)
+                    return (
+                      <li
+                        key={key}
+                        onClick={() => toggleItem(key)}
+                        className={`flex items-center gap-3 cursor-pointer group ${isChecked ? 'opacity-50' : ''}`}
+                      >
+                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+                          isChecked 
+                            ? 'bg-[rgb(var(--brand))] border-[rgb(var(--brand))]' 
+                            : 'border-[rgb(var(--border))] group-hover:border-[rgb(var(--brand))]'
+                        }`}>
+                          {isChecked && <Check className="w-3 h-3 text-[rgb(var(--bg))]" />}
+                        </div>
+                        <span className={isChecked ? 'line-through' : ''}>
+                          <span className="font-medium">{ing.item}</span>
+                          <span className="text-[rgb(var(--text-muted))] ml-2">{ing.amount}</span>
+                        </span>
+                      </li>
+                    )
+                  })}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Instructions */}
+        <section>
+          <div className="flex items-center gap-3 mb-4">
+            <ChefHat className="w-5 h-5 text-[rgb(var(--brand))]" />
+            <h2 className="text-xl font-semibold">Instructions</h2>
+          </div>
+
+          <div className="space-y-3">
+            {recipe.instructions.map((step, i) => (
+              <div
+                key={i}
+                className="flex gap-4 p-4 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))]"
+              >
+                <span className="flex-shrink-0 w-8 h-8 rounded-full bg-[rgb(var(--brand-weak)_/_0.7)] border border-[rgb(var(--brand)_/_0.45)] text-[rgb(var(--brand))] flex items-center justify-center font-mono font-semibold text-sm">
+                  {i + 1}
+                </span>
+                <p className="text-[rgb(var(--text))] leading-relaxed pt-1">{step}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      </div>
+    </main>
+  )
+}
