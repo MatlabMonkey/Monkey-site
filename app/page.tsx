@@ -1,9 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { BookOpen, CheckSquare, Wrench, MessageCircle, BarChart3, BriefcaseBusiness, Gauge } from "lucide-react"
+import { BookOpen, CheckSquare, Wrench, MessageCircle, BarChart3, BriefcaseBusiness, Gauge, Lock, Unlock } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+
+const CORRECT_PIN = "2245"
 
 // Daily nature photo system with dynamic Unsplash API
 const UNSPLASH_ACCESS_KEY = process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY
@@ -406,7 +408,39 @@ export default function Home() {
     photographer: string
     unsplashLink: string
   } | null>(null)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [showPinInput, setShowPinInput] = useState(false)
+  const [pin, setPin] = useState("")
+  const [pinError, setPinError] = useState("")
   const quoteIndex = getDailyQuoteIndex()
+
+  useEffect(() => {
+    const stored = localStorage.getItem("dashboard_pin")
+    if (stored === CORRECT_PIN) {
+      setIsAuthenticated(true)
+    }
+  }, [])
+
+  const handlePinSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setPinError("")
+    if (pin === CORRECT_PIN) {
+      localStorage.setItem("dashboard_pin", pin)
+      setIsAuthenticated(true)
+      setShowPinInput(false)
+      setPin("")
+    } else {
+      setPinError("Incorrect PIN")
+      setPin("")
+    }
+  }
+
+  const handleSignOut = () => {
+    localStorage.removeItem("dashboard_pin")
+    setIsAuthenticated(false)
+    setShowPinInput(false)
+    setPin("")
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -421,22 +455,7 @@ export default function Home() {
   }, [])
 
   const openWorkspace = () => {
-    const storedPin = localStorage.getItem("dashboard_pin")
-    if (storedPin === "2245") {
-      router.push("/workspace")
-      return
-    }
-
-    const entered = window.prompt("Enter PIN to open Workspace")
-    if (!entered) return
-
-    if (entered === "2245") {
-      localStorage.setItem("dashboard_pin", entered)
-      router.push("/workspace")
-      return
-    }
-
-    window.alert("Incorrect PIN")
+    router.push("/workspace")
   }
 
   const backgroundPattern =
@@ -444,6 +463,58 @@ export default function Home() {
 
   return (
     <main className="min-h-screen relative overflow-hidden">
+      {/* Corner Auth Widget */}
+      <div className="absolute top-4 right-4 z-50">
+        {isAuthenticated ? (
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-2 px-3 py-2 bg-[rgb(var(--surface)_/_0.7)] backdrop-blur-sm rounded-xl border border-[rgb(var(--border))] text-[rgb(var(--text)_/_0.7)] hover:bg-[rgb(var(--surface-2)_/_0.8)] transition-all text-sm"
+          >
+            <Unlock className="w-4 h-4" />
+            <span>Sign out</span>
+          </button>
+        ) : showPinInput ? (
+          <form onSubmit={handlePinSubmit} className="flex items-center gap-2">
+            <input
+              type="password"
+              value={pin}
+              onChange={(e) => setPin(e.target.value)}
+              placeholder="PIN"
+              maxLength={4}
+              autoFocus
+              className="w-20 px-3 py-2 bg-[rgb(var(--surface)_/_0.9)] backdrop-blur-sm border border-[rgb(var(--border))] rounded-xl text-[rgb(var(--text))] text-center text-sm font-mono tracking-widest focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand))]"
+            />
+            <button
+              type="submit"
+              disabled={pin.length === 0}
+              className="px-3 py-2 bg-[rgb(var(--brand))] text-[rgb(var(--text))] rounded-xl text-sm font-medium hover:bg-[rgb(var(--brand-strong))] disabled:opacity-50 transition-all"
+            >
+              Unlock
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowPinInput(false); setPin(""); setPinError(""); }}
+              className="px-3 py-2 bg-[rgb(var(--surface)_/_0.7)] text-[rgb(var(--text)_/_0.7)] rounded-xl text-sm hover:bg-[rgb(var(--surface-2)_/_0.8)] transition-all"
+            >
+              Cancel
+            </button>
+          </form>
+        ) : (
+          <button
+            onClick={() => setShowPinInput(true)}
+            className="flex items-center gap-2 px-3 py-2 bg-[rgb(var(--surface)_/_0.7)] backdrop-blur-sm rounded-xl border border-[rgb(var(--border))] text-[rgb(var(--text)_/_0.7)] hover:bg-[rgb(var(--surface-2)_/_0.8)] transition-all text-sm"
+          >
+            <Lock className="w-4 h-4" />
+            <span>Sign in</span>
+          </button>
+        )}
+        {pinError && (
+          <p className="absolute top-full right-0 mt-2 px-3 py-1.5 bg-red-500/90 text-white text-xs rounded-lg whitespace-nowrap">
+            {pinError}
+          </p>
+        )}
+      </div>
+
       {/* Dynamic Nature Background */}
       <div className="absolute inset-0">
         {imageData ? (
@@ -480,14 +551,16 @@ export default function Home() {
               <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Journal</h3>
               <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Open your journal dashboard and entries</p>
             </Link>
-            <Link
-              href="/todos"
-              className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center   hover:scale-105"
-            >
-              <CheckSquare className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
-              <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Todos</h3>
-              <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Manage your todos and tasks</p>
-            </Link>
+            {isAuthenticated && (
+              <Link
+                href="/todos"
+                className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center   hover:scale-105"
+              >
+                <CheckSquare className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
+                <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Todos</h3>
+                <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Manage your todos and tasks</p>
+              </Link>
+            )}
             <Link
               href="/tools"
               className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center   hover:scale-105"
@@ -520,15 +593,17 @@ export default function Home() {
               <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Arias</h3>
               <p className="text-[rgb(var(--text)_/_0.7)] text-sm">View OpenClaw usage dashboard</p>
             </Link>
-            <button
-              type="button"
-              onClick={openWorkspace}
-              className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center hover:scale-105"
-            >
-              <BriefcaseBusiness className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
-              <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Workspace</h3>
-              <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Quick capture dashboard (PIN)</p>
-            </button>
+            {isAuthenticated && (
+              <button
+                type="button"
+                onClick={openWorkspace}
+                className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center hover:scale-105"
+              >
+                <BriefcaseBusiness className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
+                <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Workspace</h3>
+                <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Quick capture dashboard</p>
+              </button>
+            )}
           </div>
 
           {/* Daily Photo Credit */}
