@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { BookOpen, CheckSquare, Wrench, MessageCircle, BarChart3, Dumbbell, BriefcaseBusiness } from "lucide-react"
+import { BookOpen, CheckSquare, Wrench, MessageCircle, BarChart3, BriefcaseBusiness } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
@@ -511,14 +511,6 @@ export default function Home() {
               <BarChart3 className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
               <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Arias</h3>
               <p className="text-[rgb(var(--text)_/_0.7)] text-sm">View OpenClaw usage dashboard</p>
-            </Link>
-            <Link
-              href="/tools/workout"
-              className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center   hover:scale-105"
-            >
-              <Dumbbell className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
-              <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Workout</h3>
-              <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Generate and track gym sessions</p>
             </Link>
             <button
               type="button"
