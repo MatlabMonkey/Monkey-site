@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { BookOpen, CheckSquare, Wrench, MessageCircle, BarChart3, BriefcaseBusiness, Gauge, Lock, Unlock } from "lucide-react"
+import { BookOpen, CheckSquare, Wrench, MessageCircle, BarChart3, BriefcaseBusiness, Lock, Unlock } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
@@ -543,14 +543,16 @@ export default function Home() {
 
           {/* Feature Buttons */}
           <div className="grid gap-6 mt-12 md:grid-cols-3">
-            <Link
-              href="/dashboard"
-              className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center   hover:scale-105"
-            >
-              <BookOpen className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
-              <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Journal</h3>
-              <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Open your journal dashboard and entries</p>
-            </Link>
+            {isAuthenticated && (
+              <Link
+                href="/dashboard"
+                className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center   hover:scale-105"
+              >
+                <BookOpen className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
+                <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Journal</h3>
+                <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Open your journal dashboard and entries</p>
+              </Link>
+            )}
             {isAuthenticated && (
               <Link
                 href="/todos"
@@ -568,14 +570,6 @@ export default function Home() {
               <Wrench className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
               <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Tools</h3>
               <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Utilities and calculators</p>
-            </Link>
-            <Link
-              href="/tools/pd-controller"
-              className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-5 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center hover:scale-105"
-            >
-              <Gauge className="w-7 h-7 text-[rgb(var(--brand))] mb-3" />
-              <h3 className="text-base font-semibold text-[rgb(var(--text))] mb-1.5">PD Visualizer</h3>
-              <p className="text-[rgb(var(--text)_/_0.7)] text-xs">Control dynamics sandbox</p>
             </Link>
             <Link
               href="/questions"
