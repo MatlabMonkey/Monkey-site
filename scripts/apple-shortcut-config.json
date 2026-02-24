@@ -1,0 +1,19 @@
+{
+  "name": "Quick Capture",
+  "method": "POST",
+  "url": "https://YOUR_DOMAIN/api/capture",
+  "headers": {
+    "Authorization": "Bearer CAPTURE_API_KEY",
+    "Content-Type": "application/json"
+  },
+  "body": {
+    "content": "{{Shortcut Input}}",
+    "source": "apple-shortcuts",
+    "tags": []
+  },
+  "notes": [
+    "Set YOUR_DOMAIN to your deployed site.",
+    "Replace CAPTURE_API_KEY with the same value used in server env.",
+    "Shortcut Input can be dictated text, clipboard text, or a prompt result."
+  ]
+}

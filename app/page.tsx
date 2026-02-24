@@ -1,8 +1,9 @@
 "use client"
 
 import Link from "next/link"
-import { BookOpen, CheckSquare, Wrench, MessageCircle, BarChart3, Dumbbell } from "lucide-react"
+import { BookOpen, CheckSquare, Wrench, MessageCircle, BarChart3, Dumbbell, BriefcaseBusiness } from "lucide-react"
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 
 // Daily nature photo system with dynamic Unsplash API
 const UNSPLASH_ACCESS_KEY = process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY
@@ -396,6 +397,7 @@ function getDailyQuoteIndex() {
 }
 
 export default function Home() {
+  const router = useRouter()
   const [dailyPhoto, setDailyPhoto] = useState(getDailyPhoto())
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageData, setImageData] = useState<{
@@ -417,6 +419,25 @@ export default function Home() {
     }
     return () => { cancelled = true }
   }, [])
+
+  const openWorkspace = () => {
+    const storedPin = localStorage.getItem("dashboard_pin")
+    if (storedPin === "2245") {
+      router.push("/workspace")
+      return
+    }
+
+    const entered = window.prompt("Enter PIN to open Workspace")
+    if (!entered) return
+
+    if (entered === "2245") {
+      localStorage.setItem("dashboard_pin", entered)
+      router.push("/workspace")
+      return
+    }
+
+    window.alert("Incorrect PIN")
+  }
 
   const backgroundPattern =
     "data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fillRule='evenodd'%3E%3Cg fill='%239C92AC' fillOpacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"
@@ -499,6 +520,15 @@ export default function Home() {
               <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Workout</h3>
               <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Generate and track gym sessions</p>
             </Link>
+            <button
+              type="button"
+              onClick={openWorkspace}
+              className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center hover:scale-105"
+            >
+              <BriefcaseBusiness className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
+              <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Workspace</h3>
+              <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Quick capture dashboard (PIN)</p>
+            </button>
           </div>
 
           {/* Daily Photo Credit */}
