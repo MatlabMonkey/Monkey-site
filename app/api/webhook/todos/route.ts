@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { createTodo } from "../../../../lib/server/todos"
+import { isTodoBucket } from "../../../../lib/todos"
+import { createTodo, TodoValidationError } from "../../../../lib/server/todos"
 
 type TodoWebhookPayload = {
   content?: unknown
@@ -49,10 +50,17 @@ export async function POST(request: NextRequest) {
     }
 
     const folder = typeof body.folder === "string" && body.folder.trim() ? body.folder.trim() : "inbox"
-    const todo = await createTodo(content, folder)
+    if (!isTodoBucket(folder)) {
+      return NextResponse.json({ error: "Invalid folder value" }, { status: 400 })
+    }
+
+    const todo = await createTodo({ content, folder })
 
     return NextResponse.json({ success: true, todo }, { status: 201 })
   } catch (error) {
+    if (error instanceof TodoValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
     console.error("Todo webhook API error:", error)
     return NextResponse.json(
       { error: "Internal server error", details: error instanceof Error ? error.message : String(error) },
