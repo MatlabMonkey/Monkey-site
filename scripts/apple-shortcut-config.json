@@ -1,19 +1,19 @@
 {
-  "name": "Quick Capture",
+  "name": "Quick Todo",
   "method": "POST",
-  "url": "https://YOUR_DOMAIN/api/capture",
+  "url": "https://YOUR_DOMAIN/api/webhook/todos",
   "headers": {
-    "Authorization": "Bearer CAPTURE_API_KEY",
+    "Authorization": "Bearer TODO_WEBHOOK_SECRET",
     "Content-Type": "application/json"
   },
   "body": {
     "content": "{{Shortcut Input}}",
-    "source": "apple-shortcuts",
-    "tags": []
+    "folder": "inbox"
   },
   "notes": [
     "Set YOUR_DOMAIN to your deployed site.",
-    "Replace CAPTURE_API_KEY with the same value used in server env.",
+    "Set TODO_WEBHOOK_SECRET in your server env and use the same value in the Authorization header (or reuse CAPTURE_API_KEY).",
+    "The endpoint accepts content/text/todo/task keys and also plain-text request bodies.",
     "Shortcut Input can be dictated text, clipboard text, or a prompt result."
   ]
 }

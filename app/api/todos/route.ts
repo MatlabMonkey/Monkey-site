@@ -1,28 +1,15 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { supabase } from "../../../lib/supabaseClient"
+import { createTodo, listInboxTodos } from "../../../lib/server/todos"
 
 export async function GET() {
   try {
-    const { data: todos, error } = await supabase
-      .from("todos")
-      .select("*")
-      .eq("folder", "inbox")
-      .order("created_at", { ascending: false })
-
-    if (error) {
-      console.error("Supabase error:", error)
-      return NextResponse.json(
-        { error: "Failed to fetch todos", details: error.message },
-        { status: 500 }
-      )
-    }
-
+    const todos = await listInboxTodos()
     return NextResponse.json({ todos: todos || [] })
   } catch (error) {
     console.error("API error:", error)
     return NextResponse.json(
       { error: "Internal server error", details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
@@ -36,36 +23,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Content is required" }, { status: 400 })
     }
 
-    const { data: todo, error } = await supabase
-      .from("todos")
-      .insert([
-        {
-          content: content.trim(),
-          folder: "inbox",
-          completed: false,
-        },
-      ])
-      .select()
-      .single()
-
-    if (error) {
-      console.error("Supabase error:", error)
-      return NextResponse.json(
-        { error: "Failed to create todo", details: error.message },
-        { status: 500 }
-      )
-    }
-
-    if (!todo) {
-      return NextResponse.json({ error: "Todo created but not returned" }, { status: 500 })
-    }
+    const todo = await createTodo(content.trim(), "inbox")
 
     return NextResponse.json({ todo }, { status: 201 })
   } catch (error) {
     console.error("API error:", error)
     return NextResponse.json(
       { error: "Internal server error", details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
+      { status: 500 },
     )
   }
 }
