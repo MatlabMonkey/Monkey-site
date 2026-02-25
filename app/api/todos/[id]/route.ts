@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { isTodoBucket, isTodoItemType } from "../../../../lib/todos"
+import { isTodoBucket, isTodoItemType, normalizeTodoContext } from "../../../../lib/todos"
 import { deleteTodoById, TodoValidationError, updateTodoById } from "../../../../lib/server/todos"
 
 export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
@@ -15,10 +15,16 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
       return NextResponse.json({ error: "Invalid item_type value" }, { status: 400 })
     }
 
+    const normalizedContext = normalizeTodoContext(body.context)
+    if (body.context !== undefined && !normalizedContext) {
+      return NextResponse.json({ error: "Invalid context value" }, { status: 400 })
+    }
+
     const todo = await updateTodoById(id, {
       content: typeof body.content === "string" ? body.content : undefined,
       completed: typeof body.completed === "boolean" ? body.completed : undefined,
       folder: body.folder,
+      context: normalizedContext,
       item_type: body.item_type,
       project_id: typeof body.project_id === "string" || body.project_id === null ? body.project_id : undefined,
       scheduled_for: typeof body.scheduled_for === "string" || body.scheduled_for === null ? body.scheduled_for : undefined,

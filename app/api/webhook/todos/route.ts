@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { isTodoBucket } from "../../../../lib/todos"
+import { isTodoBucket, normalizeTodoContext } from "../../../../lib/todos"
 import { createTodo, TodoValidationError } from "../../../../lib/server/todos"
 
 type TodoWebhookPayload = {
@@ -8,6 +8,7 @@ type TodoWebhookPayload = {
   todo?: unknown
   task?: unknown
   folder?: unknown
+  context?: unknown
 }
 
 function readAuthToken(request: NextRequest): string {
@@ -54,7 +55,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid folder value" }, { status: 400 })
     }
 
-    const todo = await createTodo({ content, folder })
+    const rawContext = body.context
+    const normalizedContext = normalizeTodoContext(rawContext)
+    if (rawContext !== undefined && rawContext !== null && !normalizedContext) {
+      return NextResponse.json({ error: "Invalid context value" }, { status: 400 })
+    }
+
+    const todo = await createTodo({ content, folder, context: normalizedContext || "personal" })
 
     return NextResponse.json({ success: true, todo }, { status: 201 })
   } catch (error) {

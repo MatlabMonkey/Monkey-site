@@ -1,5 +1,13 @@
 import { createClient } from "@supabase/supabase-js"
-import { isTodoBucket, isTodoItemType, type TodoBucket, type TodoItemType, type TodoOutcome } from "../todos"
+import {
+  isTodoBucket,
+  isTodoItemType,
+  normalizeTodoContext,
+  type TodoBucket,
+  type TodoContext,
+  type TodoItemType,
+  type TodoOutcome,
+} from "../todos"
 
 type NullableString = string | null
 
@@ -8,6 +16,7 @@ export type TodoRecord = {
   content: string
   completed: boolean
   folder: TodoBucket
+  context: TodoContext
   item_type: TodoItemType
   project_id: NullableString
   scheduled_for: NullableString
@@ -22,6 +31,7 @@ export type TodoScheduledFilter = "all" | "with" | "without"
 
 export type ListTodosOptions = {
   bucket?: TodoBucket
+  context?: TodoContext
   includeCompleted?: boolean
   projectId?: string
   scheduled?: TodoScheduledFilter
@@ -31,6 +41,7 @@ export type ListTodosOptions = {
 export type CreateTodoInput = {
   content: string
   folder?: TodoBucket
+  context?: TodoContext
   item_type?: TodoItemType
   project_id?: NullableString
   scheduled_for?: NullableString
@@ -100,6 +111,16 @@ function normalizeItemType(value: unknown): TodoItemType | undefined {
   return value
 }
 
+export function normalizeTodoContextOrDefault(value: unknown, fallback: TodoContext = "personal"): TodoContext {
+  const normalized = normalizeTodoContext(value)
+  if (normalized) return normalized
+
+  if (value === undefined || value === null) return fallback
+  if (typeof value === "string" && !value.trim()) return fallback
+
+  throw new TodoValidationError("Invalid context value")
+}
+
 function normalizeIsoTimestamp(value: unknown, fieldName: string): NullableString | undefined {
   if (value === undefined) return undefined
   if (value === null) return null
@@ -148,6 +169,7 @@ function normalizeUuid(value: unknown, fieldName: string): NullableString | unde
 function normalizeCreateInput(input: CreateTodoInput): Record<string, unknown> {
   const content = normalizeContent(input.content)
   const folder = normalizeBucket(input.folder) || "inbox"
+  const context = normalizeTodoContextOrDefault(input.context)
   const itemType = normalizeItemType(input.item_type) || "task"
   const projectId = normalizeUuid(input.project_id, "project_id")
   const scheduledFor = normalizeIsoTimestamp(input.scheduled_for, "scheduled_for")
@@ -158,6 +180,7 @@ function normalizeCreateInput(input: CreateTodoInput): Record<string, unknown> {
   return {
     content,
     folder,
+    context,
     item_type: itemType,
     project_id: projectId ?? null,
     scheduled_for: scheduledFor ?? null,
@@ -178,6 +201,10 @@ function normalizeUpdateInput(input: UpdateTodoInput): Record<string, unknown> {
 
   if (input.folder !== undefined) {
     updates.folder = normalizeBucket(input.folder)
+  }
+
+  if (input.context !== undefined) {
+    updates.context = normalizeTodoContextOrDefault(input.context)
   }
 
   if (input.item_type !== undefined) {
@@ -214,6 +241,7 @@ function normalizeUpdateInput(input: UpdateTodoInput): Record<string, unknown> {
 export async function listTodos(options: ListTodosOptions = {}): Promise<TodoRecord[]> {
   const {
     bucket = "inbox",
+    context = "personal",
     includeCompleted = true,
     projectId,
     scheduled = "all",
@@ -221,7 +249,7 @@ export async function listTodos(options: ListTodosOptions = {}): Promise<TodoRec
   } = options
 
   const supabase = getSupabaseAdmin()
-  let query = supabase.from("todos").select("*").eq("folder", bucket)
+  let query = supabase.from("todos").select("*").eq("context", context).eq("folder", bucket)
 
   if (!includeCompleted) {
     query = query.eq("completed", false)

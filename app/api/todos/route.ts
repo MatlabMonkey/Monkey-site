@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { isTodoBucket, isTodoItemType } from "../../../lib/todos"
+import { isTodoBucket, isTodoItemType, normalizeTodoContext } from "../../../lib/todos"
 import { createTodo, listTodos, TodoValidationError, type TodoScheduledFilter, type TodoSort } from "../../../lib/server/todos"
 
 function parseBooleanQuery(value: string | null, fallback: boolean) {
@@ -21,9 +21,21 @@ function parseSortQuery(value: string | null): TodoSort | undefined {
   throw new TodoValidationError("order must be one of: newest, oldest, next_up")
 }
 
+function parseContextQuery(value: string | null) {
+  if (value === null) return "personal"
+
+  const normalized = normalizeTodoContext(value)
+  if (!normalized) {
+    throw new TodoValidationError("context must be one of: personal, work")
+  }
+
+  return normalized
+}
+
 export async function GET(request: NextRequest) {
   try {
     const bucketParam = request.nextUrl.searchParams.get("bucket")
+    const contextParam = request.nextUrl.searchParams.get("context")
     const includeCompletedParam = request.nextUrl.searchParams.get("includeCompleted")
     const scheduledParam = request.nextUrl.searchParams.get("scheduled")
     const projectIdParam = request.nextUrl.searchParams.get("projectId")
@@ -35,6 +47,7 @@ export async function GET(request: NextRequest) {
 
     const todos = await listTodos({
       bucket: bucketParam || "inbox",
+      context: parseContextQuery(contextParam),
       includeCompleted: parseBooleanQuery(includeCompletedParam, true),
       scheduled: parseScheduledQuery(scheduledParam),
       projectId: projectIdParam || undefined,
@@ -63,6 +76,7 @@ export async function POST(request: NextRequest) {
     const projectId = body.project_id
     const scheduledFor = body.scheduled_for
     const waitingFor = body.waiting_for
+    const context = body.context
 
     if (folder !== undefined && !isTodoBucket(folder)) {
       return NextResponse.json({ error: "Invalid folder value" }, { status: 400 })
@@ -72,9 +86,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid item_type value" }, { status: 400 })
     }
 
+    const normalizedContext = normalizeTodoContext(context)
+    if (context !== undefined && context !== null && !normalizedContext) {
+      return NextResponse.json({ error: "Invalid context value" }, { status: 400 })
+    }
+
     const todo = await createTodo({
       content: typeof content === "string" ? content : "",
       folder,
+      context: normalizedContext,
       item_type: itemType,
       project_id: typeof projectId === "string" || projectId === null ? projectId : undefined,
       scheduled_for: typeof scheduledFor === "string" || scheduledFor === null ? scheduledFor : undefined,

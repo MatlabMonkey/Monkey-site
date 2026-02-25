@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
   CalendarClock,
@@ -18,12 +19,14 @@ import {
   FolderKanban,
 } from "lucide-react"
 import PinGate from "../components/PinGate"
+import { isTodoBucket, normalizeTodoContext, type TodoBucket, type TodoContext } from "../../lib/todos"
 
 type Todo = {
   id: string
   content: string
   completed: boolean
   folder: string
+  context: TodoContext
   item_type: string
   project_id: string | null
   scheduled_for: string | null
@@ -51,6 +54,34 @@ const EMPTY_BUCKETS: BucketState = {
   calendar: [],
   someday_maybe: [],
   reference: [],
+}
+
+const CONTEXT_TABS: Array<{ value: TodoContext; label: string }> = [
+  { value: "personal", label: "Personal" },
+  { value: "work", label: "Work" },
+]
+
+const BUCKET_TABS: Array<{ value: TodoBucket; label: string }> = [
+  { value: "inbox", label: "Inbox" },
+  { value: "next_action", label: "Next" },
+  { value: "project", label: "Projects" },
+  { value: "waiting_for", label: "Waiting" },
+  { value: "calendar", label: "Calendar" },
+  { value: "someday_maybe", label: "Someday" },
+  { value: "reference", label: "Reference" },
+]
+
+function readContextFromLocation(): TodoContext {
+  if (typeof window === "undefined") return "personal"
+  const params = new URLSearchParams(window.location.search)
+  return normalizeTodoContext(params.get("context")) || "personal"
+}
+
+function readBucketFromLocation(): TodoBucket {
+  if (typeof window === "undefined") return "inbox"
+  const params = new URLSearchParams(window.location.search)
+  const bucket = params.get("bucket")
+  return isTodoBucket(bucket) ? bucket : "inbox"
 }
 
 function formatRelative(iso: string) {
@@ -86,8 +117,12 @@ async function fetchBucket(path: string): Promise<Todo[]> {
 }
 
 export default function TodosPage() {
+  const router = useRouter()
+
   const [buckets, setBuckets] = useState<BucketState>(EMPTY_BUCKETS)
   const [newTodo, setNewTodo] = useState("")
+  const [activeContext, setActiveContext] = useState<TodoContext>(readContextFromLocation)
+  const [activeBucket, setActiveBucket] = useState<TodoBucket>(readBucketFromLocation)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [adding, setAdding] = useState(false)
@@ -95,18 +130,72 @@ export default function TodosPage() {
   const [projectDrafts, setProjectDrafts] = useState<Record<string, string>>({})
   const [addingProjectActionId, setAddingProjectActionId] = useState<string | null>(null)
 
+  useEffect(() => {
+    const syncFromLocation = () => {
+      const nextContext = readContextFromLocation()
+      const nextBucket = readBucketFromLocation()
+      setActiveContext((current) => (current === nextContext ? current : nextContext))
+      setActiveBucket((current) => (current === nextBucket ? current : nextBucket))
+    }
+
+    syncFromLocation()
+    window.addEventListener("popstate", syncFromLocation)
+    return () => window.removeEventListener("popstate", syncFromLocation)
+  }, [])
+
+  const replaceTodosUrl = useCallback(
+    (nextContext: TodoContext, nextBucket: TodoBucket) => {
+      const params = typeof window === "undefined" ? new URLSearchParams() : new URLSearchParams(window.location.search)
+      params.set("context", nextContext)
+      params.set("bucket", nextBucket)
+      router.replace(`/todos?${params.toString()}`, { scroll: false })
+    },
+    [router],
+  )
+
+  const handleContextChange = useCallback(
+    (nextContext: TodoContext) => {
+      if (nextContext === activeContext) return
+      setActiveContext(nextContext)
+      replaceTodosUrl(nextContext, activeBucket)
+    },
+    [activeBucket, activeContext, replaceTodosUrl],
+  )
+
+  const handleBucketChange = useCallback(
+    (nextBucket: TodoBucket) => {
+      setActiveBucket(nextBucket)
+      replaceTodosUrl(activeContext, nextBucket)
+      const element = document.getElementById(`bucket-${nextBucket}`)
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "start" })
+      }
+    },
+    [activeContext, replaceTodosUrl],
+  )
+
   const loadDashboard = useCallback(async () => {
     setError("")
 
+    const buildBucketPath = (bucket: TodoBucket, order: "oldest" | "next_up") => {
+      const params = new URLSearchParams({
+        context: activeContext,
+        bucket,
+        includeCompleted: "false",
+        order,
+      })
+      return `/api/todos?${params.toString()}`
+    }
+
     try {
       const [inbox, nextActions, projects, waitingFor, calendar, somedayMaybe, reference] = await Promise.all([
-        fetchBucket("/api/todos?bucket=inbox&includeCompleted=false&order=oldest"),
-        fetchBucket("/api/todos?bucket=next_action&includeCompleted=false&order=next_up"),
-        fetchBucket("/api/todos?bucket=project&includeCompleted=false&order=oldest"),
-        fetchBucket("/api/todos?bucket=waiting_for&includeCompleted=false&order=oldest"),
-        fetchBucket("/api/todos?bucket=calendar&includeCompleted=false&order=next_up"),
-        fetchBucket("/api/todos?bucket=someday_maybe&includeCompleted=false&order=oldest"),
-        fetchBucket("/api/todos?bucket=reference&includeCompleted=false&order=oldest"),
+        fetchBucket(buildBucketPath("inbox", "oldest")),
+        fetchBucket(buildBucketPath("next_action", "next_up")),
+        fetchBucket(buildBucketPath("project", "oldest")),
+        fetchBucket(buildBucketPath("waiting_for", "oldest")),
+        fetchBucket(buildBucketPath("calendar", "next_up")),
+        fetchBucket(buildBucketPath("someday_maybe", "oldest")),
+        fetchBucket(buildBucketPath("reference", "oldest")),
       ])
 
       setBuckets({
@@ -121,7 +210,7 @@ export default function TodosPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load GTD dashboard")
     }
-  }, [])
+  }, [activeContext])
 
   useEffect(() => {
     const run = async () => {
@@ -149,7 +238,7 @@ export default function TodosPage() {
       const response = await fetch("/api/todos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: newTodo.trim() }),
+        body: JSON.stringify({ content: newTodo.trim(), context: activeContext }),
       })
 
       const data = await response.json()
@@ -215,6 +304,7 @@ export default function TodosPage() {
         body: JSON.stringify({
           content: draft,
           folder: "next_action",
+          context: activeContext,
           item_type: "task",
           project_id: projectId,
         }),
@@ -316,6 +406,9 @@ export default function TodosPage() {
                 <p className="text-[rgb(var(--text-muted))] mt-1">Clarify inbox fast, then run from Next Actions.</p>
               </div>
               <div className="flex flex-wrap gap-2 text-sm">
+                <span className="px-3 py-1.5 rounded-full border border-[rgb(var(--brand))] bg-[rgb(var(--brand-weak)_/_0.65)]">
+                  {activeContext === "work" ? "Work Context" : "Personal Context"}
+                </span>
                 <span className="px-3 py-1.5 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface-2)_/_0.7)]">
                   Inbox {buckets.inbox.length}
                 </span>
@@ -326,6 +419,40 @@ export default function TodosPage() {
                   Projects {buckets.project.length}
                 </span>
               </div>
+            </div>
+
+            <div className="mt-5 flex flex-wrap items-center gap-2">
+              {CONTEXT_TABS.map((tab) => (
+                <button
+                  key={tab.value}
+                  type="button"
+                  onClick={() => handleContextChange(tab.value)}
+                  className={`px-4 py-2 rounded-xl text-sm border transition-colors ${
+                    activeContext === tab.value
+                      ? "border-[rgb(var(--brand))] bg-[rgb(var(--brand-weak)_/_0.8)] text-[rgb(var(--text))]"
+                      : "border-[rgb(var(--border))] bg-[rgb(var(--surface-2)_/_0.65)] text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))]"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {BUCKET_TABS.map((tab) => (
+                <button
+                  key={tab.value}
+                  type="button"
+                  onClick={() => handleBucketChange(tab.value)}
+                  className={`px-3 py-1.5 rounded-lg text-xs border transition-colors ${
+                    activeBucket === tab.value
+                      ? "border-[rgb(var(--brand))] bg-[rgb(var(--brand-weak)_/_0.75)] text-[rgb(var(--text))]"
+                      : "border-[rgb(var(--border))] bg-[rgb(var(--surface-2)_/_0.55)] text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))]"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
           </header>
 
@@ -339,7 +466,7 @@ export default function TodosPage() {
             <form onSubmit={addInboxTodo} className="lg:col-span-2 rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-5">
               <div className="flex items-center gap-2 mb-3">
                 <Plus className="w-5 h-5 text-[rgb(var(--brand))]" />
-                <h2 className="text-xl font-semibold">Quick Capture to Inbox</h2>
+                <h2 className="text-xl font-semibold">Quick Capture to Inbox ({activeContext === "work" ? "Work" : "Personal"})</h2>
               </div>
               <div className="flex gap-2">
                 <input
@@ -370,7 +497,7 @@ export default function TodosPage() {
               </div>
               <div className="mt-4 flex gap-2">
                 <Link
-                  href="/todos/process"
+                  href={`/todos/process?context=${activeContext}&bucket=inbox`}
                   className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] transition-colors"
                 >
                   Open
@@ -387,7 +514,7 @@ export default function TodosPage() {
             </div>
           </section>
 
-          <section className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
+          <section id="bucket-next_action" className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
             <div className="flex items-center gap-2 mb-4">
               <ListChecks className="w-5 h-5 text-[rgb(var(--brand))]" />
               <h2 className="text-xl font-semibold">Next Up</h2>
@@ -402,7 +529,7 @@ export default function TodosPage() {
             )}
           </section>
 
-          <section className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
+          <section id="bucket-project" className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
             <div className="flex items-center gap-2 mb-4">
               <FolderKanban className="w-5 h-5 text-[rgb(var(--brand))]" />
               <h2 className="text-xl font-semibold">Projects</h2>
@@ -472,7 +599,7 @@ export default function TodosPage() {
             )}
           </section>
 
-          <details open className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
+          <details id="bucket-waiting_for" open className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
             <summary className="cursor-pointer font-semibold inline-flex items-center gap-2">
               <Users className="w-5 h-5 text-[rgb(var(--brand))]" />
               Waiting For ({buckets.waiting_for.length})
@@ -486,7 +613,7 @@ export default function TodosPage() {
             </div>
           </details>
 
-          <details open className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
+          <details id="bucket-calendar" open className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
             <summary className="cursor-pointer font-semibold inline-flex items-center gap-2">
               <CalendarClock className="w-5 h-5 text-[rgb(var(--brand))]" />
               Calendar ({buckets.calendar.length})
@@ -501,7 +628,7 @@ export default function TodosPage() {
           </details>
 
           <section className="grid lg:grid-cols-2 gap-4">
-            <details open className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
+            <details id="bucket-someday_maybe" open className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
               <summary className="cursor-pointer font-semibold inline-flex items-center gap-2">
                 <Archive className="w-5 h-5 text-[rgb(var(--brand))]" />
                 Someday/Maybe ({buckets.someday_maybe.length})
@@ -515,7 +642,7 @@ export default function TodosPage() {
               </div>
             </details>
 
-            <details open className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
+            <details id="bucket-reference" open className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
               <summary className="cursor-pointer font-semibold inline-flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-[rgb(var(--brand))]" />
                 Reference ({buckets.reference.length})
@@ -530,7 +657,7 @@ export default function TodosPage() {
             </details>
           </section>
 
-          <details className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
+          <details id="bucket-inbox" className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
             <summary className="cursor-pointer font-semibold inline-flex items-center gap-2">
               <Inbox className="w-5 h-5 text-[rgb(var(--brand))]" />
               Inbox Backlog ({buckets.inbox.length})

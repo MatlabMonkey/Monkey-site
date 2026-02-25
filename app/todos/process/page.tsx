@@ -5,13 +5,14 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, CalendarClock, CheckCircle2, Clock3, Layers, ListTodo, RotateCcw, Trash2 } from "lucide-react"
 import PinGate from "../../components/PinGate"
-import { type TodoOutcome } from "../../../lib/todos"
+import { normalizeTodoContext, type TodoContext, type TodoOutcome } from "../../../lib/todos"
 
 type Todo = {
   id: string
   content: string
   completed: boolean
   folder: string
+  context: TodoContext
   item_type: string
   project_id: string | null
   scheduled_for: string | null
@@ -81,8 +82,15 @@ function formatDateTime(iso: string | null): string {
   })
 }
 
+function readContextFromLocation(): TodoContext {
+  if (typeof window === "undefined") return "personal"
+  const params = new URLSearchParams(window.location.search)
+  return normalizeTodoContext(params.get("context")) || "personal"
+}
+
 export default function ProcessTodosPage() {
   const router = useRouter()
+  const [activeContext, setActiveContext] = useState<TodoContext>(readContextFromLocation)
   const [queue, setQueue] = useState<Todo[]>([])
   const [initialQueueSize, setInitialQueueSize] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -95,13 +103,31 @@ export default function ProcessTodosPage() {
 
   const currentTodo = queue[0] || null
   const processedCount = Math.max(0, initialQueueSize - queue.length)
+  const dashboardHref = `/todos?context=${activeContext}&bucket=inbox`
+
+  useEffect(() => {
+    const syncContext = () => {
+      const nextContext = readContextFromLocation()
+      setActiveContext((current) => (current === nextContext ? current : nextContext))
+    }
+
+    syncContext()
+    window.addEventListener("popstate", syncContext)
+    return () => window.removeEventListener("popstate", syncContext)
+  }, [])
 
   const fetchQueue = useCallback(async () => {
     setLoading(true)
     setError("")
 
     try {
-      const response = await fetch("/api/todos?bucket=inbox&includeCompleted=false&order=oldest", { cache: "no-store" })
+      const params = new URLSearchParams({
+        context: activeContext,
+        bucket: "inbox",
+        includeCompleted: "false",
+        order: "oldest",
+      })
+      const response = await fetch(`/api/todos?${params.toString()}`, { cache: "no-store" })
       const data = await response.json()
 
       if (!response.ok) {
@@ -116,7 +142,7 @@ export default function ProcessTodosPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [activeContext])
 
   useEffect(() => {
     void fetchQueue()
@@ -180,6 +206,7 @@ export default function ProcessTodosPage() {
           content: before.content,
           completed: before.completed,
           folder: before.folder,
+          context: before.context,
           item_type: before.item_type,
           project_id: before.project_id,
           scheduled_for: before.scheduled_for,
@@ -274,7 +301,7 @@ export default function ProcessTodosPage() {
       const key = event.key.toLowerCase()
       if (key === "escape") {
         event.preventDefault()
-        router.push("/todos")
+        router.push(dashboardHref)
         return
       }
 
@@ -293,7 +320,7 @@ export default function ProcessTodosPage() {
 
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [processCurrentTodo, router, undoLast])
+  }, [dashboardHref, processCurrentTodo, router, undoLast])
 
   const legendText = useMemo(() => OUTCOME_ACTIONS.map((action) => `${action.key} ${action.label}`).join(" • "), [])
 
@@ -317,7 +344,7 @@ export default function ProcessTodosPage() {
           <header className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.75)] p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-2">
-                <Link href="/todos" className="inline-flex items-center gap-2 text-sm text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))]">
+                <Link href={dashboardHref} className="inline-flex items-center gap-2 text-sm text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))]">
                   <ArrowLeft className="w-4 h-4" />
                   Back to Todos
                 </Link>
@@ -345,7 +372,7 @@ export default function ProcessTodosPage() {
               <h2 className="text-2xl font-semibold">Inbox cleared</h2>
               <p className="text-[rgb(var(--text-muted))]">Everything in inbox has been clarified.</p>
               <Link
-                href="/todos"
+                href={dashboardHref}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[rgb(var(--brand))] text-[rgb(var(--text))] hover:bg-[rgb(var(--brand-strong))] transition-colors"
               >
                 <ListTodo className="w-4 h-4" />
