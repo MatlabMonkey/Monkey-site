@@ -6,6 +6,7 @@ type ExerciseUpdate = {
   status?: "pending" | "completed" | "skipped"
   completed_sets?: number
   notes?: string
+  weight_lbs?: number | null
 }
 
 type WorkoutPatchRequest = {
@@ -36,6 +37,10 @@ function normalizeUserId(request: NextRequest): string | null {
   const fromHeader = request.headers.get("x-user-id")?.trim()
   const userId = fromQuery || fromHeader || "demo-user"
   return USER_ID_PATTERN.test(userId) ? userId : null
+}
+
+function normalizeExerciseName(name: string): string {
+  return name.trim().toLowerCase().replace(/\s+/g, " ")
 }
 
 export async function GET(request: NextRequest) {
@@ -113,6 +118,8 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "exercises must be an array when provided" }, { status: 400 })
     }
 
+    const completedWeightUpdates: Array<{ exercise_name: string; weight_lbs: number }> = []
+
     if (Array.isArray(body.exercises) && body.exercises.length > 0) {
       for (const ex of body.exercises) {
         if (!ex || typeof ex !== "object") {
@@ -137,6 +144,15 @@ export async function PATCH(request: NextRequest) {
         if (ex.notes !== undefined && typeof ex.notes !== "string") {
           return NextResponse.json({ error: "notes must be a string when provided" }, { status: 400 })
         }
+        if (ex.weight_lbs !== undefined) {
+          if (
+            ex.weight_lbs !== null &&
+            (typeof ex.weight_lbs !== "number" || !Number.isFinite(ex.weight_lbs) || ex.weight_lbs <= 0 || ex.weight_lbs > 2000)
+          ) {
+            return NextResponse.json({ error: "weight_lbs must be a number between 0 and 2000, or null" }, { status: 400 })
+          }
+          patch.weight_lbs = ex.weight_lbs === null ? null : Number.parseFloat(ex.weight_lbs.toFixed(2))
+        }
 
         if (Object.keys(patch).length > 0) {
           const { data, error } = await supabase
@@ -144,13 +160,31 @@ export async function PATCH(request: NextRequest) {
             .update(patch)
             .eq("id", ex.id)
             .eq("workout_id", workoutId)
-            .select("id")
+            .select("id, name, status, weight_lbs")
 
           if (error) {
             return NextResponse.json({ error: error.message }, { status: 500 })
           }
           if (!data?.length) {
             return NextResponse.json({ error: `exercise ${ex.id} was not found in workout ${workoutId}` }, { status: 404 })
+          }
+
+          const updatedExercise = data[0] as {
+            name: string
+            status: "pending" | "completed" | "skipped"
+            weight_lbs: number | null
+          }
+
+          if (
+            updatedExercise.status === "completed" &&
+            typeof updatedExercise.weight_lbs === "number" &&
+            Number.isFinite(updatedExercise.weight_lbs) &&
+            updatedExercise.weight_lbs > 0
+          ) {
+            completedWeightUpdates.push({
+              exercise_name: updatedExercise.name,
+              weight_lbs: Number.parseFloat(updatedExercise.weight_lbs.toFixed(2)),
+            })
           }
         }
       }
@@ -181,6 +215,30 @@ export async function PATCH(request: NextRequest) {
 
     if (workoutError) {
       return NextResponse.json({ error: workoutError.message }, { status: 500 })
+    }
+
+    if (completedWeightUpdates.length > 0) {
+      const dedupedWeights = new Map<string, number>()
+      for (const update of completedWeightUpdates) {
+        dedupedWeights.set(normalizeExerciseName(update.exercise_name), update.weight_lbs)
+      }
+
+      const now = new Date().toISOString()
+      const weightRows = Array.from(dedupedWeights.entries()).map(([exercise_name, weight_lbs]) => ({
+        user_id: workout.user_id,
+        exercise_name,
+        weight_lbs,
+        last_used_at: now,
+        updated_at: now,
+      }))
+
+      const { error: weightError } = await supabase
+        .from("exercise_weights")
+        .upsert(weightRows, { onConflict: "user_id,exercise_name" })
+
+      if (weightError) {
+        return NextResponse.json({ error: weightError.message }, { status: 500 })
+      }
     }
 
     const { data: exercises, error: exercisesError } = await supabase

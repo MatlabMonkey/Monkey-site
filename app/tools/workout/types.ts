@@ -10,6 +10,7 @@ export interface WorkoutExercise {
   order_index: number
   status: "pending" | "completed" | "skipped"
   completed_sets: number
+  weight_lbs: number | null
   notes: string | null
 }
 

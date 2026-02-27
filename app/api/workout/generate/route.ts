@@ -64,6 +64,10 @@ function isValidDayType(dayType: unknown): dayType is (typeof DAY_TYPES)[number]
   return typeof dayType === "string" && DAY_TYPES.includes(dayType as (typeof DAY_TYPES)[number])
 }
 
+function normalizeExerciseName(name: string): string {
+  return name.trim().toLowerCase().replace(/\s+/g, " ")
+}
+
 function sanitizeWorkout(raw: unknown): GeneratedWorkout {
   const fallback: GeneratedWorkout = {
     title: "Generated Workout",
@@ -292,6 +296,44 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    const generatedExerciseNames = Array.from(
+      new Set(
+        [
+          ...(parsed.warmup || []).map((warmup) => normalizeExerciseName(warmup.name)),
+          ...parsed.blocks.flatMap((block) => block.exercises.map((exercise) => normalizeExerciseName(exercise.name))),
+        ].filter(Boolean),
+      ),
+    )
+
+    const lastWeightByExercise = new Map<string, number>()
+
+    if (generatedExerciseNames.length > 0) {
+      const { data: priorWeights, error: priorWeightsError } = await supabase
+        .from("exercise_weights")
+        .select("exercise_name, weight_lbs")
+        .eq("user_id", userId)
+        .in("exercise_name", generatedExerciseNames)
+
+      if (priorWeightsError) {
+        return errorResponse(500, new Error(priorWeightsError.message), {
+          provider: "supabase",
+          operation: "select_exercise_weights",
+          supabase_error: priorWeightsError,
+        })
+      }
+
+      for (const row of priorWeights || []) {
+        if (
+          typeof row.exercise_name === "string" &&
+          typeof row.weight_lbs === "number" &&
+          Number.isFinite(row.weight_lbs) &&
+          row.weight_lbs > 0
+        ) {
+          lastWeightByExercise.set(row.exercise_name, Number.parseFloat(row.weight_lbs.toFixed(2)))
+        }
+      }
+    }
+
     const { data: workout, error: workoutError } = await supabase
       .from("workouts")
       .insert({
@@ -321,6 +363,7 @@ export async function POST(request: NextRequest) {
       order_index: -100 + idx, // Put warmup before main exercises
       status: "pending" as const,
       completed_sets: 0,
+      weight_lbs: lastWeightByExercise.get(normalizeExerciseName(w.name)) ?? null,
       notes: JSON.stringify({
         block: "Warmup",
         start_minute: 0,
@@ -341,6 +384,7 @@ export async function POST(request: NextRequest) {
         order_index: blockIndex * 100 + exerciseIndex,
         status: "pending" as const,
         completed_sets: 0,
+        weight_lbs: lastWeightByExercise.get(normalizeExerciseName(exercise.name)) ?? null,
         notes: JSON.stringify({
           block: block.name,
           start_minute: block.start_minute,

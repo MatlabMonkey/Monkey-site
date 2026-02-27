@@ -48,6 +48,10 @@ function completionPercent(exercises: WorkoutExercise[]) {
   return Math.round((completed / exercises.length) * 100)
 }
 
+function formatWeight(weightLbs: number) {
+  return weightLbs.toFixed(2).replace(/\.?0+$/, "")
+}
+
 export default function WorkoutToolPage() {
   const [tab, setTab] = useState<"generator" | "history">("generator")
   const [dayType, setDayType] = useState<DayType>("Upper")
@@ -59,6 +63,7 @@ export default function WorkoutToolPage() {
   const [generating, setGenerating] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [weightInputs, setWeightInputs] = useState<Record<string, string>>({})
 
   async function loadWorkouts() {
     setLoading(true)
@@ -81,6 +86,20 @@ export default function WorkoutToolPage() {
   useEffect(() => {
     void loadWorkouts()
   }, [])
+
+  useEffect(() => {
+    if (!activeWorkout) {
+      setWeightInputs({})
+      return
+    }
+
+    const nextInputs: Record<string, string> = {}
+    for (const exercise of activeWorkout.exercises) {
+      nextInputs[exercise.id] =
+        exercise.status === "completed" && typeof exercise.weight_lbs === "number" ? formatWeight(exercise.weight_lbs) : ""
+    }
+    setWeightInputs(nextInputs)
+  }, [activeWorkout?.id])
 
   const progress = useMemo(() => completionPercent(activeWorkout?.exercises || []), [activeWorkout])
 
@@ -137,22 +156,46 @@ export default function WorkoutToolPage() {
 
   async function toggleExercise(exercise: WorkoutExercise, checked: boolean) {
     if (!activeWorkout) return
+
+    const rawWeight = (weightInputs[exercise.id] ?? "").trim()
+    let weightLbs: number | null | undefined
+
+    if (rawWeight) {
+      const parsedWeight = Number.parseFloat(rawWeight)
+      if (!Number.isFinite(parsedWeight) || parsedWeight <= 0 || parsedWeight > 2000) {
+        setError("Weight must be a number between 0 and 2000 lbs")
+        return
+      }
+      weightLbs = Number.parseFloat(parsedWeight.toFixed(2))
+    } else if (checked) {
+      weightLbs = exercise.weight_lbs ?? null
+    }
+
     setSaving(true)
     setError(null)
 
     try {
+      const exercisePatch: {
+        id: string
+        status: "pending" | "completed"
+        completed_sets: number
+        weight_lbs?: number | null
+      } = {
+        id: exercise.id,
+        status: checked ? "completed" : "pending",
+        completed_sets: checked ? exercise.sets : 0,
+      }
+
+      if (weightLbs !== undefined) {
+        exercisePatch.weight_lbs = weightLbs
+      }
+
       const res = await fetch("/api/workout", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           workout_id: activeWorkout.id,
-          exercises: [
-            {
-              id: exercise.id,
-              status: checked ? "completed" : "pending",
-              completed_sets: checked ? exercise.sets : 0,
-            },
-          ],
+          exercises: [exercisePatch],
         }),
       })
 
@@ -165,11 +208,20 @@ export default function WorkoutToolPage() {
           ...prev,
           exercises: prev.exercises.map((ex) =>
             ex.id === exercise.id
-              ? { ...ex, status: checked ? "completed" : "pending", completed_sets: checked ? ex.sets : 0 }
+              ? {
+                  ...ex,
+                  status: checked ? "completed" : "pending",
+                  completed_sets: checked ? ex.sets : 0,
+                  weight_lbs: weightLbs !== undefined ? weightLbs : ex.weight_lbs,
+                }
               : ex,
           ),
         }
       })
+
+      if (checked && weightLbs !== undefined && weightLbs !== null) {
+        setWeightInputs((prev) => ({ ...prev, [exercise.id]: formatWeight(weightLbs) }))
+      }
     } catch (err) {
       console.error("[WorkoutToolPage] toggleExercise failed", err)
       setError(err instanceof Error ? err.message : "Failed to update exercise")
@@ -354,10 +406,17 @@ export default function WorkoutToolPage() {
                   <div className="space-y-3">
                     {activeWorkout.exercises.map((exercise) => {
                       const meta = parseMeta(exercise.notes)
+                      const checkboxId = `exercise-complete-${exercise.id}`
+                      const weightInputId = `exercise-weight-${exercise.id}`
                       const timeLabel =
                         typeof meta.start_minute === "number" && typeof meta.end_minute === "number"
                           ? `${meta.start_minute}-${meta.end_minute}m`
                           : null
+                      const lastUsedWeight =
+                        typeof exercise.weight_lbs === "number" && Number.isFinite(exercise.weight_lbs)
+                          ? formatWeight(exercise.weight_lbs)
+                          : null
+                      const weightValue = weightInputs[exercise.id] ?? ""
 
                       return (
                         <div
@@ -365,12 +424,18 @@ export default function WorkoutToolPage() {
                           className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2)_/_0.45)] px-4 py-3"
                         >
                           <div className="flex items-start gap-3">
-                            <input
-                              type="checkbox"
-                              checked={exercise.status === "completed"}
-                              onChange={(e) => void toggleExercise(exercise, e.target.checked)}
-                              className="mt-1 h-4 w-4 accent-[rgb(var(--brand))]"
-                            />
+                            <label
+                              htmlFor={checkboxId}
+                              className="inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-lg border border-transparent hover:border-[rgb(var(--border))]"
+                            >
+                              <input
+                                id={checkboxId}
+                                type="checkbox"
+                                checked={exercise.status === "completed"}
+                                onChange={(e) => void toggleExercise(exercise, e.target.checked)}
+                                className="h-5 w-5 accent-[rgb(var(--brand))]"
+                              />
+                            </label>
                             <div className="w-full">
                               <div className="flex flex-wrap items-center justify-between gap-2">
                                 <h3 className="font-medium">{exercise.name}</h3>
@@ -391,6 +456,25 @@ export default function WorkoutToolPage() {
                               {meta.substitutions && meta.substitutions.length > 0 && (
                                 <p className="mt-1 text-xs text-[rgb(var(--text-muted))]">Swap: {meta.substitutions[0]}</p>
                               )}
+                              <div className="mt-3 max-w-[220px]">
+                                <label htmlFor={weightInputId} className="mb-1 block text-xs text-[rgb(var(--text-muted))]">
+                                  Weight (lbs)
+                                </label>
+                                <input
+                                  id={weightInputId}
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={weightValue}
+                                  onChange={(e) =>
+                                    setWeightInputs((prev) => ({
+                                      ...prev,
+                                      [exercise.id]: e.target.value,
+                                    }))
+                                  }
+                                  placeholder={lastUsedWeight ? `Last used: ${lastUsedWeight} lbs` : "e.g. 135"}
+                                  className="w-full rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.35)] px-2.5 py-1.5 text-sm text-[rgb(var(--text))] outline-none placeholder:text-[rgb(var(--text-muted))] focus:border-[rgb(var(--brand)_/_0.6)]"
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
