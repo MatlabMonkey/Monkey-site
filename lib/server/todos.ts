@@ -67,7 +67,7 @@ export class TodoValidationError extends Error {
   }
 }
 
-function getSupabaseAdmin() {
+export function getSupabaseAdmin() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 

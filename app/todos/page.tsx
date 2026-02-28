@@ -6,12 +6,14 @@ import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
   CalendarClock,
+  Clock3,
   Check,
   ChevronRight,
   Inbox,
   ListChecks,
   Plus,
   PlayCircle,
+  Repeat2,
   Trash2,
   Users,
   Archive,
@@ -19,6 +21,7 @@ import {
   FolderKanban,
 } from "lucide-react"
 import PinGate from "../components/PinGate"
+import { describeRecurringRRule } from "../../lib/recurring"
 import { isTodoBucket, normalizeTodoContext, type TodoBucket, type TodoContext } from "../../lib/todos"
 
 type Todo = {
@@ -46,6 +49,20 @@ type BucketState = {
   reference: Todo[]
 }
 
+type RecurringTodo = {
+  id: string
+  content: string
+  context: TodoContext
+  folder: string
+  rrule: string
+  next_run_at: string
+  active: boolean
+  created_at: string
+  updated_at: string
+}
+
+type RecurringFrequency = "daily" | "weekly" | "monthly"
+
 const EMPTY_BUCKETS: BucketState = {
   inbox: [],
   next_action: [],
@@ -70,6 +87,16 @@ const BUCKET_TABS: Array<{ value: TodoBucket; label: string }> = [
   { value: "someday_maybe", label: "Someday" },
   { value: "reference", label: "Reference" },
 ]
+
+const WEEKDAY_OPTIONS = [
+  { value: "mon", label: "Mon" },
+  { value: "tue", label: "Tue" },
+  { value: "wed", label: "Wed" },
+  { value: "thu", label: "Thu" },
+  { value: "fri", label: "Fri" },
+  { value: "sat", label: "Sat" },
+  { value: "sun", label: "Sun" },
+] as const
 
 function readContextFromLocation(): TodoContext {
   if (typeof window === "undefined") return "personal"
@@ -107,6 +134,19 @@ function formatDateTime(iso: string | null) {
   })
 }
 
+function formatDateOnly(dateValue: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateValue)
+  if (!match) return dateValue
+
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const day = Number(match[3])
+  const date = new Date(year, month - 1, day)
+  if (Number.isNaN(date.getTime())) return dateValue
+
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+}
+
 async function fetchBucket(path: string): Promise<Todo[]> {
   const response = await fetch(path, { cache: "no-store" })
   const data = await response.json()
@@ -114,6 +154,15 @@ async function fetchBucket(path: string): Promise<Todo[]> {
     throw new Error(data.error || "Failed to fetch todos")
   }
   return Array.isArray(data.todos) ? (data.todos as Todo[]) : []
+}
+
+async function fetchRecurring(path: string): Promise<RecurringTodo[]> {
+  const response = await fetch(path, { cache: "no-store" })
+  const data = await response.json()
+  if (!response.ok) {
+    throw new Error(data.error || "Failed to fetch recurring todos")
+  }
+  return Array.isArray(data.recurringTodos) ? (data.recurringTodos as RecurringTodo[]) : []
 }
 
 export default function TodosPage() {
@@ -129,6 +178,13 @@ export default function TodosPage() {
   const [error, setError] = useState("")
   const [projectDrafts, setProjectDrafts] = useState<Record<string, string>>({})
   const [addingProjectActionId, setAddingProjectActionId] = useState<string | null>(null)
+  const [recurringTodos, setRecurringTodos] = useState<RecurringTodo[]>([])
+  const [recurringContent, setRecurringContent] = useState("")
+  const [recurringFrequency, setRecurringFrequency] = useState<RecurringFrequency>("daily")
+  const [recurringWeeklyDays, setRecurringWeeklyDays] = useState<Array<(typeof WEEKDAY_OPTIONS)[number]["value"]>>(["mon"])
+  const [recurringMonthlyDay, setRecurringMonthlyDay] = useState("1")
+  const [addingRecurring, setAddingRecurring] = useState(false)
+  const [recurringActionId, setRecurringActionId] = useState<string | null>(null)
 
   useEffect(() => {
     const syncFromLocation = () => {
@@ -212,20 +268,30 @@ export default function TodosPage() {
     }
   }, [activeContext])
 
+  const loadRecurring = useCallback(async () => {
+    const params = new URLSearchParams({ context: activeContext })
+    try {
+      const recurring = await fetchRecurring(`/api/todos/recurring?${params.toString()}`)
+      setRecurringTodos(recurring)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load recurring todos")
+    }
+  }, [activeContext])
+
   useEffect(() => {
     const run = async () => {
       setLoading(true)
-      await loadDashboard()
+      await Promise.all([loadDashboard(), loadRecurring()])
       setLoading(false)
     }
     void run()
-  }, [loadDashboard])
+  }, [loadDashboard, loadRecurring])
 
   const refresh = useCallback(async () => {
     setRefreshing(true)
-    await loadDashboard()
+    await Promise.all([loadDashboard(), loadRecurring()])
     setRefreshing(false)
-  }, [loadDashboard])
+  }, [loadDashboard, loadRecurring])
 
   const addInboxTodo = async (event: React.FormEvent) => {
     event.preventDefault()
