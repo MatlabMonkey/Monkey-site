@@ -310,8 +310,25 @@ function JournalPageContent() {
           />
         )
 
-      case "multiselect":
-        const options = question.metadata?.options || []
+      case "multiselect": {
+        let options: string[] = []
+        const metadata = question.metadata as unknown
+        if (metadata && typeof metadata === "object" && !Array.isArray(metadata)) {
+          const rawOptions = (metadata as { options?: unknown }).options
+          if (Array.isArray(rawOptions)) {
+            options = rawOptions.filter((opt): opt is string => typeof opt === "string")
+          }
+        } else if (typeof metadata === "string") {
+          try {
+            const parsed = JSON.parse(metadata) as { options?: unknown }
+            if (Array.isArray(parsed?.options)) {
+              options = parsed.options.filter((opt): opt is string => typeof opt === "string")
+            }
+          } catch {
+            options = []
+          }
+        }
+
         const selectedValues = Array.isArray(value) ? value : []
 
         return (
@@ -337,6 +354,7 @@ function JournalPageContent() {
             ))}
           </div>
         )
+      }
 
       default:
         return (
