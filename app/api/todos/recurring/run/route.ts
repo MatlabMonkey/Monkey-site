@@ -17,7 +17,16 @@ function todayDateString(): string {
   return new Date().toISOString().split("T")[0]
 }
 
+// Vercel crons send GET requests
+export async function GET() {
+  return runRecurringTodos()
+}
+
 export async function POST() {
+  return runRecurringTodos()
+}
+
+async function runRecurringTodos() {
   try {
     const today = todayDateString()
     const supabase = getSupabaseAdmin()
