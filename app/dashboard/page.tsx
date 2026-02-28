@@ -36,9 +36,6 @@ type DashboardStats = {
   avgAlcohol7: number
   totalAlcohol30: number
   workoutCounts14: Record<string, number>
-  roseHighlight: { date: string; value: string } | null
-  budHighlight: { date: string; value: string } | null
-  thornHighlight: { date: string; value: string } | null
   totalEntries: number
   daysBehind: number
   lastEntryStr: string
@@ -129,9 +126,6 @@ export default function Dashboard() {
             avgAlcohol7: 0,
             totalAlcohol30: 0,
             workoutCounts14,
-            roseHighlight: null,
-            budHighlight: null,
-            thornHighlight: null,
             totalEntries: 0,
             daysBehind: 0,
             lastEntryStr: "No entries yet",
@@ -189,22 +183,6 @@ export default function Dashboard() {
           }
         })
 
-        // Rose / bud / thorn highlights – latest non-empty values
-        const latestWith = (key: string): { date: string; value: string } | null => {
-          for (let i = days.length - 1; i >= 0; i--) {
-            const d = days[i]
-            const v = d.answers[key]
-            if (typeof v === "string" && v.trim() !== "") {
-              return { date: d.date, value: v }
-            }
-          }
-          return null
-        }
-
-        const roseHighlight = latestWith("rose")
-        const budHighlight = latestWith("bud")
-        const thornHighlight = latestWith("thorn")
-
         const chartData = days.map((d) => ({
           date: d.date,
           day_quality: getNum(d, "day_quality"),
@@ -232,9 +210,6 @@ export default function Dashboard() {
           avgAlcohol7,
           totalAlcohol30,
           workoutCounts14,
-          roseHighlight,
-          budHighlight,
-          thornHighlight,
           totalEntries: days.length,
           daysBehind: Math.max(diffDays, 0),
           lastEntryStr,
@@ -490,19 +465,19 @@ export default function Dashboard() {
                       placeholder="No anchor memory captured."
                     />
                     <FieldBlock
-                      label="Wins / proud of"
-                      value={latestDay.answers["wins_proud"]}
-                      placeholder="No wins recorded."
+                      label="Reflection"
+                      value={latestDay.answers["reflection"]}
+                      placeholder="No reflection captured."
                     />
                     <FieldBlock
-                      label="Misses / friction"
-                      value={latestDay.answers["misses_friction"]}
-                      placeholder="No misses recorded."
+                      label="Rose"
+                      value={latestDay.answers["rose"]}
+                      placeholder="No rose captured."
                     />
                     <FieldBlock
-                      label="Lesson"
-                      value={latestDay.answers["lesson_next_time"]}
-                      placeholder="No explicit lesson written."
+                      label="Thorn"
+                      value={latestDay.answers["thorn"]}
+                      placeholder="No thorn captured."
                     />
                   </div>
                 ) : (
@@ -521,11 +496,6 @@ export default function Dashboard() {
                       label="Tomorrow's #1 priority"
                       value={latestDay.answers["tomorrow_priority"]}
                       placeholder="No priority set."
-                    />
-                    <FieldBlock
-                      label="Implementation intention"
-                      value={latestDay.answers["implementation_intention"]}
-                      placeholder="No implementation intention set."
                     />
                   </div>
                 ) : (
@@ -557,31 +527,6 @@ export default function Dashboard() {
                     </div>
                     <div className="text-xs text-[rgb(var(--text-muted))] mt-1">drinks</div>
                   </div>
-                </div>
-              </div>
-
-              {/* Rose / Bud / Thorn */}
-              <div className="bg-[rgb(var(--surface))] rounded-3xl border border-[rgb(var(--border))]  p-6 space-y-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <Sparkles className="w-5 h-5 text-[rgb(var(--brand))]" />
-                  <h2 className="text-lg font-semibold text-[rgb(var(--text))]">Daily highlights</h2>
-                </div>
-                <div className="space-y-3 text-sm">
-                  <FieldBlock
-                    label="Rose"
-                    value={stats.roseHighlight?.value}
-                    placeholder="No recent rose captured."
-                  />
-                  <FieldBlock
-                    label="Bud"
-                    value={stats.budHighlight?.value}
-                    placeholder="No recent bud captured."
-                  />
-                  <FieldBlock
-                    label="Thorn"
-                    value={stats.thornHighlight?.value}
-                    placeholder="No recent thorn captured."
-                  />
                 </div>
               </div>
 

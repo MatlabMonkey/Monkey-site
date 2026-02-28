@@ -70,6 +70,16 @@ function JournalPageContent() {
     loadQuestions()
   }, [entryDate])
 
+  // Reset entry-specific state when date changes before attempting to load entry data
+  useEffect(() => {
+    setAnswers({})
+    setDraftLoaded(false)
+    setLoadedEntryExists(false)
+    setCurrentQuestionIndex(0)
+    setIsDraft(false)
+    setError(null)
+  }, [entryDate])
+
   // Load entry (draft or submitted) on mount
   useEffect(() => {
     async function loadEntry() {
