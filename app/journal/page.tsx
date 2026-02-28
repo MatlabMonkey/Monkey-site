@@ -526,8 +526,8 @@ function JournalPageContent() {
             </div>
           )}
 
-          {draftLoaded && loadedEntryExists && !isSaving && (
-            <div className="mb-6 p-4 rounded-xl border border-sky-700/60 bg-sky-950/40 text-sky-200">
+          {draftLoaded && loadedEntryExists && (
+            <div className={`mb-6 p-4 rounded-xl border border-sky-700/60 bg-sky-950/40 text-sky-200 transition-opacity duration-200 ${isSaving ? "opacity-0" : "opacity-100"}`}>
               {isDraft
                 ? `Resuming your draft from ${new Date(entryDate).toLocaleDateString()}`
                 : `Editing submitted entry from ${new Date(entryDate).toLocaleDateString()}`}
