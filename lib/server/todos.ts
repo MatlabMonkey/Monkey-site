@@ -19,6 +19,7 @@ export type TodoRecord = {
   context: TodoContext
   item_type: TodoItemType
   project_id: NullableString
+  sort_order: number | null
   scheduled_for: NullableString
   waiting_for: NullableString
   clarified_at: NullableString
@@ -44,6 +45,7 @@ export type CreateTodoInput = {
   context?: TodoContext
   item_type?: TodoItemType
   project_id?: NullableString
+  sort_order?: number | null
   scheduled_for?: NullableString
   waiting_for?: NullableString
   clarified_at?: NullableString
@@ -166,12 +168,22 @@ function normalizeUuid(value: unknown, fieldName: string): NullableString | unde
   return trimmed
 }
 
+function normalizeSortOrder(value: unknown): number | null | undefined {
+  if (value === undefined) return undefined
+  if (value === null) return null
+  if (typeof value !== "number" || !Number.isInteger(value)) {
+    throw new TodoValidationError("sort_order must be an integer or null")
+  }
+  return value
+}
+
 function normalizeCreateInput(input: CreateTodoInput): Record<string, unknown> {
   const content = normalizeContent(input.content)
   const folder = normalizeBucket(input.folder) || "inbox"
   const context = normalizeTodoContextOrDefault(input.context)
   const itemType = normalizeItemType(input.item_type) || "task"
   const projectId = normalizeUuid(input.project_id, "project_id")
+  const sortOrder = normalizeSortOrder(input.sort_order)
   const scheduledFor = normalizeIsoTimestamp(input.scheduled_for, "scheduled_for")
   const waitingFor = normalizeOptionalString(input.waiting_for)
   const clarifiedAt = normalizeIsoTimestamp(input.clarified_at, "clarified_at")
@@ -183,6 +195,7 @@ function normalizeCreateInput(input: CreateTodoInput): Record<string, unknown> {
     context,
     item_type: itemType,
     project_id: projectId ?? null,
+    sort_order: sortOrder ?? null,
     scheduled_for: scheduledFor ?? null,
     waiting_for: waitingFor ?? null,
     clarified_at: clarifiedAt ?? null,
@@ -213,6 +226,10 @@ function normalizeUpdateInput(input: UpdateTodoInput): Record<string, unknown> {
 
   if (input.project_id !== undefined) {
     updates.project_id = normalizeUuid(input.project_id, "project_id")
+  }
+
+  if (input.sort_order !== undefined) {
+    updates.sort_order = normalizeSortOrder(input.sort_order)
   }
 
   if (input.scheduled_for !== undefined) {
@@ -268,7 +285,10 @@ export async function listTodos(options: ListTodosOptions = {}): Promise<TodoRec
   if (sort === "oldest") {
     query = query.order("created_at", { ascending: true })
   } else if (sort === "next_up") {
-    query = query.order("scheduled_for", { ascending: true, nullsFirst: false }).order("created_at", { ascending: true })
+    query = query
+      .order("sort_order", { ascending: true, nullsFirst: false })
+      .order("scheduled_for", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: true })
   } else {
     query = query.order("created_at", { ascending: false })
   }

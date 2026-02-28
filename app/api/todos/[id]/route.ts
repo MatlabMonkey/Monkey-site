@@ -20,6 +20,14 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
       return NextResponse.json({ error: "Invalid context value" }, { status: 400 })
     }
 
+    if (
+      body.sort_order !== undefined &&
+      body.sort_order !== null &&
+      (typeof body.sort_order !== "number" || !Number.isInteger(body.sort_order))
+    ) {
+      return NextResponse.json({ error: "Invalid sort_order value" }, { status: 400 })
+    }
+
     const todo = await updateTodoById(id, {
       content: typeof body.content === "string" ? body.content : undefined,
       completed: typeof body.completed === "boolean" ? body.completed : undefined,
@@ -27,6 +35,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
       context: normalizedContext,
       item_type: body.item_type,
       project_id: typeof body.project_id === "string" || body.project_id === null ? body.project_id : undefined,
+      sort_order: typeof body.sort_order === "number" || body.sort_order === null ? body.sort_order : undefined,
       scheduled_for: typeof body.scheduled_for === "string" || body.scheduled_for === null ? body.scheduled_for : undefined,
       waiting_for: typeof body.waiting_for === "string" || body.waiting_for === null ? body.waiting_for : undefined,
       clarified_at: typeof body.clarified_at === "string" || body.clarified_at === null ? body.clarified_at : undefined,

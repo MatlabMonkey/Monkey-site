@@ -3,6 +3,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { closestCenter, DndContext, PointerSensor, type DragEndEvent, useSensor, useSensors } from "@dnd-kit/core"
+import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 import {
   ArrowLeft,
   CalendarClock,
@@ -19,6 +22,7 @@ import {
   Archive,
   BookOpen,
   FolderKanban,
+  GripVertical,
 } from "lucide-react"
 import PinGate from "../components/PinGate"
 import { describeRecurringRRule } from "../../lib/recurring"
@@ -32,6 +36,7 @@ type Todo = {
   context: TodoContext
   item_type: string
   project_id: string | null
+  sort_order: number | null
   scheduled_for: string | null
   waiting_for: string | null
   clarified_at: string | null
@@ -62,6 +67,19 @@ type RecurringTodo = {
 }
 
 type RecurringFrequency = "daily" | "weekly" | "monthly"
+
+type TodoRowOptions = {
+  showProject?: boolean
+  showSchedule?: boolean
+  showWaiting?: boolean
+  dragHandle?: React.ReactNode
+  dragging?: boolean
+}
+
+type SortableNextActionItemProps = {
+  todo: Todo
+  renderTodoRow: (todo: Todo, options?: TodoRowOptions) => React.ReactElement
+}
 
 const EMPTY_BUCKETS: BucketState = {
   inbox: [],
@@ -165,8 +183,39 @@ async function fetchRecurring(path: string): Promise<RecurringTodo[]> {
   return Array.isArray(data.recurringTodos) ? (data.recurringTodos as RecurringTodo[]) : []
 }
 
+function SortableNextActionItem({ todo, renderTodoRow }: SortableNextActionItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: todo.id })
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.9 : 1,
+  }
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      {renderTodoRow(todo, {
+        showProject: true,
+        showSchedule: true,
+        dragging: isDragging,
+        dragHandle: (
+          <button
+            type="button"
+            {...attributes}
+            {...listeners}
+            className="mt-0.5 p-1.5 rounded-lg text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))] hover:bg-[rgb(var(--surface-2)_/_0.7)] transition-colors cursor-grab active:cursor-grabbing touch-none"
+            aria-label={`Reorder ${todo.content}`}
+          >
+            <GripVertical className="w-4 h-4" />
+          </button>
+        ),
+      })}
+    </div>
+  )
+}
+
 export default function TodosPage() {
   const router = useRouter()
+  const dndSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
 
   const [buckets, setBuckets] = useState<BucketState>(EMPTY_BUCKETS)
   const [newTodo, setNewTodo] = useState("")
@@ -409,11 +458,58 @@ export default function TodosPage() {
     return grouped
   }, [buckets.next_action])
 
-  const renderTodoRow = (todo: Todo, options?: { showProject?: boolean; showSchedule?: boolean; showWaiting?: boolean }) => (
+  const saveNextActionOrder = useCallback(async (orderedTodos: Todo[]) => {
+    const response = await fetch("/api/todos/reorder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        items: orderedTodos.map((todo, index) => ({
+          id: todo.id,
+          sort_order: index,
+        })),
+      }),
+    })
+
+    const data = await response.json()
+    if (!response.ok) {
+      throw new Error(data.error || "Failed to reorder todos")
+    }
+  }, [])
+
+  const handleNextActionDragEnd = useCallback(
+    async (event: DragEndEvent) => {
+      const { active, over } = event
+      if (!over || active.id === over.id) return
+
+      const activeId = String(active.id)
+      const overId = String(over.id)
+      const oldIndex = buckets.next_action.findIndex((todo) => todo.id === activeId)
+      const newIndex = buckets.next_action.findIndex((todo) => todo.id === overId)
+
+      if (oldIndex < 0 || newIndex < 0 || oldIndex === newIndex) return
+
+      const reordered = arrayMove(buckets.next_action, oldIndex, newIndex)
+      setBuckets((current) => ({ ...current, next_action: reordered }))
+      setError("")
+
+      try {
+        await saveNextActionOrder(reordered)
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to reorder todos")
+        await refresh()
+      }
+    },
+    [buckets.next_action, refresh, saveNextActionOrder],
+  )
+
+  const renderTodoRow = (todo: Todo, options?: TodoRowOptions) => (
     <div
       key={todo.id}
-      className="p-4 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.6)] flex items-start gap-3"
+      className={`p-4 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.6)] flex items-start gap-3 ${
+        options?.dragging ? "opacity-90" : ""
+      }`}
     >
+      {options?.dragHandle}
       <button
         type="button"
         onClick={() => void markCompleted(todo)}
@@ -589,9 +685,15 @@ export default function TodosPage() {
             {buckets.next_action.length === 0 ? (
               <p className="text-sm text-[rgb(var(--text-muted))]">No next actions yet. Process inbox items into this list.</p>
             ) : (
-              <div className="space-y-3">
-                {buckets.next_action.map((todo) => renderTodoRow(todo, { showProject: true, showSchedule: true }))}
-              </div>
+              <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={(event) => void handleNextActionDragEnd(event)}>
+                <SortableContext items={buckets.next_action.map((todo) => todo.id)} strategy={verticalListSortingStrategy}>
+                  <div className="space-y-3">
+                    {buckets.next_action.map((todo) => (
+                      <SortableNextActionItem key={todo.id} todo={todo} renderTodoRow={renderTodoRow} />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             )}
           </section>
 
