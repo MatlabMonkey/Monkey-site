@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Lightbulb, PlusCircle, LockKeyhole, Archive } from "lucide-react"
+import { ArrowLeft, Lightbulb, PlusCircle, LockKeyhole, Archive, Users } from "lucide-react"
 import PinGate from "../components/PinGate"
 
 type IdeasSummary = {
@@ -70,25 +70,44 @@ export default function WorkspacePage() {
             </div>
           </div>
 
-          <div className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2)_/_0.60)] p-6">
-            <h2 className="text-xl font-semibold mb-2">Capture pipeline</h2>
-            <p className="text-[rgb(var(--text-muted))] mb-6">
-              Apple Shortcuts can post to <code className="font-mono">/api/capture</code> using <code className="font-mono">CAPTURE_API_KEY</code>.
-            </p>
-            <div className="flex flex-wrap gap-3">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2)_/_0.60)] p-6">
+              <h2 className="text-xl font-semibold mb-2">Capture pipeline</h2>
+              <p className="text-[rgb(var(--text-muted))] mb-6">
+                Apple Shortcuts can post to <code className="font-mono">/api/capture</code> using <code className="font-mono">CAPTURE_API_KEY</code>.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <Link
+                  href="/workspace/ideas"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[rgb(var(--brand))] text-[rgb(var(--text))] hover:bg-[rgb(var(--brand-strong))] transition-colors"
+                >
+                  <Lightbulb className="w-4 h-4" />
+                  Open Ideas
+                </Link>
+                <Link
+                  href="/workspace/ideas?archived=true"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.7)] transition-colors"
+                >
+                  <Archive className="w-4 h-4" />
+                  View Archived
+                </Link>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2)_/_0.60)] p-6">
+              <div className="flex items-center gap-2 mb-2 text-[rgb(var(--brand))]">
+                <Users className="w-5 h-5" />
+                <h2 className="text-xl font-semibold">Contacts</h2>
+              </div>
+              <p className="text-[rgb(var(--text-muted))] mb-6">
+                Capture people you meet with AI-powered extraction and semantic search.
+              </p>
               <Link
-                href="/workspace/ideas"
+                href="/workspace/contacts"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[rgb(var(--brand))] text-[rgb(var(--text))] hover:bg-[rgb(var(--brand-strong))] transition-colors"
               >
-                <Lightbulb className="w-4 h-4" />
-                Open Ideas
-              </Link>
-              <Link
-                href="/workspace/ideas?archived=true"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.7)] transition-colors"
-              >
-                <Archive className="w-4 h-4" />
-                View Archived
+                <Users className="w-4 h-4" />
+                Open Contacts
               </Link>
             </div>
           </div>

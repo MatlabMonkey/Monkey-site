@@ -116,6 +116,26 @@ const WEEKDAY_OPTIONS = [
   { value: "sun", label: "Sun" },
 ] as const
 
+const WEEKDAY_RRULE_CODES: Record<(typeof WEEKDAY_OPTIONS)[number]["value"], string> = {
+  mon: "MO",
+  tue: "TU",
+  wed: "WE",
+  thu: "TH",
+  fri: "FR",
+  sat: "SA",
+  sun: "SU",
+}
+
+const RRULE_DAY_LABELS: Record<string, string> = {
+  MO: "Mon",
+  TU: "Tue",
+  WE: "Wed",
+  TH: "Thu",
+  FR: "Fri",
+  SA: "Sat",
+  SU: "Sun",
+}
+
 function readContextFromLocation(): TodoContext {
   if (typeof window === "undefined") return "personal"
   const params = new URLSearchParams(window.location.search)
@@ -163,6 +183,35 @@ function formatDateOnly(dateValue: string) {
   if (Number.isNaN(date.getTime())) return dateValue
 
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+}
+
+function describeRecurringRuleLabel(rrule: string) {
+  try {
+    return describeRecurringRRule(rrule)
+  } catch {
+    const normalized = rrule.trim().toUpperCase()
+    if (normalized === "FREQ=DAILY") {
+      return "Every day"
+    }
+
+    const weeklyMatch = /^FREQ=WEEKLY;BYDAY=([A-Z,]+)$/.exec(normalized)
+    if (weeklyMatch) {
+      const labels = weeklyMatch[1]
+        .split(",")
+        .map((token) => token.trim())
+        .filter(Boolean)
+        .map((token) => RRULE_DAY_LABELS[token] || token)
+        .join(", ")
+      return labels ? `Every week on ${labels}` : "Every week"
+    }
+
+    const monthlyMatch = /^FREQ=MONTHLY;BYMONTHDAY=(\d{1,2})$/.exec(normalized)
+    if (monthlyMatch) {
+      return `Day ${Number(monthlyMatch[1])} of every month`
+    }
+
+    return rrule
+  }
 }
 
 async function fetchBucket(path: string): Promise<Todo[]> {
@@ -402,6 +451,167 @@ export default function TodosPage() {
       await refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to delete todo")
+    }
+  }
+
+  const buildRecurringRRule = () => {
+    if (recurringFrequency === "daily") {
+      return "FREQ=DAILY"
+    }
+
+    if (recurringFrequency === "weekly") {
+      const byDay = WEEKDAY_OPTIONS.filter((option) => recurringWeeklyDays.includes(option.value)).map(
+        (option) => WEEKDAY_RRULE_CODES[option.value],
+      )
+      if (byDay.length === 0) {
+        throw new Error("Select at least one day for a weekly recurring todo")
+      }
+      return `FREQ=WEEKLY;BYDAY=${byDay.join(",")}`
+    }
+
+    const day = Number.parseInt(recurringMonthlyDay, 10)
+    if (!Number.isInteger(day) || day < 1 || day > 31) {
+      throw new Error("Monthly day must be between 1 and 31")
+    }
+
+    return `FREQ=MONTHLY;BYMONTHDAY=${day}`
+  }
+
+  const buildLegacyRecurringRRule = () => {
+    if (recurringFrequency === "daily") {
+      return "daily"
+    }
+
+    if (recurringFrequency === "weekly") {
+      const days = WEEKDAY_OPTIONS.filter((option) => recurringWeeklyDays.includes(option.value)).map((option) => option.value)
+      if (days.length === 0) {
+        throw new Error("Select at least one day for a weekly recurring todo")
+      }
+      return `weekly:${days.join(",")}`
+    }
+
+    const day = Number.parseInt(recurringMonthlyDay, 10)
+    if (!Number.isInteger(day) || day < 1 || day > 31) {
+      throw new Error("Monthly day must be between 1 and 31")
+    }
+
+    return `monthly:${day}`
+  }
+
+  const toggleRecurringWeeklyDay = (day: (typeof WEEKDAY_OPTIONS)[number]["value"]) => {
+    setRecurringWeeklyDays((current) => {
+      if (current.includes(day)) {
+        return current.filter((value) => value !== day)
+      }
+      return [...current, day]
+    })
+  }
+
+  const addRecurringTodo = async (event: React.FormEvent) => {
+    event.preventDefault()
+    if (!recurringContent.trim() || addingRecurring) return
+
+    let rrule = ""
+    try {
+      rrule = buildRecurringRRule()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to build recurring rule")
+      return
+    }
+
+    setAddingRecurring(true)
+    setError("")
+
+    try {
+      const createWithRule = async (rule: string) => {
+        const response = await fetch("/api/todos/recurring", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: recurringContent.trim(),
+            context: activeContext,
+            folder: "inbox",
+            rrule: rule,
+          }),
+        })
+        const data = await response.json()
+        return { response, data }
+      }
+
+      let { response, data } = await createWithRule(rrule)
+      const rruleError = typeof data?.error === "string" ? data.error.toLowerCase() : ""
+      if (!response.ok && rruleError.includes("rrule")) {
+        const fallbackRule = buildLegacyRecurringRRule()
+        ;({ response, data } = await createWithRule(fallbackRule))
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to add recurring todo")
+      }
+
+      setRecurringContent("")
+      setRecurringFrequency("daily")
+      setRecurringWeeklyDays(["mon"])
+      setRecurringMonthlyDay("1")
+      await loadRecurring()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to add recurring todo")
+    } finally {
+      setAddingRecurring(false)
+    }
+  }
+
+  const toggleRecurringTodoActive = async (todo: RecurringTodo) => {
+    if (recurringActionId) return
+
+    setRecurringActionId(todo.id)
+    setError("")
+
+    try {
+      const params = new URLSearchParams({ id: todo.id })
+      const response = await fetch(`/api/todos/recurring?${params.toString()}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: todo.id,
+          active: !todo.active,
+        }),
+      })
+
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to update recurring todo")
+      }
+
+      await loadRecurring()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update recurring todo")
+    } finally {
+      setRecurringActionId(null)
+    }
+  }
+
+  const deleteRecurringTodo = async (id: string) => {
+    if (recurringActionId) return
+
+    setRecurringActionId(id)
+    setError("")
+
+    try {
+      const params = new URLSearchParams({ id })
+      const response = await fetch(`/api/todos/recurring?${params.toString()}`, {
+        method: "DELETE",
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to delete recurring todo")
+      }
+
+      await loadRecurring()
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete recurring todo")
+    } finally {
+      setRecurringActionId(null)
     }
   }
 
@@ -674,6 +884,144 @@ export default function TodosPage() {
                 </button>
               </div>
             </div>
+          </section>
+
+          <section className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Repeat2 className="w-5 h-5 text-[rgb(var(--brand))]" />
+              <h2 className="text-xl font-semibold">Recurring</h2>
+              <span className="text-sm text-[rgb(var(--text-muted))]">{recurringTodos.length}</span>
+            </div>
+
+            {recurringTodos.length === 0 ? (
+              <p className="text-sm text-[rgb(var(--text-muted))] mb-5">No recurring todos yet. Add one below.</p>
+            ) : (
+              <div className="space-y-3 mb-5">
+                {recurringTodos.map((todo) => {
+                  const busy = recurringActionId === todo.id
+                  return (
+                    <article
+                      key={todo.id}
+                      className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2)_/_0.65)] p-4"
+                    >
+                      <div className="flex flex-wrap items-start gap-3 justify-between">
+                        <div className="min-w-0 flex-1">
+                          <p className={todo.active ? "font-medium" : "font-medium text-[rgb(var(--text-muted))]"}>{todo.content}</p>
+                          <p className="text-xs text-[rgb(var(--text-muted))] mt-1">{describeRecurringRuleLabel(todo.rrule)}</p>
+                          <p className="text-xs text-[rgb(var(--text-muted))] mt-1">Next run: {formatDateOnly(todo.next_run_at)}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void toggleRecurringTodoActive(todo)}
+                            disabled={recurringActionId !== null}
+                            className={`px-3 py-1.5 rounded-xl border text-xs transition-colors disabled:opacity-60 ${
+                              todo.active
+                                ? "border-[rgb(var(--brand))] bg-[rgb(var(--brand-weak)_/_0.7)]"
+                                : "border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.65)] text-[rgb(var(--text-muted))]"
+                            }`}
+                          >
+                            {busy ? "Saving..." : todo.active ? "Active" : "Paused"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void deleteRecurringTodo(todo.id)}
+                            disabled={recurringActionId !== null}
+                            className="p-2 rounded-xl text-[rgb(var(--text-muted))] hover:text-[rgb(248_113_113)] hover:bg-[rgb(127_29_29_/_0.25)] transition-colors disabled:opacity-60"
+                            aria-label={`Delete recurring todo ${todo.content}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
+            )}
+
+            <form onSubmit={addRecurringTodo} className="space-y-3">
+              <div>
+                <label className="text-xs text-[rgb(var(--text-muted))]">Recurring Todo</label>
+                <input
+                  type="text"
+                  value={recurringContent}
+                  onChange={(event) => setRecurringContent(event.target.value)}
+                  placeholder="Add a recurring todo..."
+                  className="mt-1 w-full px-4 py-3 rounded-2xl bg-[rgb(var(--surface-2)_/_0.7)] border border-[rgb(var(--border))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand))]"
+                  disabled={addingRecurring}
+                />
+              </div>
+
+              <div>
+                <label className="text-xs text-[rgb(var(--text-muted))]">Frequency</label>
+                <select
+                  value={recurringFrequency}
+                  onChange={(event) => setRecurringFrequency(event.target.value as RecurringFrequency)}
+                  className="mt-1 w-full md:w-auto px-3 py-2 rounded-xl bg-[rgb(var(--surface-2)_/_0.7)] border border-[rgb(var(--border))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand))]"
+                  disabled={addingRecurring}
+                >
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+              </div>
+
+              {recurringFrequency === "weekly" && (
+                <div>
+                  <p className="text-xs text-[rgb(var(--text-muted))]">Days</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {WEEKDAY_OPTIONS.map((option) => {
+                      const checked = recurringWeeklyDays.includes(option.value)
+                      return (
+                        <label
+                          key={option.value}
+                          className={`px-3 py-1.5 rounded-lg border text-xs cursor-pointer transition-colors ${
+                            checked
+                              ? "border-[rgb(var(--brand))] bg-[rgb(var(--brand-weak)_/_0.75)]"
+                              : "border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.65)] text-[rgb(var(--text-muted))]"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => toggleRecurringWeeklyDay(option.value)}
+                            className="sr-only"
+                            disabled={addingRecurring}
+                          />
+                          {option.label}
+                        </label>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {recurringFrequency === "monthly" && (
+                <div className="max-w-[180px]">
+                  <label className="text-xs text-[rgb(var(--text-muted))]">Day of month</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={31}
+                    value={recurringMonthlyDay}
+                    onChange={(event) => setRecurringMonthlyDay(event.target.value)}
+                    className="mt-1 w-full px-3 py-2 rounded-xl bg-[rgb(var(--surface-2)_/_0.7)] border border-[rgb(var(--border))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand))]"
+                    disabled={addingRecurring}
+                  />
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <button
+                  type="submit"
+                  disabled={!recurringContent.trim() || addingRecurring || (recurringFrequency === "weekly" && recurringWeeklyDays.length === 0)}
+                  className="px-4 py-2 rounded-xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60 transition-colors"
+                >
+                  {addingRecurring ? "Adding..." : "Add Recurring"}
+                </button>
+              </div>
+            </form>
           </section>
 
           <section id="bucket-next_action" className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
