@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { coerceContactDraft } from "../../../../lib/contacts"
+import { coerceContactDraft } from "../../../lib/contacts"
 import {
   buildSearchFilter,
   ContactValidationError,
@@ -10,7 +10,7 @@ import {
   resolveContactUserId,
   upsertEmbeddingForContact,
   validateContactsApiKey,
-} from "../../../../lib/server/contacts"
+} from "../../../lib/server/contacts"
 
 const DEFAULT_LIMIT = 40
 const MAX_LIMIT = 100

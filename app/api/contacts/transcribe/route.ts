@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { getOpenAiApiKey, validateContactsApiKey } from "../../../../../lib/server/contacts"
+import { getOpenAiApiKey, validateContactsApiKey } from "../../../../lib/server/contacts"
 
 const MAX_AUDIO_BYTES = 25 * 1024 * 1024
 

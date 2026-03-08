@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { coerceContactDraft } from "../../../../../lib/contacts"
+import { coerceContactDraft } from "../../../../lib/contacts"
 import {
   ContactValidationError,
   getOpenAiApiKey,
@@ -10,7 +10,7 @@ import {
   resolveContactUserId,
   upsertEmbeddingForContact,
   validateContactsApiKey,
-} from "../../../../../lib/server/contacts"
+} from "../../../../lib/server/contacts"
 
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {

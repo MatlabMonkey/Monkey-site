@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { type ContactSearchResult } from "../../../../../lib/contacts"
+import { type ContactSearchResult } from "../../../../lib/contacts"
 import {
   buildSearchFilter,
   ContactValidationError,
@@ -11,7 +11,7 @@ import {
   resolveContactUserId,
   toVectorLiteral,
   validateContactsApiKey,
-} from "../../../../../lib/server/contacts"
+} from "../../../../lib/server/contacts"
 
 type MatchRow = {
   contact_id: string

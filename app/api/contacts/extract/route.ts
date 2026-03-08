@@ -1,11 +1,11 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { coerceContactDraft } from "../../../../../lib/contacts"
+import { coerceContactDraft } from "../../../../lib/contacts"
 import {
   ContactValidationError,
   getOpenAiApiKey,
   normalizeContactInput,
   validateContactsApiKey,
-} from "../../../../../lib/server/contacts"
+} from "../../../../lib/server/contacts"
 
 type ChatCompletionsResponse = {
   choices?: Array<{
