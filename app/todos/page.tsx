@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { memo, useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { closestCenter, DndContext, PointerSensor, type DragEndEvent, useSensor, useSensors } from "@dnd-kit/core"
@@ -115,6 +115,16 @@ const WEEKDAY_OPTIONS = [
   { value: "sat", label: "Sat" },
   { value: "sun", label: "Sun" },
 ] as const
+
+const TODO_BUCKET_KEYS: TodoBucket[] = [
+  "inbox",
+  "next_action",
+  "project",
+  "waiting_for",
+  "calendar",
+  "someday_maybe",
+  "reference",
+]
 
 const WEEKDAY_RRULE_CODES: Record<(typeof WEEKDAY_OPTIONS)[number]["value"], string> = {
   mon: "MO",
@@ -232,7 +242,40 @@ async function fetchRecurring(path: string): Promise<RecurringTodo[]> {
   return Array.isArray(data.recurringTodos) ? (data.recurringTodos as RecurringTodo[]) : []
 }
 
-function SortableNextActionItem({ todo, renderTodoRow }: SortableNextActionItemProps) {
+function updateTodoAcrossBuckets(current: BucketState, todoId: string, updater: (todo: Todo) => Todo): BucketState {
+  let changed = false
+  const next = { ...current }
+
+  for (const bucket of TODO_BUCKET_KEYS) {
+    const items = current[bucket]
+    const updatedItems = items.map((todo) => {
+      if (todo.id !== todoId) return todo
+      changed = true
+      return updater(todo)
+    })
+    next[bucket] = updatedItems
+  }
+
+  return changed ? next : current
+}
+
+function removeTodoAcrossBuckets(current: BucketState, todoId: string): BucketState {
+  let changed = false
+  const next = { ...current }
+
+  for (const bucket of TODO_BUCKET_KEYS) {
+    const items = current[bucket]
+    const filtered = items.filter((todo) => todo.id !== todoId)
+    if (filtered.length !== items.length) {
+      changed = true
+    }
+    next[bucket] = filtered
+  }
+
+  return changed ? next : current
+}
+
+const SortableNextActionItem = memo(function SortableNextActionItem({ todo, renderTodoRow }: SortableNextActionItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: todo.id })
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -260,7 +303,9 @@ function SortableNextActionItem({ todo, renderTodoRow }: SortableNextActionItemP
       })}
     </div>
   )
-}
+})
+
+SortableNextActionItem.displayName = "SortableNextActionItem"
 
 export default function TodosPage() {
   const router = useRouter()
@@ -283,6 +328,7 @@ export default function TodosPage() {
   const [recurringMonthlyDay, setRecurringMonthlyDay] = useState("1")
   const [addingRecurring, setAddingRecurring] = useState(false)
   const [recurringActionId, setRecurringActionId] = useState<string | null>(null)
+  const [syncingTodoIds, setSyncingTodoIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     const syncFromLocation = () => {
@@ -420,12 +466,22 @@ export default function TodosPage() {
   }
 
   const markCompleted = async (todo: Todo) => {
+    if (syncingTodoIds.has(todo.id)) return
+
+    const optimisticCompleted = !todo.completed
     setError("")
+    setSyncingTodoIds((current) => {
+      const next = new Set(current)
+      next.add(todo.id)
+      return next
+    })
+    setBuckets((current) => updateTodoAcrossBuckets(current, todo.id, (item) => ({ ...item, completed: optimisticCompleted })))
+
     try {
       const response = await fetch(`/api/todos/${todo.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ completed: !todo.completed }),
+        body: JSON.stringify({ completed: optimisticCompleted }),
       })
 
       const data = await response.json()
@@ -433,9 +489,18 @@ export default function TodosPage() {
         throw new Error(data.error || "Failed to update todo")
       }
 
-      await refresh()
+      if (optimisticCompleted) {
+        setBuckets((current) => removeTodoAcrossBuckets(current, todo.id))
+      }
     } catch (err) {
+      setBuckets((current) => updateTodoAcrossBuckets(current, todo.id, (item) => ({ ...item, completed: todo.completed })))
       setError(err instanceof Error ? err.message : "Failed to update todo")
+    } finally {
+      setSyncingTodoIds((current) => {
+        const next = new Set(current)
+        next.delete(todo.id)
+        return next
+      })
     }
   }
 
@@ -712,43 +777,53 @@ export default function TodosPage() {
     [buckets.next_action, refresh, saveNextActionOrder],
   )
 
-  const renderTodoRow = (todo: Todo, options?: TodoRowOptions) => (
-    <div
-      key={todo.id}
-      className={`p-4 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.6)] flex items-start gap-3 ${
-        options?.dragging ? "opacity-90" : ""
-      }`}
-    >
-      {options?.dragHandle}
-      <button
-        type="button"
-        onClick={() => void markCompleted(todo)}
-        className="mt-0.5 w-6 h-6 rounded-full border-2 border-[rgb(var(--border))] hover:border-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-weak)_/_0.7)] flex items-center justify-center transition-colors"
-        aria-label="Mark complete"
+  const renderTodoRow = (todo: Todo, options?: TodoRowOptions) => {
+    const syncing = syncingTodoIds.has(todo.id)
+
+    return (
+      <div
+        key={todo.id}
+        className={`p-4 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.6)] flex items-start gap-3 ${
+          options?.dragging ? "opacity-90" : ""
+        } ${syncing ? "animate-pulse" : ""}`}
       >
-        {todo.completed ? <Check className="w-4 h-4" /> : null}
-      </button>
-      <div className="flex-1 min-w-0">
-        <p className="text-[rgb(var(--text))]">{todo.content}</p>
-        <p className="text-xs text-[rgb(var(--text-muted))] mt-1">{formatRelative(todo.created_at)}</p>
-        {options?.showProject && todo.project_id && projectNameById.has(todo.project_id) && (
-          <p className="text-xs text-[rgb(var(--text-muted))] mt-1">Project: {projectNameById.get(todo.project_id)}</p>
-        )}
-        {options?.showSchedule && <p className="text-xs text-[rgb(var(--text-muted))] mt-1">{formatDateTime(todo.scheduled_for)}</p>}
-        {options?.showWaiting && todo.waiting_for && (
-          <p className="text-xs text-[rgb(var(--text-muted))] mt-1">Waiting on: {todo.waiting_for}</p>
-        )}
+        {options?.dragHandle}
+        <button
+          type="button"
+          onClick={() => void markCompleted(todo)}
+          disabled={syncing}
+          className="mt-0.5 w-6 h-6 rounded-full border-2 border-[rgb(var(--border))] hover:border-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-weak)_/_0.7)] flex items-center justify-center transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+          aria-label="Mark complete"
+        >
+          {syncing ? (
+            <Clock3 className="w-3.5 h-3.5 animate-spin text-[rgb(var(--brand))]" />
+          ) : todo.completed ? (
+            <Check className="w-4 h-4" />
+          ) : null}
+        </button>
+        <div className="flex-1 min-w-0">
+          <p className="text-[rgb(var(--text))]">{todo.content}</p>
+          <p className="text-xs text-[rgb(var(--text-muted))] mt-1">{formatRelative(todo.created_at)}</p>
+          {options?.showProject && todo.project_id && projectNameById.has(todo.project_id) && (
+            <p className="text-xs text-[rgb(var(--text-muted))] mt-1">Project: {projectNameById.get(todo.project_id)}</p>
+          )}
+          {options?.showSchedule && <p className="text-xs text-[rgb(var(--text-muted))] mt-1">{formatDateTime(todo.scheduled_for)}</p>}
+          {options?.showWaiting && todo.waiting_for && (
+            <p className="text-xs text-[rgb(var(--text-muted))] mt-1">Waiting on: {todo.waiting_for}</p>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={() => void deleteTodo(todo.id)}
+          disabled={syncing}
+          className="p-2 rounded-xl text-[rgb(var(--text-muted))] hover:text-[rgb(248_113_113)] hover:bg-[rgb(127_29_29_/_0.25)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label="Delete todo"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
       </div>
-      <button
-        type="button"
-        onClick={() => void deleteTodo(todo.id)}
-        className="p-2 rounded-xl text-[rgb(var(--text-muted))] hover:text-[rgb(248_113_113)] hover:bg-[rgb(127_29_29_/_0.25)] transition-colors"
-        aria-label="Delete todo"
-      >
-        <Trash2 className="w-4 h-4" />
-      </button>
-    </div>
-  )
+    )
+  }
 
   if (loading) {
     return (
@@ -1057,15 +1132,21 @@ export default function TodosPage() {
               <div className="grid gap-4 lg:grid-cols-2">
                 {buckets.project.map((project) => {
                   const linkedActions = nextActionsByProject.get(project.id) || []
+                  const syncing = syncingTodoIds.has(project.id)
                   return (
                     <article key={project.id} className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2)_/_0.65)] p-4 space-y-3">
                       <div className="flex items-start gap-3">
                         <button
                           type="button"
                           onClick={() => void markCompleted(project)}
-                          className="mt-0.5 w-6 h-6 rounded-full border-2 border-[rgb(var(--border))] hover:border-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-weak)_/_0.7)] flex items-center justify-center transition-colors"
+                          disabled={syncing}
+                          className="mt-0.5 w-6 h-6 rounded-full border-2 border-[rgb(var(--border))] hover:border-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-weak)_/_0.7)] flex items-center justify-center transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
                         >
-                          {project.completed ? <Check className="w-4 h-4" /> : null}
+                          {syncing ? (
+                            <Clock3 className="w-3.5 h-3.5 animate-spin text-[rgb(var(--brand))]" />
+                          ) : project.completed ? (
+                            <Check className="w-4 h-4" />
+                          ) : null}
                         </button>
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold">{project.content}</p>

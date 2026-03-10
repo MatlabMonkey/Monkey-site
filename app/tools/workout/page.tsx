@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Dumbbell, History, Sparkles } from "lucide-react"
+import { ArrowLeft, Dumbbell, History, Loader2, Sparkles } from "lucide-react"
 import type { DayType, ExerciseMeta, GenerateWorkoutRequest, Workout, WorkoutApiResponse, WorkoutExercise } from "./types"
 
 const DAY_TYPES: DayType[] = ["Push", "Pull", "Legs", "Upper", "Lower", "Full"]
@@ -64,6 +64,7 @@ export default function WorkoutToolPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [weightInputs, setWeightInputs] = useState<Record<string, string>>({})
+  const [syncingExerciseIds, setSyncingExerciseIds] = useState<Set<string>>(new Set())
 
   async function loadWorkouts() {
     setLoading(true)
@@ -155,9 +156,13 @@ export default function WorkoutToolPage() {
   }
 
   async function toggleExercise(exercise: WorkoutExercise, checked: boolean) {
-    if (!activeWorkout) return
+    if (!activeWorkout || saving || syncingExerciseIds.has(exercise.id)) return
+
+    const previousExercise = activeWorkout.exercises.find((item) => item.id === exercise.id)
+    if (!previousExercise) return
 
     const rawWeight = (weightInputs[exercise.id] ?? "").trim()
+    const previousWeightInput = weightInputs[exercise.id] ?? ""
     let weightLbs: number | null | undefined
 
     if (rawWeight) {
@@ -171,8 +176,33 @@ export default function WorkoutToolPage() {
       weightLbs = exercise.weight_lbs ?? null
     }
 
-    setSaving(true)
     setError(null)
+    setSyncingExerciseIds((current) => {
+      const next = new Set(current)
+      next.add(exercise.id)
+      return next
+    })
+
+    setActiveWorkout((prev) => {
+      if (!prev) return prev
+      return {
+        ...prev,
+        exercises: prev.exercises.map((ex) =>
+          ex.id === exercise.id
+            ? {
+                ...ex,
+                status: checked ? "completed" : "pending",
+                completed_sets: checked ? ex.sets : 0,
+                weight_lbs: weightLbs !== undefined ? weightLbs : ex.weight_lbs,
+              }
+            : ex,
+        ),
+      }
+    })
+
+    if (checked && weightLbs !== undefined && weightLbs !== null) {
+      setWeightInputs((prev) => ({ ...prev, [exercise.id]: formatWeight(weightLbs) }))
+    }
 
     try {
       const exercisePatch: {
@@ -201,32 +231,32 @@ export default function WorkoutToolPage() {
 
       const data = await readJsonSafe(res)
       if (!res.ok) throw new Error(pickApiError(data, "Failed to update exercise"))
-
+    } catch (err) {
+      console.error("[WorkoutToolPage] toggleExercise failed", err)
       setActiveWorkout((prev) => {
         if (!prev) return prev
         return {
           ...prev,
-          exercises: prev.exercises.map((ex) =>
-            ex.id === exercise.id
+          exercises: prev.exercises.map((item) =>
+            item.id === previousExercise.id
               ? {
-                  ...ex,
-                  status: checked ? "completed" : "pending",
-                  completed_sets: checked ? ex.sets : 0,
-                  weight_lbs: weightLbs !== undefined ? weightLbs : ex.weight_lbs,
+                  ...item,
+                  status: previousExercise.status,
+                  completed_sets: previousExercise.completed_sets,
+                  weight_lbs: previousExercise.weight_lbs,
                 }
-              : ex,
+              : item,
           ),
         }
       })
-
-      if (checked && weightLbs !== undefined && weightLbs !== null) {
-        setWeightInputs((prev) => ({ ...prev, [exercise.id]: formatWeight(weightLbs) }))
-      }
-    } catch (err) {
-      console.error("[WorkoutToolPage] toggleExercise failed", err)
+      setWeightInputs((prev) => ({ ...prev, [exercise.id]: previousWeightInput }))
       setError(err instanceof Error ? err.message : "Failed to update exercise")
     } finally {
-      setSaving(false)
+      setSyncingExerciseIds((current) => {
+        const next = new Set(current)
+        next.delete(exercise.id)
+        return next
+      })
     }
   }
 
@@ -391,7 +421,7 @@ export default function WorkoutToolPage() {
                     </div>
                     <button
                       type="button"
-                      disabled={saving}
+                      disabled={saving || syncingExerciseIds.size > 0}
                       onClick={markWorkoutComplete}
                       className="rounded-full border border-[rgb(var(--brand)_/_0.45)] bg-[rgb(var(--brand-weak)_/_0.7)] px-4 py-2 text-sm font-medium text-[rgb(var(--brand))] transition-colors hover:bg-[rgb(var(--brand-weak)_/_0.9)] disabled:opacity-60"
                     >
@@ -405,6 +435,7 @@ export default function WorkoutToolPage() {
 
                   <div className="space-y-3">
                     {activeWorkout.exercises.map((exercise) => {
+                      const syncingExercise = syncingExerciseIds.has(exercise.id)
                       const meta = parseMeta(exercise.notes)
                       const checkboxId = `exercise-complete-${exercise.id}`
                       const weightInputId = `exercise-weight-${exercise.id}`
@@ -421,7 +452,9 @@ export default function WorkoutToolPage() {
                       return (
                         <div
                           key={exercise.id}
-                          className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2)_/_0.45)] px-4 py-3"
+                          className={`rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2)_/_0.45)] px-4 py-3 ${
+                            syncingExercise ? "animate-pulse" : ""
+                          }`}
                         >
                           <div className="flex items-start gap-3">
                             <label
@@ -433,14 +466,23 @@ export default function WorkoutToolPage() {
                                 type="checkbox"
                                 checked={exercise.status === "completed"}
                                 onChange={(e) => void toggleExercise(exercise, e.target.checked)}
+                                disabled={syncingExercise || saving}
                                 className="h-5 w-5 accent-[rgb(var(--brand))]"
                               />
                             </label>
                             <div className="w-full">
                               <div className="flex flex-wrap items-center justify-between gap-2">
                                 <h3 className="font-medium">{exercise.name}</h3>
-                                <div className="text-xs text-[rgb(var(--text-muted))]">
-                                  {exercise.sets} x {exercise.reps} · rest {exercise.rest_seconds}s
+                                <div className="inline-flex items-center gap-2 text-xs text-[rgb(var(--text-muted))]">
+                                  <span>
+                                    {exercise.sets} x {exercise.reps} · rest {exercise.rest_seconds}s
+                                  </span>
+                                  {syncingExercise && (
+                                    <span className="inline-flex items-center gap-1 text-[rgb(var(--brand))]">
+                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                      Syncing...
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                               <div className="mt-1 text-xs text-[rgb(var(--text-muted))]">
