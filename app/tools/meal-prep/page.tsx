@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Clock, Users, Flame, Check, ShoppingCart, ChefHat, RefreshCw } from "lucide-react"
+import { ArrowLeft, Clock, Users, Flame, Check, ShoppingCart, ChefHat, RefreshCw, Loader2 } from "lucide-react"
 
 interface Ingredient {
   item: string
@@ -139,6 +139,16 @@ export default function MealPrepPage() {
 
   return (
     <main className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--text))]">
+      {/* Loading Overlay */}
+      {generating && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[rgb(var(--bg)_/_0.85)] backdrop-blur-sm">
+          <div className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-8 text-center">
+            <Loader2 className="w-10 h-10 animate-spin text-[rgb(var(--brand))] mx-auto mb-4" />
+            <p className="text-lg font-semibold">Cooking up something tasty...</p>
+            <p className="text-sm text-[rgb(var(--text-muted))] mt-2">This takes about 10-15 seconds</p>
+          </div>
+        </div>
+      )}
       <div className="max-w-4xl mx-auto px-6 py-10">
         {/* Header */}
         <Link
@@ -163,10 +173,20 @@ export default function MealPrepPage() {
             <button
               onClick={generateRecipe}
               disabled={generating}
-              className="p-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2))] transition-colors disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2))] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
               title="Generate new recipe"
             >
-              <RefreshCw className={`w-5 h-5 text-[rgb(var(--text-muted))] ${generating ? 'animate-spin' : ''}`} />
+              {generating ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-[rgb(var(--brand))]" />
+                  <span className="text-sm font-medium">Generating...</span>
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4 text-[rgb(var(--text-muted))]" />
+                  <span className="text-sm font-medium text-[rgb(var(--text-muted))]">New Recipe</span>
+                </>
+              )}
             </button>
           </div>
           
