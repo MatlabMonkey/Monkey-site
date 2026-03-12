@@ -116,7 +116,7 @@ const WEEKDAY_OPTIONS = [
   { value: "sun", label: "Sun" },
 ] as const
 
-const TODO_BUCKET_KEYS: TodoBucket[] = [
+const TODO_BUCKET_KEYS: (keyof BucketState)[] = [
   "inbox",
   "next_action",
   "project",

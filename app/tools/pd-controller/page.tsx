@@ -355,34 +355,104 @@ export default function PdControllerPage() {
 
       const mapX = (x: number) => left + ((x - xMin) / (xMax - xMin)) * (right - left)
       const mapY = (v: number) => bottom - ((v - vMin) / (vMax - vMin)) * (bottom - top)
+      const unmapX = (px: number) => xMin + ((px - left) / (right - left)) * (xMax - xMin)
+      const unmapY = (py: number) => vMin + ((bottom - py) / (bottom - top)) * (vMax - vMin)
 
-      fieldCtx.strokeStyle = "rgba(180, 189, 200, 0.6)"
-      fieldCtx.lineWidth = 1.2
+      const occupied = new Set<string>()
+      const key = (px: number, py: number) => `${Math.round(px / 5)}:${Math.round(py / 5)}`
+      const isOccupied = (px: number, py: number) => occupied.has(key(px, py))
+      const markOccupied = (px: number, py: number) => occupied.add(key(px, py))
 
-      const cols = 16
-      const rows = 12
+      const rk4Step = (x: number, v: number, dt: number) => {
+        const k1x = v
+        const k1v = acceleration(x, v, params)
+        const k2x = v + 0.5 * dt * k1v
+        const k2v = acceleration(x + 0.5 * dt * k1x, v + 0.5 * dt * k1v, params)
+        const k3x = v + 0.5 * dt * k2v
+        const k3v = acceleration(x + 0.5 * dt * k2x, v + 0.5 * dt * k2v, params)
+        const k4x = v + dt * k3v
+        const k4v = acceleration(x + dt * k3x, v + dt * k3v, params)
+        return {
+          x: x + (dt / 6) * (k1x + 2 * k2x + 2 * k3x + k4x),
+          v: v + (dt / 6) * (k1v + 2 * k2v + 2 * k3v + k4v),
+        }
+      }
 
-      for (let row = 0; row <= rows; row += 1) {
-        for (let col = 0; col <= cols; col += 1) {
-          const x = xMin + (col / cols) * (xMax - xMin)
-          const v = vMin + (row / rows) * (vMax - vMin)
-          const dx = v
-          const dv = acceleration(x, v, params)
-          const mag = Math.hypot(dx, dv) || 1
+      const traceStreamline = (seedX: number, seedV: number, direction: 1 | -1) => {
+        const points: { x: number; v: number; px: number; py: number }[] = []
+        let x = seedX
+        let v = seedV
+        const dt = 0.02 * direction
+        const maxSteps = 400
 
-          const nx = dx / mag
-          const ny = dv / mag
-          const len = 8
+        for (let i = 0; i < maxSteps; i++) {
+          const px = mapX(x)
+          const py = mapY(v)
 
-          const cx = mapX(x)
-          const cy = mapY(v)
-          const x2 = cx + nx * len
-          const y2 = cy - ny * len
+          if (px < left - 10 || px > right + 10 || py < top - 10 || py > bottom + 10) break
+          if (points.length > 10 && isOccupied(px, py)) break
+
+          points.push({ x, v, px, py })
+          markOccupied(px, py)
+
+          const next = rk4Step(x, v, dt)
+          x = next.x
+          v = next.v
+        }
+        return points
+      }
+
+      const drawArrowhead = (px: number, py: number, angle: number, size: number) => {
+        fieldCtx.save()
+        fieldCtx.translate(px, py)
+        fieldCtx.rotate(angle)
+        fieldCtx.beginPath()
+        fieldCtx.moveTo(0, 0)
+        fieldCtx.lineTo(-size, -size * 0.5)
+        fieldCtx.lineTo(-size, size * 0.5)
+        fieldCtx.closePath()
+        fieldCtx.fillStyle = "rgba(160, 175, 195, 0.85)"
+        fieldCtx.fill()
+        fieldCtx.restore()
+      }
+
+      const seedCols = 10
+      const seedRows = 8
+
+      for (let row = 0; row < seedRows; row++) {
+        for (let col = 0; col < seedCols; col++) {
+          const x = xMin + ((col + 0.5) / seedCols) * (xMax - xMin)
+          const v = vMin + ((row + 0.5) / seedRows) * (vMax - vMin)
+
+          const forward = traceStreamline(x, v, 1)
+          const backward = traceStreamline(x, v, -1)
+
+          const fullPath = [...backward.slice(1).reverse(), ...forward]
+          if (fullPath.length < 5) continue
 
           fieldCtx.beginPath()
-          fieldCtx.moveTo(cx, cy)
-          fieldCtx.lineTo(x2, y2)
+          fieldCtx.strokeStyle = "rgba(160, 175, 195, 0.55)"
+          fieldCtx.lineWidth = 1.2
+          fieldCtx.moveTo(fullPath[0].px, fullPath[0].py)
+          for (let i = 1; i < fullPath.length; i++) {
+            fieldCtx.lineTo(fullPath[i].px, fullPath[i].py)
+          }
           fieldCtx.stroke()
+
+          let arcLength = 0
+          for (let i = 1; i < fullPath.length; i++) {
+            const dx = fullPath[i].px - fullPath[i - 1].px
+            const dy = fullPath[i].py - fullPath[i - 1].py
+            arcLength += Math.hypot(dx, dy)
+
+            if (arcLength > 60) {
+              const prev = fullPath[i - 1]
+              const curr = fullPath[i]
+              const angle = Math.atan2(curr.py - prev.py, curr.px - prev.px)
+              drawArrowhead(curr.px, curr.py, angle, 5)
+              arcLength = 0
+            }
+          }
         }
       }
 
