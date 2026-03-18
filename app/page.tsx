@@ -572,21 +572,20 @@ export default function Home() {
               <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Utilities and calculators</p>
             </Link>
             <Link
-<<<<<<< HEAD
               href="/questions"
               className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center   hover:scale-105"
             >
               <MessageCircle className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
               <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Q&A</h3>
               <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Ask Zach anything</p>
-=======
+            </Link>
+            <Link
               href="/usage"
-              className="group bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all duration-300 flex flex-col items-center justify-center shadow-lg hover:shadow-xl hover:scale-105"
+              className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center   hover:scale-105"
             >
-              <Activity className="w-8 h-8 text-sky-300 mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">Ops Dashboard</h3>
-              <p className="text-white/70 text-sm">Track current work, updates, and inbox tasks</p>
->>>>>>> 5f73aee (Add Ops Dashboard MVP with Supabase-backed focus, updates, tasks, and GitHub widget)
+              <Activity className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
+              <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Ops Dashboard</h3>
+              <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Track current work, updates, and inbox tasks</p>
             </Link>
             <Link
               href="/arias"
