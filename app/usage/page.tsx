@@ -2,14 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import {
-  ArrowLeft,
-  CircleDashed,
-  GitCommitHorizontal,
-  GitPullRequest,
-  Clock3,
-  Plus,
-} from "lucide-react"
+import { ArrowLeft, CircleDashed, Clock3, Plus, Save } from "lucide-react"
 import PinGate from "../components/PinGate"
 
 type Focus = {
@@ -22,8 +15,8 @@ type Focus = {
 type WorkUpdate = {
   id: string
   summary: string
-  repo: string
-  branch: string
+  repo: string | null
+  branch: string | null
   commit_start: string | null
   commit_end: string | null
   commit_url: string | null
@@ -87,15 +80,11 @@ export default function UsageOpsDashboardPage() {
     notes: "",
   })
 
+  const [taskEdits, setTaskEdits] = useState<Record<string, WorkTask>>({})
+
   const [updateDraft, setUpdateDraft] = useState({
     summary: "",
     repo: "",
-    branch: "main",
-    commit_start: "",
-    commit_end: "",
-    commit_url: "",
-    pr_url: "",
-    files_touched: "",
     why_it_matters: "",
     status: "in_progress",
   })
@@ -125,6 +114,12 @@ export default function UsageOpsDashboardPage() {
       setFocus(overviewJson.focus)
       setUpdates(overviewJson.updates || [])
       setTasks(overviewJson.tasks || [])
+      setTaskEdits(
+        (overviewJson.tasks || []).reduce((acc: Record<string, WorkTask>, task: WorkTask) => {
+          acc[task.id] = { ...task }
+          return acc
+        }, {}),
+      )
       setFocusDraft({
         now_working_on: overviewJson.focus?.now_working_on || "",
         next_up: overviewJson.focus?.next_up || "",
@@ -176,20 +171,34 @@ export default function UsageOpsDashboardPage() {
     await loadAll()
   }
 
+  async function saveTask(taskId: string) {
+    const draft = taskEdits[taskId]
+    if (!draft) return
+
+    const response = await fetch(`/api/ops/tasks/${taskId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: draft.title,
+        description: draft.description,
+        priority: draft.priority,
+        repo_target: draft.repo_target,
+        due_date: draft.due_date,
+        notes: draft.notes,
+        status: draft.status,
+      }),
+    })
+    const json = await response.json()
+    if (!response.ok) throw new Error(json.error || "Failed to update task")
+    await loadAll()
+  }
+
   async function createUpdate(event: React.FormEvent) {
     event.preventDefault()
-    const payload = {
-      ...updateDraft,
-      files_touched: updateDraft.files_touched
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean),
-    }
-
     const response = await fetch("/api/ops/updates", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(updateDraft),
     })
     const json = await response.json()
     if (!response.ok) throw new Error(json.error || "Failed to create update")
@@ -197,26 +206,9 @@ export default function UsageOpsDashboardPage() {
     setUpdateDraft({
       summary: "",
       repo: "",
-      branch: "main",
-      commit_start: "",
-      commit_end: "",
-      commit_url: "",
-      pr_url: "",
-      files_touched: "",
       why_it_matters: "",
       status: "in_progress",
     })
-    await loadAll()
-  }
-
-  async function moveTask(taskId: string, status: WorkTask["status"]) {
-    const response = await fetch(`/api/ops/tasks/${taskId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    })
-    const json = await response.json()
-    if (!response.ok) throw new Error(json.error || "Failed to update task")
     await loadAll()
   }
 
@@ -236,70 +228,62 @@ export default function UsageOpsDashboardPage() {
   return (
     <PinGate>
       <div className="min-h-screen bg-slate-950 text-slate-100">
-        <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
-          <header className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8 space-y-5">
+          <header className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6">
             <Link href="/" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200">
               <ArrowLeft className="w-4 h-4" />
               Back home
             </Link>
-            <h1 className="text-3xl md:text-4xl font-bold mt-2">Ops Dashboard</h1>
-            <p className="text-slate-400 mt-1">Current focus, high-signal checkpoints, task intake, and GitHub visibility.</p>
+            <h1 className="text-2xl md:text-4xl font-bold mt-2">Ops Dashboard</h1>
+            <p className="text-slate-400 mt-1 text-sm md:text-base">Current focus, agent checkpoints, requests from Zach, and read-only GitHub visibility.</p>
           </header>
 
           {error && (
             <div className="rounded-xl border border-red-800 bg-red-900/30 p-3 text-red-200 text-sm">{error}</div>
           )}
 
-          <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
+          <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6">
             <div className="flex items-center justify-between gap-4">
-              <h2 className="text-xl font-semibold">Current Focus</h2>
+              <h2 className="text-lg md:text-xl font-semibold">Current Focus</h2>
               <button
                 type="button"
                 onClick={() => void saveFocus().catch((err) => setError(err.message))}
-                className="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-sm"
+                className="px-3 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-sm inline-flex items-center gap-2"
               >
-                Save focus
+                <Save className="w-4 h-4" /> Save
               </button>
             </div>
-            <div className="grid md:grid-cols-2 gap-3 mt-4">
-              <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Now Working On" value={focusDraft.now_working_on || ""} onChange={(e) => setFocusDraft((p) => ({ ...p, now_working_on: e.target.value }))} />
-              <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Next Up" value={focusDraft.next_up || ""} onChange={(e) => setFocusDraft((p) => ({ ...p, next_up: e.target.value }))} />
-              <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2" placeholder="Blocked On" value={focusDraft.blocked_on || ""} onChange={(e) => setFocusDraft((p) => ({ ...p, blocked_on: e.target.value }))} />
+            <div className="grid md:grid-cols-2 gap-2 mt-4">
+              <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Now" value={focusDraft.now_working_on || ""} onChange={(e) => setFocusDraft((p) => ({ ...p, now_working_on: e.target.value }))} />
+              <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Next" value={focusDraft.next_up || ""} onChange={(e) => setFocusDraft((p) => ({ ...p, next_up: e.target.value }))} />
+              <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2" placeholder="Blocked by" value={focusDraft.blocked_on || ""} onChange={(e) => setFocusDraft((p) => ({ ...p, blocked_on: e.target.value }))} />
             </div>
             <p className="text-xs text-slate-400 mt-3">Last checkpoint: {focus?.last_checkpoint_at ? new Date(focus.last_checkpoint_at).toLocaleString() : "Not set"}</p>
           </section>
 
           <section className="grid lg:grid-cols-3 gap-4">
-            <form onSubmit={(event) => void createUpdate(event).catch((err) => setError(err.message))} className="lg:col-span-2 rounded-3xl border border-slate-800 bg-slate-900/70 p-6 space-y-3">
-              <h2 className="text-xl font-semibold">Add checkpoint update</h2>
-              <p className="text-sm text-slate-400">Capture meaningful progress chunks, not every tiny step.</p>
-              <input required className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Summary" value={updateDraft.summary} onChange={(e) => setUpdateDraft((p) => ({ ...p, summary: e.target.value }))} />
+            <form onSubmit={(event) => void createUpdate(event).catch((err) => setError(err.message))} className="lg:col-span-2 rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6 space-y-3">
+              <h2 className="text-lg md:text-xl font-semibold">Work Feed (agent checkpoints)</h2>
+              <p className="text-sm text-slate-400">Short, high-signal updates. Technical metadata is auto-generated.</p>
+              <input required className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Summary (required)" value={updateDraft.summary} onChange={(e) => setUpdateDraft((p) => ({ ...p, summary: e.target.value }))} />
               <div className="grid md:grid-cols-2 gap-2">
-                <input required className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Repo (owner/name)" value={updateDraft.repo} onChange={(e) => setUpdateDraft((p) => ({ ...p, repo: e.target.value }))} />
-                <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Branch" value={updateDraft.branch} onChange={(e) => setUpdateDraft((p) => ({ ...p, branch: e.target.value }))} />
-                <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Commit start" value={updateDraft.commit_start} onChange={(e) => setUpdateDraft((p) => ({ ...p, commit_start: e.target.value }))} />
-                <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Commit end" value={updateDraft.commit_end} onChange={(e) => setUpdateDraft((p) => ({ ...p, commit_end: e.target.value }))} />
-                <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Commit link" value={updateDraft.commit_url} onChange={(e) => setUpdateDraft((p) => ({ ...p, commit_url: e.target.value }))} />
-                <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="PR link" value={updateDraft.pr_url} onChange={(e) => setUpdateDraft((p) => ({ ...p, pr_url: e.target.value }))} />
-              </div>
-              <input className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Files touched (comma separated)" value={updateDraft.files_touched} onChange={(e) => setUpdateDraft((p) => ({ ...p, files_touched: e.target.value }))} />
-              <textarea className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" rows={2} placeholder="Why it matters" value={updateDraft.why_it_matters} onChange={(e) => setUpdateDraft((p) => ({ ...p, why_it_matters: e.target.value }))} />
-              <div className="flex items-center justify-between">
+                <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Repo (optional)" value={updateDraft.repo} onChange={(e) => setUpdateDraft((p) => ({ ...p, repo: e.target.value }))} />
                 <select className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" value={updateDraft.status} onChange={(e) => setUpdateDraft((p) => ({ ...p, status: e.target.value }))}>
                   <option value="in_progress">in_progress</option>
                   <option value="needs_review">needs_review</option>
                   <option value="blocked">blocked</option>
                   <option value="shipped">shipped</option>
                 </select>
-                <button className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500" type="submit">
-                  <Plus className="w-4 h-4" />
-                  Add update
-                </button>
               </div>
+              <textarea className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" rows={2} placeholder="Why it matters (optional)" value={updateDraft.why_it_matters} onChange={(e) => setUpdateDraft((p) => ({ ...p, why_it_matters: e.target.value }))} />
+              <button className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500" type="submit">
+                <Plus className="w-4 h-4" />
+                Add checkpoint
+              </button>
             </form>
 
-            <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-              <h2 className="text-xl font-semibold mb-3">GitHub</h2>
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6">
+              <h2 className="text-lg md:text-xl font-semibold mb-2">GitHub (read-only)</h2>
               {!github?.configured ? (
                 <p className="text-sm text-slate-400">{github?.hint || "GitHub not configured."}</p>
               ) : github.error ? (
@@ -334,10 +318,10 @@ export default function UsageOpsDashboardPage() {
             </div>
           </section>
 
-          <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6">
-            <h2 className="text-xl font-semibold mb-4">Work Feed</h2>
+          <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6">
+            <h2 className="text-lg md:text-xl font-semibold mb-4">Work Feed</h2>
             {updates.length === 0 ? (
-              <p className="text-sm text-slate-400">No checkpoints yet. Add your first high-signal update.</p>
+              <p className="text-sm text-slate-400">No checkpoints yet.</p>
             ) : (
               <div className="space-y-3">
                 {updates.map((update) => (
@@ -346,37 +330,31 @@ export default function UsageOpsDashboardPage() {
                       <p className="font-medium">{update.summary}</p>
                       <span className={`text-xs px-2 py-1 rounded-full border ${statusClasses[update.status]}`}>{update.status}</span>
                     </div>
-                    <p className="text-sm text-slate-400 mt-1">{update.repo} · {update.branch}</p>
                     <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-400">
-                      <span className="inline-flex items-center gap-1"><GitCommitHorizontal className="w-3 h-3" /> {update.commit_start || "-"} → {update.commit_end || "-"}</span>
+                      <span>{update.repo || "repo not specified"}</span>
                       <span className="inline-flex items-center gap-1"><Clock3 className="w-3 h-3" /> {new Date(update.checkpoint_at).toLocaleString()}</span>
                     </div>
-                    {update.files_touched?.length > 0 && <p className="text-xs text-slate-300 mt-2">Files: {update.files_touched.slice(0, 5).join(", ")}</p>}
                     {update.why_it_matters && <p className="text-sm text-slate-300 mt-2">Why it matters: {update.why_it_matters}</p>}
-                    <div className="mt-2 flex gap-3 text-xs">
-                      {update.commit_url && <a className="text-sky-300 hover:underline" href={update.commit_url} target="_blank" rel="noreferrer">Commit link</a>}
-                      {update.pr_url && <a className="text-violet-300 hover:underline inline-flex items-center gap-1" href={update.pr_url} target="_blank" rel="noreferrer"><GitPullRequest className="w-3 h-3" />PR link</a>}
-                    </div>
                   </article>
                 ))}
               </div>
             )}
           </section>
 
-          <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6 space-y-4">
-            <h2 className="text-xl font-semibold">Task Inbox</h2>
+          <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6 space-y-4">
+            <h2 className="text-lg md:text-xl font-semibold">Task Inbox (requests from Zach)</h2>
             <form onSubmit={(event) => void createTask(event).catch((err) => setError(err.message))} className="grid md:grid-cols-2 gap-2">
-              <input required className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2" placeholder="Task title" value={taskDraft.title} onChange={(e) => setTaskDraft((p) => ({ ...p, title: e.target.value }))} />
-              <textarea className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2" rows={2} placeholder="Description" value={taskDraft.description} onChange={(e) => setTaskDraft((p) => ({ ...p, description: e.target.value }))} />
+              <input required className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2" placeholder="Title" value={taskDraft.title} onChange={(e) => setTaskDraft((p) => ({ ...p, title: e.target.value }))} />
+              <textarea className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2" rows={2} placeholder="Description / notes" value={taskDraft.description} onChange={(e) => setTaskDraft((p) => ({ ...p, description: e.target.value }))} />
               <select className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" value={taskDraft.priority} onChange={(e) => setTaskDraft((p) => ({ ...p, priority: e.target.value }))}>
                 <option value="low">low</option>
                 <option value="med">med</option>
                 <option value="high">high</option>
               </select>
-              <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Repo target (optional)" value={taskDraft.repo_target} onChange={(e) => setTaskDraft((p) => ({ ...p, repo_target: e.target.value }))} />
+              <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Repo target" value={taskDraft.repo_target} onChange={(e) => setTaskDraft((p) => ({ ...p, repo_target: e.target.value }))} />
               <input type="date" className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" value={taskDraft.due_date} onChange={(e) => setTaskDraft((p) => ({ ...p, due_date: e.target.value }))} />
-              <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Notes (optional)" value={taskDraft.notes} onChange={(e) => setTaskDraft((p) => ({ ...p, notes: e.target.value }))} />
-              <button className="md:col-span-2 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500">Create task</button>
+              <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Extra notes" value={taskDraft.notes} onChange={(e) => setTaskDraft((p) => ({ ...p, notes: e.target.value }))} />
+              <button className="md:col-span-2 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500">Create request</button>
             </form>
 
             <div className="grid lg:grid-cols-5 gap-3">
@@ -384,20 +362,31 @@ export default function UsageOpsDashboardPage() {
                 <div key={status} className="rounded-2xl border border-slate-800 bg-slate-900/80 p-3">
                   <p className="text-sm font-semibold uppercase tracking-wide text-slate-300">{status.replace("_", " ")}</p>
                   <div className="space-y-2 mt-2">
-                    {(groupedTasks[status] || []).map((task) => (
-                      <article key={task.id} className="rounded-xl border border-slate-700 p-2 bg-slate-800/70">
-                        <p className="text-sm">{task.title}</p>
-                        <p className="text-xs text-slate-400 mt-1">{task.priority.toUpperCase()} {task.repo_target ? `· ${task.repo_target}` : ""}</p>
-                        {task.due_date && <p className="text-xs text-slate-400">Due {task.due_date}</p>}
-                        <div className="mt-2">
-                          <select className="w-full text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" value={task.status} onChange={(e) => void moveTask(task.id, e.target.value as WorkTask["status"]).catch((err) => setError(err.message))}>
-                            {TASK_STATUSES.map((option) => (
-                              <option key={option} value={option}>{option}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </article>
-                    ))}
+                    {(groupedTasks[status] || []).map((task) => {
+                      const draft = taskEdits[task.id] || task
+                      return (
+                        <article key={task.id} className="rounded-xl border border-slate-700 p-2 bg-slate-800/70 space-y-2">
+                          <input className="w-full text-sm px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" value={draft.title} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, title: e.target.value } }))} />
+                          <textarea className="w-full text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" rows={2} value={draft.description || ""} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, description: e.target.value } }))} placeholder="Description / notes" />
+                          <div className="grid grid-cols-2 gap-1">
+                            <select className="text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" value={draft.priority} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, priority: e.target.value as WorkTask["priority"] } }))}>
+                              <option value="low">low</option>
+                              <option value="med">med</option>
+                              <option value="high">high</option>
+                            </select>
+                            <select className="text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" value={draft.status} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, status: e.target.value as WorkTask["status"] } }))}>
+                              {TASK_STATUSES.map((option) => (
+                                <option key={option} value={option}>{option}</option>
+                              ))}
+                            </select>
+                          </div>
+                          <input className="w-full text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" placeholder="Repo target" value={draft.repo_target || ""} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, repo_target: e.target.value } }))} />
+                          <input type="date" className="w-full text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" value={draft.due_date || ""} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, due_date: e.target.value || null } }))} />
+                          <input className="w-full text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" placeholder="Notes" value={draft.notes || ""} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, notes: e.target.value } }))} />
+                          <button type="button" className="w-full text-xs px-2 py-1 rounded-lg bg-sky-700 hover:bg-sky-600" onClick={() => void saveTask(task.id).catch((err) => setError(err.message))}>Save</button>
+                        </article>
+                      )
+                    })}
                     {(groupedTasks[status] || []).length === 0 && (
                       <div className="text-xs text-slate-500 inline-flex items-center gap-1"><CircleDashed className="w-3 h-3" />Empty</div>
                     )}
