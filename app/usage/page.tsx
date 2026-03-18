@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, CircleDashed, Clock3, Plus, Save } from "lucide-react"
+import { ArrowLeft, CircleDashed, Clock3, Save } from "lucide-react"
 import PinGate from "../components/PinGate"
 
 type Focus = {
@@ -70,6 +70,7 @@ export default function UsageOpsDashboardPage() {
     blocked_on: "",
     last_checkpoint_at: null,
   })
+  const [isEditingFocus, setIsEditingFocus] = useState(false)
 
   const [taskDraft, setTaskDraft] = useState({
     title: "",
@@ -81,13 +82,6 @@ export default function UsageOpsDashboardPage() {
   })
 
   const [taskEdits, setTaskEdits] = useState<Record<string, WorkTask>>({})
-
-  const [updateDraft, setUpdateDraft] = useState({
-    summary: "",
-    repo: "",
-    why_it_matters: "",
-    status: "in_progress",
-  })
 
   const groupedTasks = useMemo(() => {
     return TASK_STATUSES.reduce(
@@ -155,6 +149,27 @@ export default function UsageOpsDashboardPage() {
       blocked_on: json.focus?.blocked_on || "",
       last_checkpoint_at: json.focus?.last_checkpoint_at || null,
     })
+    setIsEditingFocus(false)
+  }
+
+  function beginFocusEdit() {
+    setFocusDraft({
+      now_working_on: focus?.now_working_on || "",
+      next_up: focus?.next_up || "",
+      blocked_on: focus?.blocked_on || "",
+      last_checkpoint_at: focus?.last_checkpoint_at || null,
+    })
+    setIsEditingFocus(true)
+  }
+
+  function cancelFocusEdit() {
+    setFocusDraft({
+      now_working_on: focus?.now_working_on || "",
+      next_up: focus?.next_up || "",
+      blocked_on: focus?.blocked_on || "",
+      last_checkpoint_at: focus?.last_checkpoint_at || null,
+    })
+    setIsEditingFocus(false)
   }
 
   async function createTask(event: React.FormEvent) {
@@ -193,25 +208,6 @@ export default function UsageOpsDashboardPage() {
     await loadAll()
   }
 
-  async function createUpdate(event: React.FormEvent) {
-    event.preventDefault()
-    const response = await fetch("/api/ops/updates", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updateDraft),
-    })
-    const json = await response.json()
-    if (!response.ok) throw new Error(json.error || "Failed to create update")
-
-    setUpdateDraft({
-      summary: "",
-      repo: "",
-      why_it_matters: "",
-      status: "in_progress",
-    })
-    await loadAll()
-  }
-
   if (loading) {
     return (
       <PinGate>
@@ -245,42 +241,63 @@ export default function UsageOpsDashboardPage() {
           <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6">
             <div className="flex items-center justify-between gap-4">
               <h2 className="text-lg md:text-xl font-semibold">Current Focus</h2>
-              <button
-                type="button"
-                onClick={() => void saveFocus().catch((err) => setError(err.message))}
-                className="px-3 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-sm inline-flex items-center gap-2"
-              >
-                <Save className="w-4 h-4" /> Save
-              </button>
+              {isEditingFocus ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => void saveFocus().catch((err) => setError(err.message))}
+                    className="px-3 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-sm inline-flex items-center gap-2"
+                  >
+                    <Save className="w-4 h-4" /> Save
+                  </button>
+                  <button
+                    type="button"
+                    onClick={cancelFocusEdit}
+                    className="px-3 py-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-sm"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={beginFocusEdit}
+                  className="px-3 py-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-sm"
+                >
+                  Edit focus
+                </button>
+              )}
             </div>
-            <div className="grid md:grid-cols-2 gap-2 mt-4">
-              <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Now" value={focusDraft.now_working_on || ""} onChange={(e) => setFocusDraft((p) => ({ ...p, now_working_on: e.target.value }))} />
-              <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Next" value={focusDraft.next_up || ""} onChange={(e) => setFocusDraft((p) => ({ ...p, next_up: e.target.value }))} />
-              <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2" placeholder="Blocked by" value={focusDraft.blocked_on || ""} onChange={(e) => setFocusDraft((p) => ({ ...p, blocked_on: e.target.value }))} />
-            </div>
+            {isEditingFocus ? (
+              <div className="grid md:grid-cols-2 gap-2 mt-4">
+                <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Now" value={focusDraft.now_working_on || ""} onChange={(e) => setFocusDraft((p) => ({ ...p, now_working_on: e.target.value }))} />
+                <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Next" value={focusDraft.next_up || ""} onChange={(e) => setFocusDraft((p) => ({ ...p, next_up: e.target.value }))} />
+                <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2" placeholder="Blocked by" value={focusDraft.blocked_on || ""} onChange={(e) => setFocusDraft((p) => ({ ...p, blocked_on: e.target.value }))} />
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 gap-2 mt-4 text-sm">
+                <div className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800">
+                  <p className="text-xs uppercase tracking-wide text-slate-400 mb-1">Now</p>
+                  <p>{focus?.now_working_on || "Not set"}</p>
+                </div>
+                <div className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800">
+                  <p className="text-xs uppercase tracking-wide text-slate-400 mb-1">Next</p>
+                  <p>{focus?.next_up || "Not set"}</p>
+                </div>
+                <div className="px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 md:col-span-2">
+                  <p className="text-xs uppercase tracking-wide text-slate-400 mb-1">Blocked by</p>
+                  <p>{focus?.blocked_on || "Nothing currently blocking"}</p>
+                </div>
+              </div>
+            )}
             <p className="text-xs text-slate-400 mt-3">Last checkpoint: {focus?.last_checkpoint_at ? new Date(focus.last_checkpoint_at).toLocaleString() : "Not set"}</p>
           </section>
 
           <section className="grid lg:grid-cols-3 gap-4">
-            <form onSubmit={(event) => void createUpdate(event).catch((err) => setError(err.message))} className="lg:col-span-2 rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6 space-y-3">
+            <div className="lg:col-span-2 rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6 space-y-3">
               <h2 className="text-lg md:text-xl font-semibold">Work Feed (agent checkpoints)</h2>
-              <p className="text-sm text-slate-400">Short, high-signal updates. Technical metadata is auto-generated.</p>
-              <input required className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Summary (required)" value={updateDraft.summary} onChange={(e) => setUpdateDraft((p) => ({ ...p, summary: e.target.value }))} />
-              <div className="grid md:grid-cols-2 gap-2">
-                <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Repo (optional)" value={updateDraft.repo} onChange={(e) => setUpdateDraft((p) => ({ ...p, repo: e.target.value }))} />
-                <select className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" value={updateDraft.status} onChange={(e) => setUpdateDraft((p) => ({ ...p, status: e.target.value }))}>
-                  <option value="in_progress">in_progress</option>
-                  <option value="needs_review">needs_review</option>
-                  <option value="blocked">blocked</option>
-                  <option value="shipped">shipped</option>
-                </select>
-              </div>
-              <textarea className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" rows={2} placeholder="Why it matters (optional)" value={updateDraft.why_it_matters} onChange={(e) => setUpdateDraft((p) => ({ ...p, why_it_matters: e.target.value }))} />
-              <button className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500" type="submit">
-                <Plus className="w-4 h-4" />
-                Add checkpoint
-              </button>
-            </form>
+              <p className="text-sm text-slate-400">This feed is read-only on the dashboard. Checkpoints are posted by agent automation.</p>
+            </div>
 
             <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6">
               <h2 className="text-lg md:text-xl font-semibold mb-2">GitHub (read-only)</h2>
