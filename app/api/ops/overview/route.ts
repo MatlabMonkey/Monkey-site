@@ -3,20 +3,23 @@ import { supabase } from "../../../../lib/supabaseClient"
 
 export async function GET() {
   try {
-    const [focusRes, updatesRes, tasksRes] = await Promise.all([
+    const [focusRes, updatesRes, tasksRes, reportsRes] = await Promise.all([
       supabase.from("work_focus").select("*").eq("id", 1).maybeSingle(),
       supabase.from("work_updates").select("*").order("checkpoint_at", { ascending: false }).limit(12),
       supabase.from("work_tasks").select("*").order("created_at", { ascending: false }).limit(50),
+      supabase.from("work_reports").select("*").order("published_at", { ascending: false }).limit(50),
     ])
 
     if (focusRes.error) throw focusRes.error
     if (updatesRes.error) throw updatesRes.error
     if (tasksRes.error) throw tasksRes.error
+    if (reportsRes.error) throw reportsRes.error
 
     return NextResponse.json({
       focus: focusRes.data,
       updates: updatesRes.data || [],
       tasks: tasksRes.data || [],
+      reports: reportsRes.data || [],
     })
   } catch (error) {
     return NextResponse.json(
