@@ -2,7 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, ChevronDown, ChevronUp, CircleDashed, Clock3, ExternalLink, Save } from "lucide-react"
+import {
+  Archive,
+  ArchiveRestore,
+  ArrowLeft,
+  ChevronDown,
+  ChevronUp,
+  CircleDashed,
+  Clock3,
+  ExternalLink,
+  FolderKanban,
+  GitBranch,
+  Plus,
+  Save,
+} from "lucide-react"
 import PinGate from "../components/PinGate"
 
 type Focus = {
@@ -12,11 +25,29 @@ type Focus = {
   last_checkpoint_at: string | null
 }
 
+type OpsProject = {
+  id: string
+  project_key: string
+  project_label: string
+  description: string | null
+  repo_full_name: string | null
+  status: "active" | "archived"
+  started_at: string
+  closed_at: string | null
+  sort_order: number
+  metadata: Record<string, unknown>
+  created_at: string
+  updated_at: string
+}
+
 type WorkUpdate = {
   id: string
   summary: string
   repo: string | null
   branch: string | null
+  project_key: string | null
+  resolved_project_key: string | null
+  inferred_project_key: string | null
   commit_start: string | null
   commit_end: string | null
   commit_url: string | null
@@ -34,6 +65,9 @@ type WorkTask = {
   priority: "low" | "med" | "high"
   status: "inbox" | "planned" | "in_progress" | "review" | "done"
   repo_target: string | null
+  project_key: string | null
+  resolved_project_key: string | null
+  inferred_project_key: string | null
   due_date: string | null
   notes: string | null
 }
@@ -41,6 +75,7 @@ type WorkTask = {
 type WorkReport = {
   id: string
   project_key: string
+  resolved_project_key: string | null
   project_label: string
   title: string
   summary: string
@@ -63,6 +98,16 @@ type GitHubData = {
   commits: Array<{ sha: string; html_url: string; message: string; author: string; date: string }>
   pullRequests: Array<{ id: number; number: number; title: string; html_url: string; user: string; updated_at: string }>
 }
+
+type ProjectActivity = {
+  project: OpsProject | null
+  github: GitHubData
+}
+
+type OverviewScope =
+  | { mode: "all"; projectKey: null }
+  | { mode: "unassigned"; projectKey: null }
+  | { mode: "project"; projectKey: string }
 
 const TASK_STATUSES: WorkTask["status"][] = ["inbox", "planned", "in_progress", "review", "done"]
 const REPORT_TYPES: WorkReport["report_type"][] = ["html", "md", "pdf", "link"]
@@ -91,12 +136,29 @@ function formatDateTime(value: string | null) {
   return new Date(value).toLocaleString()
 }
 
+function formatDate(value: string | null) {
+  if (!value) return "Not set"
+  return new Date(value).toLocaleDateString()
+}
+
+function normalizeFilesTouched(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((entry): entry is string => typeof entry === "string")
+  }
+  return []
+}
+
 export default function UsageOpsDashboardPage() {
   const [focus, setFocus] = useState<Focus | null>(null)
   const [updates, setUpdates] = useState<WorkUpdate[]>([])
   const [tasks, setTasks] = useState<WorkTask[]>([])
   const [reports, setReports] = useState<WorkReport[]>([])
-  const [github, setGithub] = useState<GitHubData | null>(null)
+  const [projects, setProjects] = useState<OpsProject[]>([])
+  const [activity, setActivity] = useState<ProjectActivity | null>(null)
+
+  const [selectedScope, setSelectedScope] = useState<string>("all")
+  const [serverScope, setServerScope] = useState<OverviewScope | null>(null)
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
@@ -111,17 +173,17 @@ export default function UsageOpsDashboardPage() {
   const [taskDraft, setTaskDraft] = useState({
     title: "",
     description: "",
-    priority: "med",
+    priority: "med" as WorkTask["priority"],
     repo_target: "",
     due_date: "",
     notes: "",
+    project_key: "",
   })
 
   const [taskEdits, setTaskEdits] = useState<Record<string, WorkTask>>({})
 
   const [showPublishPanel, setShowPublishPanel] = useState(false)
   const [isPublishingReport, setIsPublishingReport] = useState(false)
-  const [selectedProjectFilter, setSelectedProjectFilter] = useState("all")
   const [reportDraft, setReportDraft] = useState({
     project_key: "",
     project_label: "",
@@ -135,6 +197,67 @@ export default function UsageOpsDashboardPage() {
     published_by: "agent",
   })
 
+  const [showAddProjectPanel, setShowAddProjectPanel] = useState(false)
+  const [isCreatingProject, setIsCreatingProject] = useState(false)
+  const [projectDraft, setProjectDraft] = useState({
+    project_key: "",
+    project_label: "",
+    description: "",
+    repo_full_name: "",
+  })
+
+  const [isSavingProjectDetail, setIsSavingProjectDetail] = useState(false)
+  const [projectDetailDraft, setProjectDetailDraft] = useState({
+    project_label: "",
+    description: "",
+    repo_full_name: "",
+  })
+
+  const [showArchivedProjects, setShowArchivedProjects] = useState(false)
+
+  const activeProjects = useMemo(() => projects.filter((project) => project.status === "active"), [projects])
+  const archivedProjects = useMemo(() => projects.filter((project) => project.status === "archived"), [projects])
+
+  const projectMap = useMemo(() => {
+    const map = new Map<string, OpsProject>()
+    for (const project of projects) map.set(project.project_key, project)
+    return map
+  }, [projects])
+
+  const selectedProject = useMemo(() => {
+    if (selectedScope === "all" || selectedScope === "unassigned") return null
+    return projectMap.get(selectedScope) || null
+  }, [projectMap, selectedScope])
+
+  useEffect(() => {
+    if (!selectedProject) {
+      setProjectDetailDraft({ project_label: "", description: "", repo_full_name: "" })
+      return
+    }
+
+    setProjectDetailDraft({
+      project_label: selectedProject.project_label,
+      description: selectedProject.description || "",
+      repo_full_name: selectedProject.repo_full_name || "",
+    })
+  }, [selectedProject])
+
+  useEffect(() => {
+    if (!selectedProject) return
+
+    setReportDraft((prev) => ({
+      ...prev,
+      project_key: selectedProject.project_key,
+      project_label: selectedProject.project_label,
+    }))
+  }, [selectedProject])
+
+  useEffect(() => {
+    if (selectedScope === "all" || selectedScope === "unassigned") return
+    if (projects.some((project) => project.project_key === selectedScope)) return
+    setSelectedScope("all")
+  }, [projects, selectedScope])
+
   const groupedTasks = useMemo(() => {
     return TASK_STATUSES.reduce(
       (acc, status) => {
@@ -145,69 +268,87 @@ export default function UsageOpsDashboardPage() {
     )
   }, [tasks])
 
-  const projectOptions = useMemo(() => {
-    const projects = new Map<string, string>()
-
-    for (const report of reports) {
-      const projectKey = report.project_key
-      const projectLabel = report.project_label?.trim() || report.project_key
-      if (!projects.has(projectKey)) {
-        projects.set(projectKey, projectLabel)
-      }
-    }
-
-    return Array.from(projects.entries())
-      .map(([key, label]) => ({ key, label }))
-      .sort((a, b) => a.label.localeCompare(b.label))
-  }, [reports])
-
   const groupedReports = useMemo(() => {
-    const visibleReports = reports.filter((report) => {
-      if (selectedProjectFilter === "all") return true
-      return report.project_key === selectedProjectFilter
-    })
-
     const grouped = new Map<string, WorkReport[]>()
 
-    for (const report of visibleReports) {
-      const groupLabel = report.project_label?.trim() || report.project_key
-      const existing = grouped.get(groupLabel) || []
+    for (const report of reports) {
+      const label = projectMap.get(report.project_key)?.project_label || report.project_label || report.project_key
+      const key = `${report.project_key}::${label}`
+      const existing = grouped.get(key) || []
       existing.push(report)
-      grouped.set(groupLabel, existing)
+      grouped.set(key, existing)
     }
 
     return Array.from(grouped.entries())
-      .map(([projectLabel, items]) => ({
-        projectLabel,
-        reports: items.sort(
-          (a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime(),
-        ),
-      }))
+      .map(([key, items]) => {
+        const [projectKey, projectLabel] = key.split("::")
+        return {
+          projectKey,
+          projectLabel,
+          reports: items.sort(
+            (a, b) => new Date(b.published_at).getTime() - new Date(a.published_at).getTime(),
+          ),
+        }
+      })
       .sort((a, b) => a.projectLabel.localeCompare(b.projectLabel))
-  }, [reports, selectedProjectFilter])
+  }, [projectMap, reports])
 
-  async function loadAll() {
+  const activeProjectOptions = useMemo(
+    () => activeProjects.map((project) => ({ key: project.project_key, label: project.project_label })),
+    [activeProjects],
+  )
+
+  async function loadAll(scope: string) {
     setError("")
     setLoading(true)
+
     try {
-      const [overviewRes, githubRes] = await Promise.all([
-        fetch("/api/ops/overview", { cache: "no-store" }),
-        fetch("/api/ops/github", { cache: "no-store" }),
+      const query = scope === "all" ? "" : `?project=${encodeURIComponent(scope)}`
+
+      const overviewPromise = fetch(`/api/ops/overview${query}`, { cache: "no-store" })
+      const projectsPromise = fetch("/api/ops/projects", { cache: "no-store" })
+      const activityPromise =
+        scope !== "all" && scope !== "unassigned"
+          ? fetch(`/api/ops/projects/activity?project=${encodeURIComponent(scope)}`, { cache: "no-store" })
+          : null
+
+      const [overviewRes, projectsRes, activityRes] = await Promise.all([
+        overviewPromise,
+        projectsPromise,
+        activityPromise ?? Promise.resolve(null),
       ])
 
-      const overviewJson = await overviewRes.json()
-      if (!overviewRes.ok) throw new Error(overviewJson.error || "Failed to load dashboard")
+      const overviewJson = (await overviewRes.json()) as {
+        focus: Focus | null
+        updates: WorkUpdate[]
+        tasks: WorkTask[]
+        reports: WorkReport[]
+        scope?: OverviewScope
+      }
 
-      setFocus(overviewJson.focus)
-      setUpdates(overviewJson.updates || [])
+      if (!overviewRes.ok) {
+        throw new Error((overviewJson as { error?: string }).error || "Failed to load dashboard")
+      }
+
+      const projectsJson = (await projectsRes.json()) as { projects?: OpsProject[]; error?: string }
+      if (!projectsRes.ok) {
+        throw new Error(projectsJson.error || "Failed to load projects")
+      }
+
+      setProjects(projectsJson.projects || [])
+      setServerScope(overviewJson.scope || null)
+      setFocus(overviewJson.focus || null)
+      setUpdates((overviewJson.updates || []).map((update) => ({ ...update, files_touched: normalizeFilesTouched(update.files_touched) })))
       setTasks(overviewJson.tasks || [])
       setReports(overviewJson.reports || [])
+
       setTaskEdits(
         (overviewJson.tasks || []).reduce((acc: Record<string, WorkTask>, task: WorkTask) => {
           acc[task.id] = { ...task }
           return acc
         }, {}),
       )
+
       setFocusDraft({
         now_working_on: overviewJson.focus?.now_working_on || "",
         next_up: overviewJson.focus?.next_up || "",
@@ -215,8 +356,16 @@ export default function UsageOpsDashboardPage() {
         last_checkpoint_at: overviewJson.focus?.last_checkpoint_at || null,
       })
 
-      const githubJson = await githubRes.json()
-      setGithub(githubJson)
+      if (activityRes) {
+        const activityJson = (await activityRes.json()) as ProjectActivity & { error?: string }
+        if (!activityRes.ok) {
+          throw new Error(activityJson.error || "Failed to load project activity")
+        }
+
+        setActivity(activityJson)
+      } else {
+        setActivity(null)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load ops dashboard")
     } finally {
@@ -225,8 +374,8 @@ export default function UsageOpsDashboardPage() {
   }
 
   useEffect(() => {
-    void loadAll()
-  }, [])
+    void loadAll(selectedScope)
+  }, [selectedScope])
 
   async function saveFocus() {
     const response = await fetch("/api/ops/focus", {
@@ -234,9 +383,10 @@ export default function UsageOpsDashboardPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(focusDraft),
     })
-    const json = await response.json()
+    const json = (await response.json()) as { focus?: Focus; error?: string }
     if (!response.ok) throw new Error(json.error || "Failed to save focus")
-    setFocus(json.focus)
+
+    setFocus(json.focus || null)
     setFocusDraft({
       now_working_on: json.focus?.now_working_on || "",
       next_up: json.focus?.next_up || "",
@@ -266,18 +416,119 @@ export default function UsageOpsDashboardPage() {
     setIsEditingFocus(false)
   }
 
+  async function createProject(event: React.FormEvent) {
+    event.preventDefault()
+    setError("")
+    setIsCreatingProject(true)
+
+    try {
+      const response = await fetch("/api/ops/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          project_key: projectDraft.project_key || undefined,
+          project_label: projectDraft.project_label,
+          description: projectDraft.description,
+          repo_full_name: projectDraft.repo_full_name,
+        }),
+      })
+
+      const json = (await response.json()) as { project?: OpsProject; error?: string }
+      if (!response.ok) throw new Error(json.error || "Failed to create project")
+
+      setProjectDraft({ project_key: "", project_label: "", description: "", repo_full_name: "" })
+      setShowAddProjectPanel(false)
+
+      const nextScope = json.project?.project_key || "all"
+      setSelectedScope(nextScope)
+      await loadAll(nextScope)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create project")
+    } finally {
+      setIsCreatingProject(false)
+    }
+  }
+
+  async function saveSelectedProjectDetail() {
+    if (!selectedProject) return
+
+    setError("")
+    setIsSavingProjectDetail(true)
+
+    try {
+      const response = await fetch(`/api/ops/projects/${selectedProject.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          project_label: projectDetailDraft.project_label,
+          description: projectDetailDraft.description,
+          repo_full_name: projectDetailDraft.repo_full_name,
+        }),
+      })
+
+      const json = (await response.json()) as { error?: string }
+      if (!response.ok) throw new Error(json.error || "Failed to update project")
+
+      await loadAll(selectedScope)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update project")
+    } finally {
+      setIsSavingProjectDetail(false)
+    }
+  }
+
+  async function setProjectStatus(project: OpsProject, status: OpsProject["status"]) {
+    setError("")
+
+    try {
+      const response = await fetch(`/api/ops/projects/${project.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      })
+
+      const json = (await response.json()) as { error?: string }
+      if (!response.ok) throw new Error(json.error || "Failed to update project status")
+
+      await loadAll(selectedScope)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update project status")
+    }
+  }
+
   async function createTask(event: React.FormEvent) {
     event.preventDefault()
+
+    const selectedProjectKey =
+      selectedScope === "all" ? null : selectedScope === "unassigned" ? null : selectedScope
+
     const response = await fetch("/api/ops/tasks", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(taskDraft),
+      body: JSON.stringify({
+        title: taskDraft.title,
+        description: taskDraft.description,
+        priority: taskDraft.priority,
+        repo_target: taskDraft.repo_target,
+        due_date: taskDraft.due_date,
+        notes: taskDraft.notes,
+        project_key: selectedProjectKey || taskDraft.project_key || null,
+      }),
     })
-    const json = await response.json()
+
+    const json = (await response.json()) as { error?: string }
     if (!response.ok) throw new Error(json.error || "Failed to create task")
 
-    setTaskDraft({ title: "", description: "", priority: "med", repo_target: "", due_date: "", notes: "" })
-    await loadAll()
+    setTaskDraft({
+      title: "",
+      description: "",
+      priority: "med",
+      repo_target: "",
+      due_date: "",
+      notes: "",
+      project_key: "",
+    })
+    await loadAll(selectedScope)
   }
 
   async function saveTask(taskId: string) {
@@ -292,14 +543,16 @@ export default function UsageOpsDashboardPage() {
         description: draft.description,
         priority: draft.priority,
         repo_target: draft.repo_target,
+        project_key: draft.project_key,
         due_date: draft.due_date,
         notes: draft.notes,
         status: draft.status,
       }),
     })
-    const json = await response.json()
+    const json = (await response.json()) as { error?: string }
     if (!response.ok) throw new Error(json.error || "Failed to update task")
-    await loadAll()
+
+    await loadAll(selectedScope)
   }
 
   async function publishReport(event: React.FormEvent) {
@@ -308,13 +561,16 @@ export default function UsageOpsDashboardPage() {
     setError("")
     setIsPublishingReport(true)
 
+    const selectedProjectKey = selectedScope !== "all" && selectedScope !== "unassigned" ? selectedScope : null
+    const selectedProjectLabel = selectedProject ? selectedProject.project_label : null
+
     try {
       const response = await fetch("/api/ops/reports", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          project_key: reportDraft.project_key,
-          project_label: reportDraft.project_label,
+          project_key: selectedProjectKey || reportDraft.project_key,
+          project_label: selectedProjectLabel || reportDraft.project_label,
           title: reportDraft.title,
           summary: reportDraft.summary,
           report_type: reportDraft.report_type,
@@ -326,7 +582,7 @@ export default function UsageOpsDashboardPage() {
         }),
       })
 
-      const json = await response.json()
+      const json = (await response.json()) as { error?: string }
       if (!response.ok) {
         throw new Error(json.error || "Failed to publish report")
       }
@@ -341,13 +597,19 @@ export default function UsageOpsDashboardPage() {
         tags: "",
       }))
 
-      await loadAll()
+      await loadAll(selectedScope)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to publish report")
     } finally {
       setIsPublishingReport(false)
     }
   }
+
+  const selectedScopeLabel = useMemo(() => {
+    if (selectedScope === "all") return "All projects"
+    if (selectedScope === "unassigned") return "Unassigned"
+    return selectedProject?.project_label || selectedScope
+  }, [selectedProject, selectedScope])
 
   if (loading) {
     return (
@@ -372,11 +634,196 @@ export default function UsageOpsDashboardPage() {
               Back home
             </Link>
             <h1 className="text-2xl md:text-4xl font-bold mt-2">Ops Dashboard</h1>
-            <p className="text-slate-400 mt-1 text-sm md:text-base">Current focus, agent checkpoints, requests from Zach, and read-only GitHub visibility.</p>
+            <p className="text-slate-400 mt-1 text-sm md:text-base">
+              Project-centric command center: current projects, scoped reports, checkpoints, and task flow.
+            </p>
           </header>
 
           {error && (
             <div className="rounded-xl border border-red-800 bg-red-900/30 p-3 text-red-200 text-sm">{error}</div>
+          )}
+
+          <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg md:text-xl font-semibold">Current Projects</h2>
+                <p className="text-sm text-slate-400 mt-1">Choose a project scope to filter reports, updates, and tasks.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowAddProjectPanel((prev) => !prev)}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-sm"
+              >
+                <Plus className="w-4 h-4" /> Add project
+              </button>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedScope("all")}
+                className={`px-3 py-2 rounded-xl text-sm border ${
+                  selectedScope === "all"
+                    ? "border-sky-500 bg-sky-900/40 text-sky-100"
+                    : "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                }`}
+              >
+                All projects
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedScope("unassigned")}
+                className={`px-3 py-2 rounded-xl text-sm border ${
+                  selectedScope === "unassigned"
+                    ? "border-amber-500 bg-amber-900/30 text-amber-100"
+                    : "border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                }`}
+              >
+                Unassigned
+              </button>
+            </div>
+
+            {activeProjects.length === 0 ? (
+              <p className="text-sm text-slate-400">No active projects yet. Add your first project to start scoping the board.</p>
+            ) : (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {activeProjects.map((project) => {
+                  const isSelected = selectedScope === project.project_key
+                  return (
+                    <button
+                      key={project.id}
+                      type="button"
+                      onClick={() => setSelectedScope(project.project_key)}
+                      className={`text-left rounded-2xl border p-4 transition ${
+                        isSelected
+                          ? "border-sky-500 bg-sky-900/30"
+                          : "border-slate-800 bg-slate-900/80 hover:bg-slate-800/80"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-semibold text-sm md:text-base">{project.project_label}</p>
+                        <span className="text-[10px] uppercase tracking-wide px-2 py-1 rounded-full border border-emerald-700 bg-emerald-900/30 text-emerald-200">active</span>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-1">{project.project_key}</p>
+                      <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-slate-400">
+                        <span className="inline-flex items-center gap-1"><Clock3 className="w-3 h-3" /> {formatDate(project.started_at)}</span>
+                        <span className="inline-flex items-center gap-1"><GitBranch className="w-3 h-3" /> {project.repo_full_name || "No repo"}</span>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            {showAddProjectPanel && (
+              <form onSubmit={(event) => void createProject(event)} className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 grid md:grid-cols-2 gap-2">
+                <input
+                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700"
+                  placeholder="Project key (optional, slug)"
+                  value={projectDraft.project_key}
+                  onChange={(event) => setProjectDraft((prev) => ({ ...prev, project_key: event.target.value }))}
+                />
+                <input
+                  required
+                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700"
+                  placeholder="Project label"
+                  value={projectDraft.project_label}
+                  onChange={(event) => setProjectDraft((prev) => ({ ...prev, project_label: event.target.value }))}
+                />
+                <input
+                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2"
+                  placeholder="Repo (owner/repo)"
+                  value={projectDraft.repo_full_name}
+                  onChange={(event) => setProjectDraft((prev) => ({ ...prev, repo_full_name: event.target.value }))}
+                />
+                <textarea
+                  rows={2}
+                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2"
+                  placeholder="Description (optional)"
+                  value={projectDraft.description}
+                  onChange={(event) => setProjectDraft((prev) => ({ ...prev, description: event.target.value }))}
+                />
+                <button
+                  type="submit"
+                  disabled={isCreatingProject}
+                  className="md:col-span-2 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-60"
+                >
+                  {isCreatingProject ? "Creating project..." : "Create project"}
+                </button>
+              </form>
+            )}
+          </section>
+
+          {selectedProject && (
+            <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-lg md:text-xl font-semibold">Project Detail</h2>
+                  <p className="text-sm text-slate-400 mt-1">Quick edits and lifecycle controls for the selected project.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void setProjectStatus(selectedProject, selectedProject.status === "archived" ? "active" : "archived")}
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-sm"
+                >
+                  {selectedProject.status === "archived" ? (
+                    <>
+                      <ArchiveRestore className="w-4 h-4" /> Reopen project
+                    </>
+                  ) : (
+                    <>
+                      <Archive className="w-4 h-4" /> Archive project
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-2 text-sm">
+                <div className="rounded-xl border border-slate-800 bg-slate-900 p-3">
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Status</p>
+                  <p className="mt-1 capitalize">{selectedProject.status}</p>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-900 p-3">
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Started</p>
+                  <p className="mt-1">{formatDate(selectedProject.started_at)}</p>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-900 p-3">
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Repo</p>
+                  <p className="mt-1">{selectedProject.repo_full_name || "Not linked"}</p>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-2">
+                <input
+                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700"
+                  placeholder="Project label"
+                  value={projectDetailDraft.project_label}
+                  onChange={(event) => setProjectDetailDraft((prev) => ({ ...prev, project_label: event.target.value }))}
+                />
+                <input
+                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700"
+                  placeholder="Repo (owner/repo)"
+                  value={projectDetailDraft.repo_full_name}
+                  onChange={(event) => setProjectDetailDraft((prev) => ({ ...prev, repo_full_name: event.target.value }))}
+                />
+                <textarea
+                  rows={2}
+                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2"
+                  placeholder="Description"
+                  value={projectDetailDraft.description}
+                  onChange={(event) => setProjectDetailDraft((prev) => ({ ...prev, description: event.target.value }))}
+                />
+                <button
+                  type="button"
+                  onClick={() => void saveSelectedProjectDetail()}
+                  disabled={isSavingProjectDetail}
+                  className="md:col-span-2 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-60 inline-flex items-center justify-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  {isSavingProjectDetail ? "Saving..." : "Save project details"}
+                </button>
+              </div>
+            </section>
           )}
 
           <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6">
@@ -434,76 +881,84 @@ export default function UsageOpsDashboardPage() {
             <p className="text-xs text-slate-400 mt-3">Last checkpoint: {formatDateTime(focus?.last_checkpoint_at || null)}</p>
           </section>
 
-          <section className="grid lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2 rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6 space-y-3">
-              <h2 className="text-lg md:text-xl font-semibold">Work Feed (agent checkpoints)</h2>
-              <p className="text-sm text-slate-400">This feed is read-only on the dashboard. Checkpoints are posted by agent automation.</p>
-            </div>
+          <section className="grid lg:grid-cols-2 gap-4">
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6 space-y-4">
+              <h2 className="text-lg md:text-xl font-semibold">Recent GitHub Activity</h2>
+              <p className="text-sm text-slate-400">
+                Scope: <span className="text-slate-200">{selectedScopeLabel}</span>
+                {serverScope && (
+                  <span className="ml-2 text-xs text-slate-500">({serverScope.mode})</span>
+                )}
+              </p>
 
-            <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6">
-              <h2 className="text-lg md:text-xl font-semibold mb-2">GitHub (read-only)</h2>
-              {!github?.configured ? (
-                <p className="text-sm text-slate-400">{github?.hint || "GitHub not configured."}</p>
-              ) : github.error ? (
-                <p className="text-sm text-amber-200">{github.error}</p>
+              {selectedScope === "all" || selectedScope === "unassigned" ? (
+                <p className="text-sm text-slate-400">Select a specific project to view repo commits and open pull requests.</p>
+              ) : !activity?.github.configured ? (
+                <p className="text-sm text-slate-400">{activity?.github.hint || "No GitHub integration configured for this project."}</p>
+              ) : activity.github.error ? (
+                <p className="text-sm text-amber-200">{activity.github.error}</p>
               ) : (
                 <div className="space-y-4">
                   <div>
                     <p className="text-xs uppercase text-slate-400 mb-2">Recent commits</p>
                     <div className="space-y-2">
-                      {github.commits.map((commit) => (
+                      {activity.github.commits.map((commit) => (
                         <a key={commit.sha} href={commit.html_url} target="_blank" rel="noreferrer" className="block rounded-xl border border-slate-800 p-3 hover:bg-slate-800/60">
                           <p className="text-sm line-clamp-2">{commit.message}</p>
-                          <p className="text-xs text-slate-400 mt-1">{commit.sha.slice(0, 7)} · {commit.author}</p>
+                          <p className="text-xs text-slate-400 mt-1">
+                            {commit.sha.slice(0, 7)} · {commit.author}
+                          </p>
                         </a>
                       ))}
+                      {activity.github.commits.length === 0 && <p className="text-sm text-slate-500">No commits found.</p>}
                     </div>
                   </div>
                   <div>
                     <p className="text-xs uppercase text-slate-400 mb-2">Open PRs</p>
                     <div className="space-y-2">
-                      {github.pullRequests.map((pr) => (
+                      {activity.github.pullRequests.map((pr) => (
                         <a key={pr.id} href={pr.html_url} target="_blank" rel="noreferrer" className="block rounded-xl border border-slate-800 p-3 hover:bg-slate-800/60">
-                          <p className="text-sm">#{pr.number} {pr.title}</p>
+                          <p className="text-sm">
+                            #{pr.number} {pr.title}
+                          </p>
                           <p className="text-xs text-slate-400 mt-1">{pr.user}</p>
                         </a>
                       ))}
-                      {github.pullRequests.length === 0 && <p className="text-sm text-slate-500">No open PRs.</p>}
+                      {activity.github.pullRequests.length === 0 && <p className="text-sm text-slate-500">No open PRs.</p>}
                     </div>
                   </div>
                 </div>
               )}
             </div>
-          </section>
 
-          <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6">
-            <h2 className="text-lg md:text-xl font-semibold mb-4">Work Feed</h2>
-            {updates.length === 0 ? (
-              <p className="text-sm text-slate-400">No checkpoints yet.</p>
-            ) : (
-              <div className="space-y-3">
-                {updates.map((update) => (
-                  <article key={update.id} className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
-                    <div className="flex flex-wrap items-center gap-2 justify-between">
-                      <p className="font-medium">{update.summary}</p>
-                      <span className={`text-xs px-2 py-1 rounded-full border ${statusClasses[update.status]}`}>{update.status}</span>
-                    </div>
-                    <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-400">
-                      <span>{update.repo || "repo not specified"}</span>
-                      <span className="inline-flex items-center gap-1"><Clock3 className="w-3 h-3" /> {new Date(update.checkpoint_at).toLocaleString()}</span>
-                    </div>
-                    {update.why_it_matters && <p className="text-sm text-slate-300 mt-2">Why it matters: {update.why_it_matters}</p>}
-                  </article>
-                ))}
+            <div className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6 space-y-3">
+              <h2 className="text-lg md:text-xl font-semibold">Scope Summary</h2>
+              <div className="grid grid-cols-3 gap-2 text-sm">
+                <div className="rounded-xl border border-slate-800 bg-slate-900 p-3">
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Reports</p>
+                  <p className="mt-1 text-lg font-semibold">{reports.length}</p>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-900 p-3">
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Checkpoints</p>
+                  <p className="mt-1 text-lg font-semibold">{updates.length}</p>
+                </div>
+                <div className="rounded-xl border border-slate-800 bg-slate-900 p-3">
+                  <p className="text-xs uppercase tracking-wide text-slate-400">Tasks</p>
+                  <p className="mt-1 text-lg font-semibold">{tasks.length}</p>
+                </div>
               </div>
-            )}
+              <div className="rounded-xl border border-slate-800 bg-slate-900 p-3 text-sm text-slate-300">
+                <p className="text-xs uppercase tracking-wide text-slate-400 mb-1">Current selection</p>
+                <p>{selectedScopeLabel}</p>
+              </div>
+            </div>
           </section>
 
           <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <div>
                 <h2 className="text-lg md:text-xl font-semibold">Published Reports</h2>
-                <p className="text-sm text-slate-400 mt-1">Read-only by default. Browse by project, then expand the agent panel only when you need to publish a new report.</p>
+                <p className="text-sm text-slate-400 mt-1">Publishing from a selected project auto-binds project key and label.</p>
               </div>
               <button
                 type="button"
@@ -515,35 +970,22 @@ export default function UsageOpsDashboardPage() {
               </button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <label htmlFor="project-filter" className="text-xs uppercase tracking-wide text-slate-400">Project</label>
-              <select
-                id="project-filter"
-                className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-sm"
-                value={selectedProjectFilter}
-                onChange={(e) => setSelectedProjectFilter(e.target.value)}
-              >
-                <option value="all">All projects</option>
-                {projectOptions.map((project) => (
-                  <option key={project.key} value={project.key}>{project.label}</option>
-                ))}
-              </select>
-            </div>
-
             {showPublishPanel && (
               <form onSubmit={(event) => void publishReport(event)} className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 grid md:grid-cols-2 gap-2">
                 <input
                   required
-                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700"
+                  disabled={!!selectedProject}
+                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 disabled:opacity-60"
                   placeholder="Project key (e.g. monkey-site)"
-                  value={reportDraft.project_key}
+                  value={selectedProject?.project_key || reportDraft.project_key}
                   onChange={(e) => setReportDraft((prev) => ({ ...prev, project_key: e.target.value }))}
                 />
                 <input
                   required
-                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700"
+                  disabled={!!selectedProject}
+                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 disabled:opacity-60"
                   placeholder="Project label"
-                  value={reportDraft.project_label}
+                  value={selectedProject?.project_label || reportDraft.project_label}
                   onChange={(e) => setReportDraft((prev) => ({ ...prev, project_label: e.target.value }))}
                 />
                 <input
@@ -567,7 +1009,9 @@ export default function UsageOpsDashboardPage() {
                   onChange={(e) => setReportDraft((prev) => ({ ...prev, report_type: e.target.value as WorkReport["report_type"] }))}
                 >
                   {REPORT_TYPES.map((type) => (
-                    <option key={type} value={type}>{type}</option>
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
                   ))}
                 </select>
                 <input
@@ -611,12 +1055,12 @@ export default function UsageOpsDashboardPage() {
               </form>
             )}
 
-            {groupedReports.length === 0 ? (
-              <p className="text-sm text-slate-400">No published reports yet.</p>
-            ) : (
+            {reports.length === 0 ? (
+              <p className="text-sm text-slate-400">No published reports in this scope yet.</p>
+            ) : selectedScope === "all" ? (
               <div className="space-y-4">
                 {groupedReports.map((group) => (
-                  <div key={group.projectLabel} className="space-y-2">
+                  <div key={group.projectKey} className="space-y-2">
                     <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-300">{group.projectLabel}</h3>
                     <div className="space-y-2">
                       {group.reports.map((report) => (
@@ -634,7 +1078,9 @@ export default function UsageOpsDashboardPage() {
                           {report.tags.length > 0 && (
                             <div className="flex flex-wrap gap-2 mt-3">
                               {report.tags.map((tag) => (
-                                <span key={`${report.id}-${tag}`} className="text-xs px-2 py-1 rounded-full border border-slate-700 bg-slate-800 text-slate-300">#{tag}</span>
+                                <span key={`${report.id}-${tag}`} className="text-xs px-2 py-1 rounded-full border border-slate-700 bg-slate-800 text-slate-300">
+                                  #{tag}
+                                </span>
                               ))}
                             </div>
                           )}
@@ -652,22 +1098,110 @@ export default function UsageOpsDashboardPage() {
                   </div>
                 ))}
               </div>
+            ) : (
+              <div className="space-y-2">
+                {reports.map((report) => (
+                  <article key={report.id} className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+                    <div className="flex flex-wrap items-center gap-2 justify-between">
+                      <p className="font-medium text-sm md:text-base">{report.title}</p>
+                      <span className="text-xs px-2 py-1 rounded-full border border-slate-700 bg-slate-800 text-slate-300">{report.report_type}</span>
+                    </div>
+                    <p className="text-sm text-slate-300 mt-2">{report.summary}</p>
+                    <div className="flex flex-wrap gap-3 mt-3 text-xs text-slate-400">
+                      <span>Published: {formatDateTime(report.published_at)}</span>
+                      {report.commit_ref && <span>Commit: {report.commit_ref}</span>}
+                      <span>Project key: {report.project_key}</span>
+                    </div>
+                    <a
+                      href={report.report_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-3 inline-flex items-center gap-1 text-sm text-sky-300 hover:text-sky-200"
+                    >
+                      Open report <ExternalLink className="w-4 h-4" />
+                    </a>
+                  </article>
+                ))}
+              </div>
             )}
           </section>
 
           <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6 space-y-4">
-            <h2 className="text-lg md:text-xl font-semibold">Task Inbox (requests from Zach)</h2>
+            <h2 className="text-lg md:text-xl font-semibold">Agent Checkpoints</h2>
+            {updates.length === 0 ? (
+              <p className="text-sm text-slate-400">No checkpoints in this scope yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {updates.map((update) => {
+                  const resolvedKey = update.resolved_project_key || null
+                  const projectLabel = resolvedKey ? projectMap.get(resolvedKey)?.project_label || resolvedKey : "Unassigned"
+
+                  return (
+                    <article key={update.id} className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
+                      <div className="flex flex-wrap items-center gap-2 justify-between">
+                        <p className="font-medium">{update.summary}</p>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-xs px-2 py-1 rounded-full border ${statusClasses[update.status]}`}>{update.status}</span>
+                          <span className="text-xs px-2 py-1 rounded-full border border-slate-700 bg-slate-800 text-slate-300">{projectLabel}</span>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-3 mt-2 text-xs text-slate-400">
+                        <span>{update.repo || "repo not specified"}</span>
+                        <span className="inline-flex items-center gap-1">
+                          <Clock3 className="w-3 h-3" /> {new Date(update.checkpoint_at).toLocaleString()}
+                        </span>
+                      </div>
+                      {update.why_it_matters && <p className="text-sm text-slate-300 mt-2">Why it matters: {update.why_it_matters}</p>}
+                      {update.files_touched.length > 0 && (
+                        <p className="text-xs text-slate-400 mt-2 line-clamp-2">
+                          Files: {update.files_touched.slice(0, 6).join(", ")}
+                          {update.files_touched.length > 6 ? "…" : ""}
+                        </p>
+                      )}
+                    </article>
+                  )
+                })}
+              </div>
+            )}
+          </section>
+
+          <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6 space-y-4">
+            <h2 className="text-lg md:text-xl font-semibold">Task Inbox / Board</h2>
             <form onSubmit={(event) => void createTask(event).catch((err) => setError(err.message))} className="grid md:grid-cols-2 gap-2">
               <input required className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2" placeholder="Title" value={taskDraft.title} onChange={(e) => setTaskDraft((p) => ({ ...p, title: e.target.value }))} />
               <textarea className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2" rows={2} placeholder="Description / notes" value={taskDraft.description} onChange={(e) => setTaskDraft((p) => ({ ...p, description: e.target.value }))} />
-              <select className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" value={taskDraft.priority} onChange={(e) => setTaskDraft((p) => ({ ...p, priority: e.target.value }))}>
+              <select className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" value={taskDraft.priority} onChange={(e) => setTaskDraft((p) => ({ ...p, priority: e.target.value as WorkTask["priority"] }))}>
                 <option value="low">low</option>
                 <option value="med">med</option>
                 <option value="high">high</option>
               </select>
               <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Repo target" value={taskDraft.repo_target} onChange={(e) => setTaskDraft((p) => ({ ...p, repo_target: e.target.value }))} />
+              {selectedProject ? (
+                <div className="px-3 py-2 rounded-xl border border-slate-700 bg-slate-800 text-sm text-slate-200 inline-flex items-center gap-2">
+                  <FolderKanban className="w-4 h-4 text-sky-300" />
+                  Auto-assigning to <span className="font-medium">{selectedProject.project_label}</span>
+                </div>
+              ) : (
+                <select
+                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700"
+                  value={taskDraft.project_key}
+                  onChange={(event) => setTaskDraft((prev) => ({ ...prev, project_key: event.target.value }))}
+                >
+                  <option value="">Project (optional)</option>
+                  {activeProjectOptions.map((projectOption) => (
+                    <option key={projectOption.key} value={projectOption.key}>
+                      {projectOption.label}
+                    </option>
+                  ))}
+                  {archivedProjects.map((project) => (
+                    <option key={project.id} value={project.project_key}>
+                      {project.project_label} (archived)
+                    </option>
+                  ))}
+                </select>
+              )}
               <input type="date" className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" value={taskDraft.due_date} onChange={(e) => setTaskDraft((p) => ({ ...p, due_date: e.target.value }))} />
-              <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Extra notes" value={taskDraft.notes} onChange={(e) => setTaskDraft((p) => ({ ...p, notes: e.target.value }))} />
+              <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2" placeholder="Extra notes" value={taskDraft.notes} onChange={(e) => setTaskDraft((p) => ({ ...p, notes: e.target.value }))} />
               <button className="md:col-span-2 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500">Create request</button>
             </form>
 
@@ -678,6 +1212,9 @@ export default function UsageOpsDashboardPage() {
                   <div className="space-y-2 mt-2">
                     {(groupedTasks[status] || []).map((task) => {
                       const draft = taskEdits[task.id] || task
+                      const resolvedKey = draft.project_key || draft.resolved_project_key || null
+                      const resolvedLabel = resolvedKey ? projectMap.get(resolvedKey)?.project_label || resolvedKey : "Unassigned"
+
                       return (
                         <article key={task.id} className="rounded-xl border border-slate-700 p-2 bg-slate-800/70 space-y-2">
                           <input className="w-full text-sm px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" value={draft.title} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, title: e.target.value } }))} />
@@ -690,13 +1227,41 @@ export default function UsageOpsDashboardPage() {
                             </select>
                             <select className="text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" value={draft.status} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, status: e.target.value as WorkTask["status"] } }))}>
                               {TASK_STATUSES.map((option) => (
-                                <option key={option} value={option}>{option}</option>
+                                <option key={option} value={option}>
+                                  {option}
+                                </option>
                               ))}
                             </select>
                           </div>
                           <input className="w-full text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" placeholder="Repo target" value={draft.repo_target || ""} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, repo_target: e.target.value } }))} />
+                          <select
+                            className="w-full text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700"
+                            value={draft.project_key || ""}
+                            onChange={(event) =>
+                              setTaskEdits((prev) => ({
+                                ...prev,
+                                [task.id]: {
+                                  ...draft,
+                                  project_key: event.target.value || null,
+                                },
+                              }))
+                            }
+                          >
+                            <option value="">Unassigned</option>
+                            {activeProjectOptions.map((projectOption) => (
+                              <option key={projectOption.key} value={projectOption.key}>
+                                {projectOption.label}
+                              </option>
+                            ))}
+                            {archivedProjects.map((project) => (
+                              <option key={project.id} value={project.project_key}>
+                                {project.project_label} (archived)
+                              </option>
+                            ))}
+                          </select>
                           <input type="date" className="w-full text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" value={draft.due_date || ""} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, due_date: e.target.value || null } }))} />
                           <input className="w-full text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" placeholder="Notes" value={draft.notes || ""} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, notes: e.target.value } }))} />
+                          <p className="text-[11px] text-slate-400">Current scope: {resolvedLabel}</p>
                           <button type="button" className="w-full text-xs px-2 py-1 rounded-lg bg-sky-700 hover:bg-sky-600" onClick={() => void saveTask(task.id).catch((err) => setError(err.message))}>Save</button>
                         </article>
                       )
@@ -708,6 +1273,50 @@ export default function UsageOpsDashboardPage() {
                 </div>
               ))}
             </div>
+          </section>
+
+          <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6 space-y-3">
+            <button
+              type="button"
+              onClick={() => setShowArchivedProjects((prev) => !prev)}
+              className="w-full inline-flex items-center justify-between gap-2 px-3 py-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-sm"
+            >
+              <span className="inline-flex items-center gap-2">
+                <Archive className="w-4 h-4" />
+                Archived Projects ({archivedProjects.length})
+              </span>
+              {showArchivedProjects ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+
+            {showArchivedProjects && (
+              <div className="space-y-2">
+                {archivedProjects.length === 0 ? (
+                  <p className="text-sm text-slate-400">No archived projects yet.</p>
+                ) : (
+                  archivedProjects.map((project) => (
+                    <div key={project.id} className="rounded-xl border border-slate-800 bg-slate-900/80 p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedScope(project.project_key)}
+                        className="text-left"
+                      >
+                        <p className="font-medium">{project.project_label}</p>
+                        <p className="text-xs text-slate-400">
+                          {project.project_key} · closed {formatDate(project.closed_at)}
+                        </p>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void setProjectStatus(project, "active")}
+                        className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-sm"
+                      >
+                        <ArchiveRestore className="w-4 h-4" /> Reopen
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </section>
         </div>
       </div>

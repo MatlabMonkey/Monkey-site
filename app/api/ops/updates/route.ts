@@ -4,6 +4,12 @@ import { existsSync } from "node:fs"
 import path from "node:path"
 import { promisify } from "node:util"
 import { supabase } from "../../../../lib/supabaseClient"
+import {
+  OpsProjectValidationError,
+  ensureProjectExists,
+  getProjects,
+  resolveProjectKeyForEntity,
+} from "../../../../lib/server/opsProjects"
 
 const VALID_STATUSES = ["in_progress", "needs_review", "blocked", "shipped"] as const
 const execFileAsync = promisify(execFile)
@@ -19,6 +25,7 @@ type CreateUpdateBody = {
   files_touched?: string[]
   why_it_matters?: string
   status?: string
+  project_key?: string | null
 }
 
 type InferredProvenance = {
@@ -92,6 +99,18 @@ async function inferLocalGitProvenance(explicitRepo?: string): Promise<InferredP
   }
 }
 
+function normalizeProjectKeyInput(value: unknown): string | null {
+  if (value === null || value === undefined) return null
+  if (typeof value !== "string") {
+    throw new OpsProjectValidationError("project_key must be a string")
+  }
+
+  const trimmed = value.trim()
+  if (!trimmed || trimmed.toLowerCase() === "unassigned") return null
+
+  return resolveProjectKeyForEntity(trimmed, null, [])
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as CreateUpdateBody
@@ -115,12 +134,21 @@ export async function POST(request: NextRequest) {
     const commitStart = body.commit_start?.trim() || inferred.commitStart || null
     const commitEnd = body.commit_end?.trim() || inferred.commitEnd || null
 
+    const projects = await getProjects()
+    const explicitProjectKey = normalizeProjectKeyInput(body.project_key)
+    const resolvedProjectKey = explicitProjectKey ?? resolveProjectKeyForEntity(null, resolvedRepo, projects)
+
+    if (resolvedProjectKey) {
+      await ensureProjectExists(resolvedProjectKey)
+    }
+
     const { data, error } = await supabase
       .from("work_updates")
       .insert({
         summary: body.summary.trim(),
         repo: resolvedRepo,
         branch: body.branch?.trim() || inferred.branch || "main",
+        project_key: resolvedProjectKey,
         commit_start: commitStart,
         commit_end: commitEnd,
         commit_url: body.commit_url?.trim() || inferred.commitUrl || null,
@@ -138,6 +166,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ update: data }, { status: 201 })
   } catch (error) {
+    if (error instanceof OpsProjectValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
+
     return NextResponse.json(
       { error: "Failed to create work update", details: error instanceof Error ? error.message : String(error) },
       { status: 500 },

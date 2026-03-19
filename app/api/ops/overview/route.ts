@@ -1,13 +1,24 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { supabase } from "../../../../lib/supabaseClient"
+import {
+  getProjects,
+  inferProjectKeyFromRepo,
+  matchesProjectScope,
+  parseProjectScope,
+  resolveProjectKeyForEntity,
+} from "../../../../lib/server/opsProjects"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const [focusRes, updatesRes, tasksRes, reportsRes] = await Promise.all([
+    const { searchParams } = new URL(request.url)
+    const scope = parseProjectScope(searchParams.get("project"))
+
+    const [focusRes, updatesRes, tasksRes, reportsRes, projects] = await Promise.all([
       supabase.from("work_focus").select("*").eq("id", 1).maybeSingle(),
-      supabase.from("work_updates").select("*").order("checkpoint_at", { ascending: false }).limit(12),
-      supabase.from("work_tasks").select("*").order("created_at", { ascending: false }).limit(50),
-      supabase.from("work_reports").select("*").order("published_at", { ascending: false }).limit(50),
+      supabase.from("work_updates").select("*").order("checkpoint_at", { ascending: false }).limit(150),
+      supabase.from("work_tasks").select("*").order("created_at", { ascending: false }).limit(200),
+      supabase.from("work_reports").select("*").order("published_at", { ascending: false }).limit(200),
+      getProjects(),
     ])
 
     if (focusRes.error) throw focusRes.error
@@ -15,11 +26,43 @@ export async function GET() {
     if (tasksRes.error) throw tasksRes.error
     if (reportsRes.error) throw reportsRes.error
 
+    const updates = (updatesRes.data || []).map((update) => {
+      const resolvedProjectKey = resolveProjectKeyForEntity(update.project_key, update.repo, projects)
+      return {
+        ...update,
+        resolved_project_key: resolvedProjectKey,
+        inferred_project_key:
+          !update.project_key && update.repo ? inferProjectKeyFromRepo(update.repo, projects) : null,
+      }
+    })
+
+    const tasks = (tasksRes.data || []).map((task) => {
+      const resolvedProjectKey = resolveProjectKeyForEntity(task.project_key, task.repo_target, projects)
+      return {
+        ...task,
+        resolved_project_key: resolvedProjectKey,
+        inferred_project_key:
+          !task.project_key && task.repo_target ? inferProjectKeyFromRepo(task.repo_target, projects) : null,
+      }
+    })
+
+    const reports = (reportsRes.data || []).map((report) => ({
+      ...report,
+      resolved_project_key: resolveProjectKeyForEntity(report.project_key, null, projects),
+      inferred_project_key: null,
+    }))
+
+    const scopedUpdates = updates.filter((update) => matchesProjectScope(update.resolved_project_key, scope))
+    const scopedTasks = tasks.filter((task) => matchesProjectScope(task.resolved_project_key, scope))
+    const scopedReports = reports.filter((report) => matchesProjectScope(report.resolved_project_key, scope))
+
     return NextResponse.json({
+      scope,
       focus: focusRes.data,
-      updates: updatesRes.data || [],
-      tasks: tasksRes.data || [],
-      reports: reportsRes.data || [],
+      updates: scopedUpdates,
+      tasks: scopedTasks,
+      reports: scopedReports,
+      projects,
     })
   } catch (error) {
     return NextResponse.json(
