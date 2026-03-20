@@ -16,7 +16,6 @@ import {
   Plus,
   Save,
 } from "lucide-react"
-import PinGate from "../components/PinGate"
 
 type Focus = {
   now_working_on: string | null
@@ -613,19 +612,16 @@ export default function UsageOpsDashboardPage() {
 
   if (loading) {
     return (
-      <PinGate>
         <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-slate-700 border-t-sky-400 mx-auto" />
             <p className="mt-3 text-slate-300">Loading ops dashboard...</p>
           </div>
         </div>
-      </PinGate>
     )
   }
 
   return (
-    <PinGate>
       <div className="min-h-screen bg-slate-950 text-slate-100">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8 space-y-5">
           <header className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6">
@@ -1320,6 +1316,5 @@ export default function UsageOpsDashboardPage() {
           </section>
         </div>
       </div>
-    </PinGate>
   )
 }
