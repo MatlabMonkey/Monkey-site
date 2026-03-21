@@ -46,14 +46,21 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
   const sourceUrl = report.report_url
   const showSource = isExternalUrl(sourceUrl)
 
+  const projectPath = `/usage/projects/${report.project_key}`
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto max-w-6xl px-4 py-6 md:py-8 space-y-5">
         <header className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6 space-y-3">
-          <Link href="/usage" className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Ops Dashboard
-          </Link>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href={projectPath} className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-slate-200">
+              <ArrowLeft className="h-4 w-4" />
+              Back to Project
+            </Link>
+            <Link href="/usage" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-300">
+              Ops index
+            </Link>
+          </div>
 
           <div>
             <p className="text-xs uppercase tracking-wide text-slate-400">{report.project_label}</p>
