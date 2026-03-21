@@ -1,24 +1,28 @@
 import { NextRequest, NextResponse } from "next/server"
 import { supabase } from "../../../../../lib/supabaseClient"
 import { OpsProjectValidationError, ensureProjectExists } from "../../../../../lib/server/opsProjects"
-import { normalizeReportInput, ReportValidationError } from "../../../../../lib/server/opsReports"
+import {
+  buildInternalReportPath,
+  normalizeReportInput,
+  ReportValidationError,
+} from "../../../../../lib/server/opsReports"
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
     const body = (await request.json()) as Record<string, unknown>
 
-    const normalizedUpdates = normalizeReportInput(body, { partial: true })
+    const normalizedUpdates = normalizeReportInput(body, { partial: true }) as Record<string, unknown>
+
+    const { data: existingReport, error: existingError } = await supabase
+      .from("work_reports")
+      .select("id, project_key, project_label, slug")
+      .eq("id", id)
+      .single()
+
+    if (existingError) throw existingError
 
     if ("project_key" in normalizedUpdates || "project_label" in normalizedUpdates) {
-      const { data: existingReport, error: existingError } = await supabase
-        .from("work_reports")
-        .select("project_key, project_label")
-        .eq("id", id)
-        .single()
-
-      if (existingError) throw existingError
-
       const finalProjectKey =
         (typeof normalizedUpdates.project_key === "string" && normalizedUpdates.project_key) ||
         existingReport.project_key
@@ -28,6 +32,31 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
         existingReport.project_label
 
       await ensureProjectExists(finalProjectKey, finalProjectLabel)
+    }
+
+    const nextSlug =
+      "slug" in normalizedUpdates
+        ? typeof normalizedUpdates.slug === "string"
+          ? normalizedUpdates.slug
+          : null
+        : existingReport.slug
+
+    if (nextSlug) {
+      const { data: duplicate, error: duplicateError } = await supabase
+        .from("work_reports")
+        .select("id")
+        .eq("slug", nextSlug)
+        .neq("id", id)
+        .maybeSingle()
+
+      if (duplicateError) throw duplicateError
+      if (duplicate) {
+        throw new ReportValidationError(`slug '${nextSlug}' is already in use`)
+      }
+
+      if (!("report_url" in normalizedUpdates) || String(normalizedUpdates.report_url || "").startsWith("/reports/")) {
+        normalizedUpdates.report_url = buildInternalReportPath(nextSlug)
+      }
     }
 
     const updates = {

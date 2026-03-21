@@ -8,10 +8,37 @@ import {
   parseProjectScope,
   resolveProjectKeyForEntity,
 } from "../../../../lib/server/opsProjects"
-import { normalizeReportInput, ReportValidationError } from "../../../../lib/server/opsReports"
+import {
+  buildInternalReportPath,
+  normalizeReportInput,
+  ReportValidationError,
+  slugifyReportTitle,
+} from "../../../../lib/server/opsReports"
 
 const DEFAULT_LIMIT = 100
 const MAX_LIMIT = 200
+
+async function findReportBySlug(slug: string) {
+  const { data, error } = await supabase.from("work_reports").select("id").eq("slug", slug).maybeSingle()
+  if (error) throw error
+  return data
+}
+
+function hasOnSiteContent(payload: Record<string, unknown>): boolean {
+  return Boolean(payload.html_content || payload.content_md || payload.content_json)
+}
+
+async function generateUniqueSlug(baseSlug: string): Promise<string> {
+  const normalizedBase = baseSlug || "report"
+
+  for (let index = 0; index < 50; index += 1) {
+    const candidate = index === 0 ? normalizedBase : `${normalizedBase}-${index + 1}`
+    const existing = await findReportBySlug(candidate)
+    if (!existing) return candidate
+  }
+
+  throw new ReportValidationError("Unable to generate a unique slug; please provide one explicitly")
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -57,7 +84,24 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as Record<string, unknown>
-    const payload = normalizeReportInput(body, { partial: false })
+    const payload = normalizeReportInput(body, { partial: false }) as Record<string, unknown>
+
+    let slug = typeof payload.slug === "string" ? payload.slug : null
+
+    if (!slug && hasOnSiteContent(payload) && typeof payload.title === "string") {
+      const generatedBase = slugifyReportTitle(payload.title)
+      slug = await generateUniqueSlug(generatedBase)
+      payload.slug = slug
+    }
+
+    if (slug) {
+      const existing = await findReportBySlug(slug)
+      if (existing) {
+        throw new ReportValidationError(`slug '${slug}' is already in use`)
+      }
+
+      payload.report_url = buildInternalReportPath(slug)
+    }
 
     await ensureProjectExists(payload.project_key as string, payload.project_label as string)
 

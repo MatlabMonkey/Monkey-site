@@ -13,8 +13,10 @@ import {
   ExternalLink,
   FolderKanban,
   GitBranch,
+  Pencil,
   Plus,
   Save,
+  X,
 } from "lucide-react"
 
 type Focus = {
@@ -80,7 +82,12 @@ type WorkReport = {
   summary: string
   report_type: "html" | "md" | "pdf" | "link"
   report_url: string
+  slug: string | null
+  html_content: string | null
+  content_md: string | null
+  content_json: Record<string, unknown> | null
   artifact_path: string | null
+  asset_base_url: string | null
   commit_ref: string | null
   tags: string[]
   published_by: string
@@ -140,6 +147,15 @@ function formatDate(value: string | null) {
   return new Date(value).toLocaleDateString()
 }
 
+function getPreferredReportUrl(report: WorkReport): string {
+  if (report.slug) return `/reports/${report.slug}`
+  return report.report_url
+}
+
+function isInternalUrl(url: string): boolean {
+  return url.startsWith("/")
+}
+
 function normalizeFilesTouched(value: unknown): string[] {
   if (Array.isArray(value)) {
     return value.filter((entry): entry is string => typeof entry === "string")
@@ -190,6 +206,10 @@ export default function UsageOpsDashboardPage() {
     summary: "",
     report_type: "html" as WorkReport["report_type"],
     report_url: "",
+    slug: "",
+    html_content: "",
+    content_md: "",
+    asset_base_url: "",
     artifact_path: "",
     commit_ref: "",
     tags: "",
@@ -206,11 +226,15 @@ export default function UsageOpsDashboardPage() {
   })
 
   const [isSavingProjectDetail, setIsSavingProjectDetail] = useState(false)
+  const [isEditingProjectDetail, setIsEditingProjectDetail] = useState(false)
   const [projectDetailDraft, setProjectDetailDraft] = useState({
     project_label: "",
     description: "",
     repo_full_name: "",
   })
+
+  const [showTaskCreatePanel, setShowTaskCreatePanel] = useState(false)
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
 
   const [showArchivedProjects, setShowArchivedProjects] = useState(false)
 
@@ -231,6 +255,7 @@ export default function UsageOpsDashboardPage() {
   useEffect(() => {
     if (!selectedProject) {
       setProjectDetailDraft({ project_label: "", description: "", repo_full_name: "" })
+      setIsEditingProjectDetail(false)
       return
     }
 
@@ -239,6 +264,7 @@ export default function UsageOpsDashboardPage() {
       description: selectedProject.description || "",
       repo_full_name: selectedProject.repo_full_name || "",
     })
+    setIsEditingProjectDetail(false)
   }, [selectedProject])
 
   useEffect(() => {
@@ -469,6 +495,7 @@ export default function UsageOpsDashboardPage() {
       if (!response.ok) throw new Error(json.error || "Failed to update project")
 
       await loadAll(selectedScope)
+      setIsEditingProjectDetail(false)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update project")
     } finally {
@@ -527,6 +554,7 @@ export default function UsageOpsDashboardPage() {
       notes: "",
       project_key: "",
     })
+    setShowTaskCreatePanel(false)
     await loadAll(selectedScope)
   }
 
@@ -552,6 +580,17 @@ export default function UsageOpsDashboardPage() {
     if (!response.ok) throw new Error(json.error || "Failed to update task")
 
     await loadAll(selectedScope)
+    setEditingTaskId(null)
+  }
+
+  function beginTaskEdit(task: WorkTask) {
+    setTaskEdits((prev) => ({ ...prev, [task.id]: { ...task } }))
+    setEditingTaskId(task.id)
+  }
+
+  function cancelTaskEdit(task: WorkTask) {
+    setTaskEdits((prev) => ({ ...prev, [task.id]: { ...task } }))
+    setEditingTaskId((current) => (current === task.id ? null : current))
   }
 
   async function publishReport(event: React.FormEvent) {
@@ -574,6 +613,10 @@ export default function UsageOpsDashboardPage() {
           summary: reportDraft.summary,
           report_type: reportDraft.report_type,
           report_url: reportDraft.report_url,
+          slug: reportDraft.slug || undefined,
+          html_content: reportDraft.html_content || undefined,
+          content_md: reportDraft.content_md || undefined,
+          asset_base_url: reportDraft.asset_base_url || undefined,
           artifact_path: reportDraft.artifact_path,
           commit_ref: reportDraft.commit_ref,
           tags: parseTags(reportDraft.tags),
@@ -591,6 +634,10 @@ export default function UsageOpsDashboardPage() {
         title: "",
         summary: "",
         report_url: "",
+        slug: "",
+        html_content: "",
+        content_md: "",
+        asset_base_url: "",
         artifact_path: "",
         commit_ref: "",
         tags: "",
@@ -755,23 +802,33 @@ export default function UsageOpsDashboardPage() {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h2 className="text-lg md:text-xl font-semibold">Project Detail</h2>
-                  <p className="text-sm text-slate-400 mt-1">Quick edits and lifecycle controls for the selected project.</p>
+                  <p className="text-sm text-slate-400 mt-1">View-first summary with optional quick edits.</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => void setProjectStatus(selectedProject, selectedProject.status === "archived" ? "active" : "archived")}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-sm"
-                >
-                  {selectedProject.status === "archived" ? (
-                    <>
-                      <ArchiveRestore className="w-4 h-4" /> Reopen project
-                    </>
-                  ) : (
-                    <>
-                      <Archive className="w-4 h-4" /> Archive project
-                    </>
-                  )}
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingProjectDetail((prev) => !prev)}
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-sm"
+                  >
+                    {isEditingProjectDetail ? <X className="w-4 h-4" /> : <Pencil className="w-4 h-4" />}
+                    {isEditingProjectDetail ? "Close edit" : "Edit details"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void setProjectStatus(selectedProject, selectedProject.status === "archived" ? "active" : "archived")}
+                    className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-sm"
+                  >
+                    {selectedProject.status === "archived" ? (
+                      <>
+                        <ArchiveRestore className="w-4 h-4" /> Reopen project
+                      </>
+                    ) : (
+                      <>
+                        <Archive className="w-4 h-4" /> Archive project
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
 
               <div className="grid md:grid-cols-3 gap-2 text-sm">
@@ -785,40 +842,47 @@ export default function UsageOpsDashboardPage() {
                 </div>
                 <div className="rounded-xl border border-slate-800 bg-slate-900 p-3">
                   <p className="text-xs uppercase tracking-wide text-slate-400">Repo</p>
-                  <p className="mt-1">{selectedProject.repo_full_name || "Not linked"}</p>
+                  <p className="mt-1 break-all">{selectedProject.repo_full_name || "Not linked"}</p>
                 </div>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-2">
-                <input
-                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700"
-                  placeholder="Project label"
-                  value={projectDetailDraft.project_label}
-                  onChange={(event) => setProjectDetailDraft((prev) => ({ ...prev, project_label: event.target.value }))}
-                />
-                <input
-                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700"
-                  placeholder="Repo (owner/repo)"
-                  value={projectDetailDraft.repo_full_name}
-                  onChange={(event) => setProjectDetailDraft((prev) => ({ ...prev, repo_full_name: event.target.value }))}
-                />
-                <textarea
-                  rows={2}
-                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2"
-                  placeholder="Description"
-                  value={projectDetailDraft.description}
-                  onChange={(event) => setProjectDetailDraft((prev) => ({ ...prev, description: event.target.value }))}
-                />
-                <button
-                  type="button"
-                  onClick={() => void saveSelectedProjectDetail()}
-                  disabled={isSavingProjectDetail}
-                  className="md:col-span-2 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-60 inline-flex items-center justify-center gap-2"
-                >
-                  <Save className="w-4 h-4" />
-                  {isSavingProjectDetail ? "Saving..." : "Save project details"}
-                </button>
+              <div className="rounded-xl border border-slate-800 bg-slate-900 p-3 text-sm">
+                <p className="text-xs uppercase tracking-wide text-slate-400">Description</p>
+                <p className="mt-1 text-slate-200">{selectedProject.description || "No description yet."}</p>
               </div>
+
+              {isEditingProjectDetail && (
+                <div className="grid md:grid-cols-2 gap-2">
+                  <input
+                    className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700"
+                    placeholder="Project label"
+                    value={projectDetailDraft.project_label}
+                    onChange={(event) => setProjectDetailDraft((prev) => ({ ...prev, project_label: event.target.value }))}
+                  />
+                  <input
+                    className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700"
+                    placeholder="Repo (owner/repo)"
+                    value={projectDetailDraft.repo_full_name}
+                    onChange={(event) => setProjectDetailDraft((prev) => ({ ...prev, repo_full_name: event.target.value }))}
+                  />
+                  <textarea
+                    rows={2}
+                    className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2"
+                    placeholder="Description"
+                    value={projectDetailDraft.description}
+                    onChange={(event) => setProjectDetailDraft((prev) => ({ ...prev, description: event.target.value }))}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void saveSelectedProjectDetail()}
+                    disabled={isSavingProjectDetail}
+                    className="md:col-span-2 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 disabled:opacity-60 inline-flex items-center justify-center gap-2"
+                  >
+                    <Save className="w-4 h-4" />
+                    {isSavingProjectDetail ? "Saving..." : "Save project details"}
+                  </button>
+                </div>
+              )}
             </section>
           )}
 
@@ -1017,11 +1081,36 @@ export default function UsageOpsDashboardPage() {
                   onChange={(e) => setReportDraft((prev) => ({ ...prev, published_by: e.target.value }))}
                 />
                 <input
-                  required
                   className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2"
-                  placeholder="Report URL"
+                  placeholder="Report URL (optional when slug is set)"
                   value={reportDraft.report_url}
                   onChange={(e) => setReportDraft((prev) => ({ ...prev, report_url: e.target.value }))}
+                />
+                <input
+                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700"
+                  placeholder="On-site slug (optional)"
+                  value={reportDraft.slug}
+                  onChange={(e) => setReportDraft((prev) => ({ ...prev, slug: e.target.value }))}
+                />
+                <input
+                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700"
+                  placeholder="Asset base URL (optional)"
+                  value={reportDraft.asset_base_url}
+                  onChange={(e) => setReportDraft((prev) => ({ ...prev, asset_base_url: e.target.value }))}
+                />
+                <textarea
+                  rows={5}
+                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2"
+                  placeholder="HTML content (optional for on-site HTML report)"
+                  value={reportDraft.html_content}
+                  onChange={(e) => setReportDraft((prev) => ({ ...prev, html_content: e.target.value }))}
+                />
+                <textarea
+                  rows={3}
+                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2"
+                  placeholder="Markdown content (optional)"
+                  value={reportDraft.content_md}
+                  onChange={(e) => setReportDraft((prev) => ({ ...prev, content_md: e.target.value }))}
                 />
                 <input
                   className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700"
@@ -1080,14 +1169,23 @@ export default function UsageOpsDashboardPage() {
                               ))}
                             </div>
                           )}
-                          <a
-                            href={report.report_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="mt-3 inline-flex items-center gap-1 text-sm text-sky-300 hover:text-sky-200"
-                          >
-                            Open report <ExternalLink className="w-4 h-4" />
-                          </a>
+                          {isInternalUrl(getPreferredReportUrl(report)) ? (
+                            <Link
+                              href={getPreferredReportUrl(report)}
+                              className="mt-3 inline-flex items-center gap-1 text-sm text-sky-300 hover:text-sky-200"
+                            >
+                              Open report
+                            </Link>
+                          ) : (
+                            <a
+                              href={getPreferredReportUrl(report)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mt-3 inline-flex items-center gap-1 text-sm text-sky-300 hover:text-sky-200"
+                            >
+                              Open report <ExternalLink className="w-4 h-4" />
+                            </a>
+                          )}
                         </article>
                       ))}
                     </div>
@@ -1108,14 +1206,23 @@ export default function UsageOpsDashboardPage() {
                       {report.commit_ref && <span>Commit: {report.commit_ref}</span>}
                       <span>Project key: {report.project_key}</span>
                     </div>
-                    <a
-                      href={report.report_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-3 inline-flex items-center gap-1 text-sm text-sky-300 hover:text-sky-200"
-                    >
-                      Open report <ExternalLink className="w-4 h-4" />
-                    </a>
+                    {isInternalUrl(getPreferredReportUrl(report)) ? (
+                      <Link
+                        href={getPreferredReportUrl(report)}
+                        className="mt-3 inline-flex items-center gap-1 text-sm text-sky-300 hover:text-sky-200"
+                      >
+                        Open report
+                      </Link>
+                    ) : (
+                      <a
+                        href={getPreferredReportUrl(report)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-3 inline-flex items-center gap-1 text-sm text-sky-300 hover:text-sky-200"
+                      >
+                        Open report <ExternalLink className="w-4 h-4" />
+                      </a>
+                    )}
                   </article>
                 ))}
               </div>
@@ -1162,44 +1269,57 @@ export default function UsageOpsDashboardPage() {
           </section>
 
           <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6 space-y-4">
-            <h2 className="text-lg md:text-xl font-semibold">Task Inbox / Board</h2>
-            <form onSubmit={(event) => void createTask(event).catch((err) => setError(err.message))} className="grid md:grid-cols-2 gap-2">
-              <input required className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2" placeholder="Title" value={taskDraft.title} onChange={(e) => setTaskDraft((p) => ({ ...p, title: e.target.value }))} />
-              <textarea className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2" rows={2} placeholder="Description / notes" value={taskDraft.description} onChange={(e) => setTaskDraft((p) => ({ ...p, description: e.target.value }))} />
-              <select className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" value={taskDraft.priority} onChange={(e) => setTaskDraft((p) => ({ ...p, priority: e.target.value as WorkTask["priority"] }))}>
-                <option value="low">low</option>
-                <option value="med">med</option>
-                <option value="high">high</option>
-              </select>
-              <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Repo target" value={taskDraft.repo_target} onChange={(e) => setTaskDraft((p) => ({ ...p, repo_target: e.target.value }))} />
-              {selectedProject ? (
-                <div className="px-3 py-2 rounded-xl border border-slate-700 bg-slate-800 text-sm text-slate-200 inline-flex items-center gap-2">
-                  <FolderKanban className="w-4 h-4 text-sky-300" />
-                  Auto-assigning to <span className="font-medium">{selectedProject.project_label}</span>
-                </div>
-              ) : (
-                <select
-                  className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700"
-                  value={taskDraft.project_key}
-                  onChange={(event) => setTaskDraft((prev) => ({ ...prev, project_key: event.target.value }))}
-                >
-                  <option value="">Project (optional)</option>
-                  {activeProjectOptions.map((projectOption) => (
-                    <option key={projectOption.key} value={projectOption.key}>
-                      {projectOption.label}
-                    </option>
-                  ))}
-                  {archivedProjects.map((project) => (
-                    <option key={project.id} value={project.project_key}>
-                      {project.project_label} (archived)
-                    </option>
-                  ))}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-lg md:text-xl font-semibold">Task Inbox / Board</h2>
+              <button
+                type="button"
+                onClick={() => setShowTaskCreatePanel((prev) => !prev)}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-sm"
+              >
+                {showTaskCreatePanel ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                Task input panel
+              </button>
+            </div>
+
+            {showTaskCreatePanel && (
+              <form onSubmit={(event) => void createTask(event).catch((err) => setError(err.message))} className="grid md:grid-cols-2 gap-2">
+                <input required className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2" placeholder="Title" value={taskDraft.title} onChange={(e) => setTaskDraft((p) => ({ ...p, title: e.target.value }))} />
+                <textarea className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2" rows={2} placeholder="Description / notes" value={taskDraft.description} onChange={(e) => setTaskDraft((p) => ({ ...p, description: e.target.value }))} />
+                <select className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" value={taskDraft.priority} onChange={(e) => setTaskDraft((p) => ({ ...p, priority: e.target.value as WorkTask["priority"] }))}>
+                  <option value="low">low</option>
+                  <option value="med">med</option>
+                  <option value="high">high</option>
                 </select>
-              )}
-              <input type="date" className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" value={taskDraft.due_date} onChange={(e) => setTaskDraft((p) => ({ ...p, due_date: e.target.value }))} />
-              <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2" placeholder="Extra notes" value={taskDraft.notes} onChange={(e) => setTaskDraft((p) => ({ ...p, notes: e.target.value }))} />
-              <button className="md:col-span-2 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500">Create request</button>
-            </form>
+                <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" placeholder="Repo target" value={taskDraft.repo_target} onChange={(e) => setTaskDraft((p) => ({ ...p, repo_target: e.target.value }))} />
+                {selectedProject ? (
+                  <div className="px-3 py-2 rounded-xl border border-slate-700 bg-slate-800 text-sm text-slate-200 inline-flex items-center gap-2">
+                    <FolderKanban className="w-4 h-4 text-sky-300" />
+                    Auto-assigning to <span className="font-medium">{selectedProject.project_label}</span>
+                  </div>
+                ) : (
+                  <select
+                    className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700"
+                    value={taskDraft.project_key}
+                    onChange={(event) => setTaskDraft((prev) => ({ ...prev, project_key: event.target.value }))}
+                  >
+                    <option value="">Project (optional)</option>
+                    {activeProjectOptions.map((projectOption) => (
+                      <option key={projectOption.key} value={projectOption.key}>
+                        {projectOption.label}
+                      </option>
+                    ))}
+                    {archivedProjects.map((project) => (
+                      <option key={project.id} value={project.project_key}>
+                        {project.project_label} (archived)
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <input type="date" className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700" value={taskDraft.due_date} onChange={(e) => setTaskDraft((p) => ({ ...p, due_date: e.target.value }))} />
+                <input className="px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 md:col-span-2" placeholder="Extra notes" value={taskDraft.notes} onChange={(e) => setTaskDraft((p) => ({ ...p, notes: e.target.value }))} />
+                <button className="md:col-span-2 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500">Create request</button>
+              </form>
+            )}
 
             <div className="grid lg:grid-cols-5 gap-3">
               {TASK_STATUSES.map((status) => (
@@ -1208,57 +1328,79 @@ export default function UsageOpsDashboardPage() {
                   <div className="space-y-2 mt-2">
                     {(groupedTasks[status] || []).map((task) => {
                       const draft = taskEdits[task.id] || task
-                      const resolvedKey = draft.project_key || draft.resolved_project_key || null
+                      const resolvedKey = task.project_key || task.resolved_project_key || null
                       const resolvedLabel = resolvedKey ? projectMap.get(resolvedKey)?.project_label || resolvedKey : "Unassigned"
+                      const isEditingTask = editingTaskId === task.id
 
                       return (
-                        <article key={task.id} className="rounded-xl border border-slate-700 p-2 bg-slate-800/70 space-y-2">
-                          <input className="w-full text-sm px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" value={draft.title} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, title: e.target.value } }))} />
-                          <textarea className="w-full text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" rows={2} value={draft.description || ""} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, description: e.target.value } }))} placeholder="Description / notes" />
-                          <div className="grid grid-cols-2 gap-1">
-                            <select className="text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" value={draft.priority} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, priority: e.target.value as WorkTask["priority"] } }))}>
-                              <option value="low">low</option>
-                              <option value="med">med</option>
-                              <option value="high">high</option>
-                            </select>
-                            <select className="text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" value={draft.status} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, status: e.target.value as WorkTask["status"] } }))}>
-                              {TASK_STATUSES.map((option) => (
-                                <option key={option} value={option}>
-                                  {option}
-                                </option>
-                              ))}
-                            </select>
+                        <article key={task.id} className="rounded-xl border border-slate-700 p-3 bg-slate-800/70 space-y-2">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm font-medium">{task.title}</p>
+                            <button
+                              type="button"
+                              className="text-xs px-2 py-1 rounded-lg border border-slate-700 bg-slate-900 hover:bg-slate-800"
+                              onClick={() => (isEditingTask ? cancelTaskEdit(task) : beginTaskEdit(task))}
+                            >
+                              {isEditingTask ? "Close" : "Edit"}
+                            </button>
                           </div>
-                          <input className="w-full text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" placeholder="Repo target" value={draft.repo_target || ""} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, repo_target: e.target.value } }))} />
-                          <select
-                            className="w-full text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700"
-                            value={draft.project_key || ""}
-                            onChange={(event) =>
-                              setTaskEdits((prev) => ({
-                                ...prev,
-                                [task.id]: {
-                                  ...draft,
-                                  project_key: event.target.value || null,
-                                },
-                              }))
-                            }
-                          >
-                            <option value="">Unassigned</option>
-                            {activeProjectOptions.map((projectOption) => (
-                              <option key={projectOption.key} value={projectOption.key}>
-                                {projectOption.label}
-                              </option>
-                            ))}
-                            {archivedProjects.map((project) => (
-                              <option key={project.id} value={project.project_key}>
-                                {project.project_label} (archived)
-                              </option>
-                            ))}
-                          </select>
-                          <input type="date" className="w-full text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" value={draft.due_date || ""} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, due_date: e.target.value || null } }))} />
-                          <input className="w-full text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" placeholder="Notes" value={draft.notes || ""} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, notes: e.target.value } }))} />
-                          <p className="text-[11px] text-slate-400">Current scope: {resolvedLabel}</p>
-                          <button type="button" className="w-full text-xs px-2 py-1 rounded-lg bg-sky-700 hover:bg-sky-600" onClick={() => void saveTask(task.id).catch((err) => setError(err.message))}>Save</button>
+
+                          <p className="text-xs text-slate-300">{task.description || "No description"}</p>
+                          <div className="text-[11px] text-slate-400 space-y-1">
+                            <p>Priority: {task.priority}</p>
+                            <p>Scope: {resolvedLabel}</p>
+                            <p>Due: {task.due_date || "Not set"}</p>
+                          </div>
+
+                          {isEditingTask && (
+                            <div className="space-y-2 border-t border-slate-700 pt-2">
+                              <input className="w-full text-sm px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" value={draft.title} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, title: e.target.value } }))} />
+                              <textarea className="w-full text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" rows={2} value={draft.description || ""} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, description: e.target.value } }))} placeholder="Description / notes" />
+                              <div className="grid grid-cols-2 gap-1">
+                                <select className="text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" value={draft.priority} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, priority: e.target.value as WorkTask["priority"] } }))}>
+                                  <option value="low">low</option>
+                                  <option value="med">med</option>
+                                  <option value="high">high</option>
+                                </select>
+                                <select className="text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" value={draft.status} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, status: e.target.value as WorkTask["status"] } }))}>
+                                  {TASK_STATUSES.map((option) => (
+                                    <option key={option} value={option}>
+                                      {option}
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                              <input className="w-full text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" placeholder="Repo target" value={draft.repo_target || ""} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, repo_target: e.target.value } }))} />
+                              <select
+                                className="w-full text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700"
+                                value={draft.project_key || ""}
+                                onChange={(event) =>
+                                  setTaskEdits((prev) => ({
+                                    ...prev,
+                                    [task.id]: {
+                                      ...draft,
+                                      project_key: event.target.value || null,
+                                    },
+                                  }))
+                                }
+                              >
+                                <option value="">Unassigned</option>
+                                {activeProjectOptions.map((projectOption) => (
+                                  <option key={projectOption.key} value={projectOption.key}>
+                                    {projectOption.label}
+                                  </option>
+                                ))}
+                                {archivedProjects.map((project) => (
+                                  <option key={project.id} value={project.project_key}>
+                                    {project.project_label} (archived)
+                                  </option>
+                                ))}
+                              </select>
+                              <input type="date" className="w-full text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" value={draft.due_date || ""} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, due_date: e.target.value || null } }))} />
+                              <input className="w-full text-xs px-2 py-1 rounded-lg bg-slate-900 border border-slate-700" placeholder="Notes" value={draft.notes || ""} onChange={(e) => setTaskEdits((prev) => ({ ...prev, [task.id]: { ...draft, notes: e.target.value } }))} />
+                              <button type="button" className="w-full text-xs px-2 py-1 rounded-lg bg-sky-700 hover:bg-sky-600" onClick={() => void saveTask(task.id).catch((err) => setError(err.message))}>Save</button>
+                            </div>
+                          )}
                         </article>
                       )
                     })}
