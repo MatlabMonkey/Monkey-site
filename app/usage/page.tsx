@@ -6,6 +6,7 @@ import {
   Archive,
   ArchiveRestore,
   ArrowLeft,
+  ClipboardList,
   Clock3,
   ExternalLink,
   FolderKanban,
@@ -46,9 +47,17 @@ type WorkReport = {
   published_at: string
 }
 
+type OpsRunLog = {
+  id: string
+  project_key: string
+  status: "draft" | "published"
+  trigger_confidence: number
+}
+
 type OverviewResponse = {
   focus: Focus | null
   reports: WorkReport[]
+  runs: OpsRunLog[]
   updates: Array<{ id: string }>
   tasks: Array<{ id: string }>
 }
@@ -79,6 +88,7 @@ export default function UsageProjectIndexPage() {
   const [focus, setFocus] = useState<Focus | null>(null)
   const [projects, setProjects] = useState<OpsProject[]>([])
   const [allReports, setAllReports] = useState<WorkReport[]>([])
+  const [allRuns, setAllRuns] = useState<OpsRunLog[]>([])
   const [allTaskCount, setAllTaskCount] = useState(0)
   const [allCheckpointCount, setAllCheckpointCount] = useState(0)
 
@@ -103,6 +113,15 @@ export default function UsageProjectIndexPage() {
     [allReports],
   )
 
+  const runCountByProject = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const run of allRuns) {
+      if (!run.project_key) continue
+      counts.set(run.project_key, (counts.get(run.project_key) || 0) + 1)
+    }
+    return counts
+  }, [allRuns])
+
   async function loadIndex() {
     setError("")
     setLoading(true)
@@ -122,6 +141,7 @@ export default function UsageProjectIndexPage() {
       setProjects(projectsJson.projects || [])
       setFocus(overviewJson.focus || null)
       setAllReports(overviewJson.reports || [])
+      setAllRuns(overviewJson.runs || [])
       setAllTaskCount(overviewJson.tasks?.length || 0)
       setAllCheckpointCount(overviewJson.updates?.length || 0)
     } catch (err) {
@@ -211,7 +231,7 @@ export default function UsageProjectIndexPage() {
 
         {error && <div className="rounded-xl border border-red-800 bg-red-900/30 p-3 text-red-200 text-sm">{error}</div>}
 
-        <section className="grid lg:grid-cols-4 gap-3">
+        <section className="grid lg:grid-cols-5 gap-3">
           <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
             <p className="text-xs uppercase tracking-wide text-slate-400">Active projects</p>
             <p className="mt-1 text-2xl font-semibold">{activeProjects.length}</p>
@@ -219,6 +239,10 @@ export default function UsageProjectIndexPage() {
           <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
             <p className="text-xs uppercase tracking-wide text-slate-400">Reports</p>
             <p className="mt-1 text-2xl font-semibold">{allReports.length}</p>
+          </div>
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+            <p className="text-xs uppercase tracking-wide text-slate-400">Run Logs</p>
+            <p className="mt-1 text-2xl font-semibold">{allRuns.length}</p>
           </div>
           <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
             <p className="text-xs uppercase tracking-wide text-slate-400">Checkpoints</p>
@@ -288,9 +312,8 @@ export default function UsageProjectIndexPage() {
           ) : (
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {activeProjects.map((project) => (
-                <Link
+                <article
                   key={project.id}
-                  href={`/usage/projects/${encodeURIComponent(project.project_key)}`}
                   className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 hover:bg-slate-800/80 transition"
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -309,10 +332,24 @@ export default function UsageProjectIndexPage() {
                     </span>
                   </div>
                   {project.description && <p className="text-xs text-slate-300 mt-3 line-clamp-2">{project.description}</p>}
-                  <span className="mt-4 inline-flex items-center gap-1 text-sm text-sky-300 hover:text-sky-200">
-                    Open project <ExternalLink className="w-3 h-3" />
-                  </span>
-                </Link>
+                  <div className="mt-4 flex items-center justify-between gap-2">
+                    <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full border border-slate-700 bg-slate-800 text-slate-300">
+                      <ClipboardList className="w-3 h-3" /> Run Logs: {runCountByProject.get(project.project_key) || 0}
+                    </span>
+                    <Link
+                      href={`/usage/projects/${encodeURIComponent(project.project_key)}`}
+                      className="inline-flex items-center gap-1 text-sm text-sky-300 hover:text-sky-200"
+                    >
+                      Open project <ExternalLink className="w-3 h-3" />
+                    </Link>
+                  </div>
+                  <Link
+                    href={`/usage/projects/${encodeURIComponent(project.project_key)}#run-logs`}
+                    className="mt-2 inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                  >
+                    <ClipboardList className="w-3 h-3" /> Run Logs
+                  </Link>
+                </article>
               ))}
             </div>
           )}

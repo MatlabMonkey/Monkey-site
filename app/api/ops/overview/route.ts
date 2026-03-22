@@ -52,9 +52,40 @@ export async function GET(request: NextRequest) {
       inferred_project_key: null,
     }))
 
+    let runsData: Array<Record<string, unknown>> = []
+
+    const runsRes = await supabase
+      .from("ops_runs")
+      .select("*, deep_report:project_reports(id, title, slug, report_url)")
+      .order("run_date", { ascending: false })
+      .limit(250)
+
+    if (!runsRes.error) {
+      runsData = (runsRes.data || []) as Array<Record<string, unknown>>
+    } else {
+      const fallbackRunsRes = await supabase.from("ops_runs").select("*").order("run_date", { ascending: false }).limit(250)
+      if (!fallbackRunsRes.error) {
+        runsData = (fallbackRunsRes.data || []).map((row) => ({
+          ...row,
+          deep_report: null,
+        })) as Array<Record<string, unknown>>
+      }
+    }
+
+    const runs = runsData.map((run) => ({
+      ...run,
+      resolved_project_key: resolveProjectKeyForEntity(
+        typeof run.project_key === "string" ? run.project_key : null,
+        null,
+        projects,
+      ),
+      inferred_project_key: null,
+    }))
+
     const scopedUpdates = updates.filter((update) => matchesProjectScope(update.resolved_project_key, scope))
     const scopedTasks = tasks.filter((task) => matchesProjectScope(task.resolved_project_key, scope))
     const scopedReports = reports.filter((report) => matchesProjectScope(report.resolved_project_key, scope))
+    const scopedRuns = runs.filter((run) => matchesProjectScope(run.resolved_project_key, scope))
 
     return NextResponse.json({
       scope,
@@ -62,6 +93,7 @@ export async function GET(request: NextRequest) {
       updates: scopedUpdates,
       tasks: scopedTasks,
       reports: scopedReports,
+      runs: scopedRuns,
       projects,
     })
   } catch (error) {

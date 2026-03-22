@@ -10,6 +10,7 @@ import {
   ChevronDown,
   ChevronUp,
   CircleDashed,
+  ClipboardList,
   Clock3,
   ExternalLink,
   GitBranch,
@@ -86,6 +87,28 @@ type WorkReport = {
   published_at: string
 }
 
+type OpsRunLog = {
+  id: string
+  project_key: string
+  title: string
+  summary: string
+  status: "draft" | "published"
+  trigger_source: "auto_policy" | "manual" | "subagent" | "push"
+  trigger_confidence: number
+  trigger_reasons: string[]
+  run_date: string
+  slug: string | null
+  deep_report_id: string | null
+  deep_report_slug: string | null
+  deep_report_url: string | null
+  deep_report?: {
+    id: string
+    title: string
+    slug: string | null
+    report_url: string
+  } | null
+}
+
 type GitHubData = {
   configured: boolean
   hint?: string
@@ -102,8 +125,10 @@ type ProjectOverviewResponse = {
   updates: WorkUpdate[]
   tasks: WorkTask[]
   reports: WorkReport[]
+  runs: OpsRunLog[]
   summary: {
     reports: number
+    run_logs: number
     checkpoints: number
     tasks: number
   }
@@ -146,6 +171,14 @@ function getPreferredReportUrl(report: WorkReport): string {
   return report.report_url
 }
 
+function getRunDeepReportUrl(run: OpsRunLog): string | null {
+  if (run.deep_report?.slug) return `/reports/${run.deep_report.slug}`
+  if (run.deep_report_slug) return `/reports/${run.deep_report_slug}`
+  if (run.deep_report?.report_url) return run.deep_report.report_url
+  if (run.deep_report_url) return run.deep_report_url
+  return null
+}
+
 function isInternalUrl(url: string): boolean {
   return url.startsWith("/")
 }
@@ -165,8 +198,9 @@ export default function UsageProjectPage() {
   const [updates, setUpdates] = useState<WorkUpdate[]>([])
   const [tasks, setTasks] = useState<WorkTask[]>([])
   const [reports, setReports] = useState<WorkReport[]>([])
+  const [runs, setRuns] = useState<OpsRunLog[]>([])
   const [github, setGithub] = useState<GitHubData | null>(null)
-  const [summary, setSummary] = useState({ reports: 0, checkpoints: 0, tasks: 0 })
+  const [summary, setSummary] = useState({ reports: 0, run_logs: 0, checkpoints: 0, tasks: 0 })
 
   const [isEditingProjectDetail, setIsEditingProjectDetail] = useState(false)
   const [isSavingProjectDetail, setIsSavingProjectDetail] = useState(false)
@@ -219,6 +253,8 @@ export default function UsageProjectPage() {
 
   const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
   const [taskEdits, setTaskEdits] = useState<Record<string, WorkTask>>({})
+  const [expandedRunIds, setExpandedRunIds] = useState<Record<string, boolean>>({})
+  const [publishingRunId, setPublishingRunId] = useState<string | null>(null)
 
   const groupedTasks = useMemo(() => {
     return TASK_STATUSES.reduce(
@@ -249,8 +285,9 @@ export default function UsageProjectPage() {
       setUpdates(json.updates || [])
       setTasks(json.tasks || [])
       setReports(json.reports || [])
+      setRuns(json.runs || [])
       setGithub(json.github || null)
-      setSummary(json.summary || { reports: 0, checkpoints: 0, tasks: 0 })
+      setSummary(json.summary || { reports: 0, run_logs: 0, checkpoints: 0, tasks: 0 })
 
       setProjectDetailDraft({
         project_label: json.project.project_label,
@@ -506,6 +543,30 @@ export default function UsageProjectPage() {
     setEditingTaskId(null)
   }
 
+  async function publishRunLog(runId: string) {
+    if (!project) return
+
+    setPublishingRunId(runId)
+    setError("")
+
+    try {
+      const response = await fetch(`/api/ops/runs/${runId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "published" }),
+      })
+
+      const json = (await response.json()) as { error?: string }
+      if (!response.ok) throw new Error(json.error || "Failed to publish run log")
+
+      await loadProjectPage(project.project_key)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to publish run log")
+    } finally {
+      setPublishingRunId(null)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
@@ -602,10 +663,14 @@ export default function UsageProjectPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 text-sm">
+          <div className="grid md:grid-cols-4 gap-2 text-sm">
             <div className="rounded-xl border border-slate-800 bg-slate-900 p-3">
               <p className="text-xs uppercase tracking-wide text-slate-400">Reports</p>
               <p className="mt-1 text-lg font-semibold">{summary.reports}</p>
+            </div>
+            <div className="rounded-xl border border-slate-800 bg-slate-900 p-3">
+              <p className="text-xs uppercase tracking-wide text-slate-400">Run Logs</p>
+              <p className="mt-1 text-lg font-semibold">{summary.run_logs}</p>
             </div>
             <div className="rounded-xl border border-slate-800 bg-slate-900 p-3">
               <p className="text-xs uppercase tracking-wide text-slate-400">Checkpoints</p>
@@ -914,6 +979,121 @@ export default function UsageProjectPage() {
                 {isPublishingReport ? "Publishing..." : "Publish report"}
               </button>
             </form>
+          )}
+        </section>
+
+        <section id="run-logs" className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5 md:p-6 space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg md:text-xl font-semibold inline-flex items-center gap-2">
+                <ClipboardList className="w-5 h-5" /> Run Logs
+              </h2>
+              <p className="text-sm text-slate-400 mt-1">Ops layer: lightweight run summaries linked to deeper reports.</p>
+            </div>
+            <span className="text-xs px-2 py-1 rounded-full border border-slate-700 bg-slate-800 text-slate-300">
+              {runs.length} total
+            </span>
+          </div>
+
+          {runs.length === 0 ? (
+            <p className="text-sm text-slate-400">No run logs for this project yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {runs.map((run) => {
+                const deepReportUrl = getRunDeepReportUrl(run)
+                const isExpanded = Boolean(expandedRunIds[run.id])
+
+                return (
+                  <article key={run.id} className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4 space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="font-medium text-sm md:text-base">{run.title}</p>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span
+                          className={`text-xs px-2 py-1 rounded-full border ${
+                            run.status === "published"
+                              ? "border-emerald-700 bg-emerald-900/30 text-emerald-200"
+                              : "border-amber-700 bg-amber-900/30 text-amber-200"
+                          }`}
+                        >
+                          {run.status}
+                        </span>
+                        <span className="text-xs px-2 py-1 rounded-full border border-slate-700 bg-slate-800 text-slate-300">
+                          confidence {Math.max(0, Math.min(100, Math.round(run.trigger_confidence || 0)))}
+                        </span>
+                        {run.status === "draft" && (
+                          <button
+                            type="button"
+                            disabled={publishingRunId === run.id}
+                            onClick={() => void publishRunLog(run.id)}
+                            className="text-xs px-2 py-1 rounded-lg border border-sky-700 bg-sky-900/40 text-sky-200 hover:bg-sky-900/60 disabled:opacity-60"
+                          >
+                            {publishingRunId === run.id ? "Publishing..." : "Quick publish"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <p className="text-sm text-slate-300">{run.summary}</p>
+                    <div className="flex flex-wrap gap-3 text-xs text-slate-400">
+                      <span>Run date: {formatDateTime(run.run_date)}</span>
+                      <span>Trigger: {run.trigger_source}</span>
+                      {run.slug && <span>slug: {run.slug}</span>}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      {deepReportUrl && (
+                        isInternalUrl(deepReportUrl) ? (
+                          <Link
+                            href={deepReportUrl}
+                            className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg border border-slate-700 bg-slate-800 text-sky-300 hover:text-sky-200"
+                          >
+                            Open deep report
+                          </Link>
+                        ) : (
+                          <a
+                            href={deepReportUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg border border-slate-700 bg-slate-800 text-sky-300 hover:text-sky-200"
+                          >
+                            Open deep report <ExternalLink className="w-3 h-3" />
+                          </a>
+                        )
+                      )}
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedRunIds((prev) => ({
+                            ...prev,
+                            [run.id]: !prev[run.id],
+                          }))
+                        }
+                        className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700"
+                      >
+                        {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                        {isExpanded ? "Hide details" : "Show details"}
+                      </button>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="rounded-xl border border-slate-800 bg-slate-900 p-3 space-y-2">
+                        <p className="text-xs uppercase tracking-wide text-slate-400">Trigger reasons</p>
+                        {run.trigger_reasons.length === 0 ? (
+                          <p className="text-xs text-slate-500">No trigger reasons recorded.</p>
+                        ) : (
+                          <ul className="list-disc pl-5 text-xs text-slate-300 space-y-1">
+                            {run.trigger_reasons.map((reason, index) => (
+                              <li key={`${run.id}-${index}`}>{reason}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    )}
+                  </article>
+                )
+              })}
+            </div>
           )}
         </section>
 

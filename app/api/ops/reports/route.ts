@@ -8,15 +8,43 @@ import {
   parseProjectScope,
   resolveProjectKeyForEntity,
 } from "../../../../lib/server/opsProjects"
-import {
-  buildInternalReportPath,
-  normalizeReportInput,
-  ReportValidationError,
-  slugifyReportTitle,
-} from "../../../../lib/server/opsReports"
+import { buildInternalReportPath, normalizeReportInput, ReportValidationError } from "../../../../lib/server/opsReports"
+import { buildProjectDateTitleSlug, ensureUniqueSlug } from "../../../../lib/server/slugStrategy"
 
 const DEFAULT_LIMIT = 100
 const MAX_LIMIT = 200
+
+async function upsertProjectReportFromWorkReport(report: Record<string, unknown>) {
+  const payload = {
+    project_key: String(report.project_key || ""),
+    title: String(report.title || "Untitled report"),
+    summary: typeof report.summary === "string" ? report.summary : null,
+    kind: "deep_report",
+    report_url: String(report.report_url || ""),
+    slug: typeof report.slug === "string" ? report.slug : null,
+    source_work_report_id: String(report.id || ""),
+    metadata: {
+      report_type: report.report_type,
+      published_at: report.published_at,
+      published_by: report.published_by,
+    },
+    updated_at: new Date().toISOString(),
+  }
+
+  if (!payload.project_key || !payload.report_url || !payload.source_work_report_id) return
+
+  const { error } = await supabase.from("project_reports").upsert(payload, {
+    onConflict: "source_work_report_id",
+    ignoreDuplicates: false,
+  })
+
+  if (!error) return
+
+  const maybeMissingRelation = (error as { code?: string }).code === "42P01"
+  if (maybeMissingRelation) return
+
+  throw error
+}
 
 async function findReportBySlug(slug: string) {
   const { data, error } = await supabase.from("work_reports").select("id").eq("slug", slug).maybeSingle()
@@ -29,15 +57,14 @@ function hasOnSiteContent(payload: Record<string, unknown>): boolean {
 }
 
 async function generateUniqueSlug(baseSlug: string): Promise<string> {
-  const normalizedBase = baseSlug || "report"
-
-  for (let index = 0; index < 50; index += 1) {
-    const candidate = index === 0 ? normalizedBase : `${normalizedBase}-${index + 1}`
-    const existing = await findReportBySlug(candidate)
-    if (!existing) return candidate
+  try {
+    return await ensureUniqueSlug(baseSlug, async (candidate) => {
+      const existing = await findReportBySlug(candidate)
+      return Boolean(existing)
+    })
+  } catch {
+    throw new ReportValidationError("Unable to generate a unique slug; please provide one explicitly")
   }
-
-  throw new ReportValidationError("Unable to generate a unique slug; please provide one explicitly")
 }
 
 export async function GET(request: NextRequest) {
@@ -89,7 +116,11 @@ export async function POST(request: NextRequest) {
     let slug = typeof payload.slug === "string" ? payload.slug : null
 
     if (!slug && hasOnSiteContent(payload) && typeof payload.title === "string") {
-      const generatedBase = slugifyReportTitle(payload.title)
+      const generatedBase = buildProjectDateTitleSlug({
+        projectKey: String(payload.project_key || "project"),
+        title: payload.title,
+        date: typeof payload.published_at === "string" ? payload.published_at : new Date().toISOString(),
+      })
       slug = await generateUniqueSlug(generatedBase)
       payload.slug = slug
     }
@@ -115,6 +146,8 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (error) throw error
+
+    await upsertProjectReportFromWorkReport(data as Record<string, unknown>)
 
     return NextResponse.json({ report: data }, { status: 201 })
   } catch (error) {

@@ -71,6 +71,38 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       resolved_project_key: selectedProject.project_key,
     }))
 
+    let runsData: Array<Record<string, unknown>> = []
+
+    const runsRes = await supabase
+      .from("ops_runs")
+      .select("*, deep_report:project_reports(id, title, slug, report_url)")
+      .eq("project_key", selectedProject.project_key)
+      .order("run_date", { ascending: false })
+      .limit(120)
+
+    if (!runsRes.error) {
+      runsData = (runsRes.data || []) as Array<Record<string, unknown>>
+    } else {
+      const fallbackRunsRes = await supabase
+        .from("ops_runs")
+        .select("*")
+        .eq("project_key", selectedProject.project_key)
+        .order("run_date", { ascending: false })
+        .limit(120)
+
+      if (!fallbackRunsRes.error) {
+        runsData = (fallbackRunsRes.data || []).map((row) => ({
+          ...row,
+          deep_report: null,
+        })) as Array<Record<string, unknown>>
+      }
+    }
+
+    const runs = runsData.map((run) => ({
+      ...run,
+      resolved_project_key: selectedProject.project_key,
+    }))
+
     return NextResponse.json({
       scope: { mode: "project", projectKey: selectedProject.project_key },
       focus: focusRes.data || null,
@@ -79,8 +111,10 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
       updates,
       tasks,
       reports,
+      runs,
       summary: {
         reports: reports.length,
+        run_logs: runs.length,
         checkpoints: updates.length,
         tasks: tasks.length,
       },

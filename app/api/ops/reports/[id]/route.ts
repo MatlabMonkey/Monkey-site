@@ -7,6 +7,38 @@ import {
   ReportValidationError,
 } from "../../../../../lib/server/opsReports"
 
+async function upsertProjectReportFromWorkReport(report: Record<string, unknown>) {
+  const payload = {
+    project_key: String(report.project_key || ""),
+    title: String(report.title || "Untitled report"),
+    summary: typeof report.summary === "string" ? report.summary : null,
+    kind: "deep_report",
+    report_url: String(report.report_url || ""),
+    slug: typeof report.slug === "string" ? report.slug : null,
+    source_work_report_id: String(report.id || ""),
+    metadata: {
+      report_type: report.report_type,
+      published_at: report.published_at,
+      published_by: report.published_by,
+    },
+    updated_at: new Date().toISOString(),
+  }
+
+  if (!payload.project_key || !payload.report_url || !payload.source_work_report_id) return
+
+  const { error } = await supabase.from("project_reports").upsert(payload, {
+    onConflict: "source_work_report_id",
+    ignoreDuplicates: false,
+  })
+
+  if (!error) return
+
+  const maybeMissingRelation = (error as { code?: string }).code === "42P01"
+  if (maybeMissingRelation) return
+
+  throw error
+}
+
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
@@ -67,6 +99,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const { data, error } = await supabase.from("work_reports").update(updates).eq("id", id).select("*").single()
 
     if (error) throw error
+
+    await upsertProjectReportFromWorkReport(data as Record<string, unknown>)
 
     return NextResponse.json({ report: data })
   } catch (error) {

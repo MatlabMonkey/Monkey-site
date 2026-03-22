@@ -41,7 +41,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (nextProjectKey !== oldProjectKey) {
       const timestamp = new Date().toISOString()
 
-      const [reportRes, taskRes, updateRes] = await Promise.all([
+      const [reportRes, taskRes, updateRes, runRes, projectReportRes] = await Promise.all([
         supabase
           .from("work_reports")
           .update({ project_key: nextProjectKey, updated_at: timestamp })
@@ -54,11 +54,21 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
           .from("work_updates")
           .update({ project_key: nextProjectKey, updated_at: timestamp })
           .eq("project_key", oldProjectKey),
+        supabase
+          .from("ops_runs")
+          .update({ project_key: nextProjectKey, updated_at: timestamp })
+          .eq("project_key", oldProjectKey),
+        supabase
+          .from("project_reports")
+          .update({ project_key: nextProjectKey, updated_at: timestamp })
+          .eq("project_key", oldProjectKey),
       ])
 
       if (reportRes.error) throw reportRes.error
       if (taskRes.error) throw taskRes.error
       if (updateRes.error) throw updateRes.error
+      if (runRes.error) throw runRes.error
+      if (projectReportRes.error) throw projectReportRes.error
     }
 
     return NextResponse.json({ project: data })
