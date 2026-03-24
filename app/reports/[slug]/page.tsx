@@ -42,7 +42,8 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
   const hasRenderableMarkdown = report.report_type === "md" && Boolean(report.content_md)
   const hasRenderableJson = Boolean(report.content_json)
 
-  const embedPath = `/reports/${report.slug}/embed`
+  const embedPath = `/reports/${slug}/embed`
+  const rawHtmlPath = hasRenderableHtml ? `/reports/raw/${slug}` : null
   const sourceUrl = report.report_url
   const showSource = isExternalUrl(sourceUrl)
 
@@ -85,15 +86,24 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
             </div>
           )}
 
-          {showSource && (
-            <a
-              href={sourceUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1 text-sm text-sky-300 hover:text-sky-200"
-            >
-              Open original source <ExternalLink className="h-4 w-4" />
-            </a>
+          {(rawHtmlPath || showSource) && (
+            <div className="flex flex-wrap items-center gap-4">
+              {rawHtmlPath && (
+                <Link href={rawHtmlPath} className="inline-flex items-center gap-1 text-sm text-emerald-300 hover:text-emerald-200">
+                  Open raw HTML view <ExternalLink className="h-4 w-4" />
+                </Link>
+              )}
+              {showSource && (
+                <a
+                  href={sourceUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-sm text-sky-300 hover:text-sky-200"
+                >
+                  Open original source <ExternalLink className="h-4 w-4" />
+                </a>
+              )}
+            </div>
           )}
         </header>
 

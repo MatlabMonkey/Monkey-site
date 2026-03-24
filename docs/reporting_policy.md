@@ -141,3 +141,7 @@ Project page (`/usage/projects/[projectKey]`):
 - Draft rows include **Quick publish** action.
 - Trigger confidence + trigger reasons are shown.
 - If linked deep report exists, row shows deep report link.
+
+Report page (`/reports/{slug}`):
+- HTML reports include an **Open raw HTML view** link.
+- Raw mode route is `/reports/raw/{slug}` and serves the stored `html_content` full-page (no dashboard wrapper), using `asset_base_url` for relative asset resolution.

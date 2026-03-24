@@ -5,6 +5,11 @@ export type ReportRenderInput = {
   fallbackReportUrl?: string | null
 }
 
+type ReportRenderOptions = {
+  sanitize?: boolean
+  ensureViewport?: boolean
+}
+
 function escapeHtml(value: string): string {
   return value
     .replaceAll("&", "&amp;")
@@ -57,17 +62,39 @@ function normalizeBaseHref(value: string): string {
   return value
 }
 
+function hasHeadTag(html: string): boolean {
+  return /<head[\s>]/i.test(html)
+}
+
+function injectIntoHead(html: string, snippet: string): string {
+  if (hasHeadTag(html)) {
+    return html.replace(/<head([^>]*)>/i, `<head$1>${snippet}`)
+  }
+
+  if (/<html[\s>]/i.test(html)) {
+    return html.replace(/<html([^>]*)>/i, `<html$1><head>${snippet}</head>`)
+  }
+
+  return html
+}
+
+function ensureViewportMeta(html: string): string {
+  if (/<meta[^>]+name=["']viewport["'][^>]*>/i.test(html)) return html
+
+  return injectIntoHead(html, '<meta name="viewport" content="width=device-width, initial-scale=1" />')
+}
+
 function injectBaseHref(html: string, baseHref: string | null): string {
   if (!baseHref) return html
 
   const safeBase = normalizeBaseHref(baseHref)
   const baseTag = `<base href="${escapeAttribute(safeBase)}" />`
 
-  if (/<head[\s>]/i.test(html)) {
-    return html.replace(/<head([^>]*)>/i, `<head$1>${baseTag}`)
+  if (/<base[\s>]/i.test(html)) {
+    return html.replace(/<base\b[^>]*>/i, baseTag)
   }
 
-  return html.replace(/<html([^>]*)>/i, `<html$1><head>${baseTag}</head>`)
+  return injectIntoHead(html, baseTag)
 }
 
 function inferAssetBaseUrl(fallbackReportUrl: string | null | undefined): string | null {
@@ -85,10 +112,31 @@ function inferAssetBaseUrl(fallbackReportUrl: string | null | undefined): string
   }
 }
 
-export function buildRenderableReportHtml(input: ReportRenderInput): string {
-  const sanitized = sanitizeHtml(input.htmlContent)
-  const document = ensureHtmlDocument(sanitized, input.title)
-  const baseHref = input.assetBaseUrl || inferAssetBaseUrl(input.fallbackReportUrl)
+function buildReportHtml(input: ReportRenderInput, options: ReportRenderOptions): string {
+  const shouldSanitize = options.sanitize ?? true
+  const shouldEnsureViewport = options.ensureViewport ?? true
 
+  const htmlContent = shouldSanitize ? sanitizeHtml(input.htmlContent) : input.htmlContent
+  let document = ensureHtmlDocument(htmlContent, input.title)
+
+  if (shouldEnsureViewport) {
+    document = ensureViewportMeta(document)
+  }
+
+  const baseHref = input.assetBaseUrl || inferAssetBaseUrl(input.fallbackReportUrl)
   return injectBaseHref(document, baseHref)
+}
+
+export function buildRenderableReportHtml(input: ReportRenderInput): string {
+  return buildReportHtml(input, {
+    sanitize: true,
+    ensureViewport: true,
+  })
+}
+
+export function buildRawStandaloneReportHtml(input: ReportRenderInput): string {
+  return buildReportHtml(input, {
+    sanitize: false,
+    ensureViewport: true,
+  })
 }
