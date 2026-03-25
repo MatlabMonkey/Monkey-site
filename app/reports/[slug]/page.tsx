@@ -47,7 +47,7 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
   const sourceUrl = report.report_url
   const showSource = isExternalUrl(sourceUrl)
 
-  const projectPath = `/usage/projects/${report.project_key}`
+  const projectPath = report.project_key ? `/ops/projects/${encodeURIComponent(report.project_key)}` : "/ops"
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -58,7 +58,7 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
               <ArrowLeft className="h-4 w-4" />
               Back to Project
             </Link>
-            <Link href="/usage" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-300">
+            <Link href="/ops" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-300">
               Ops index
             </Link>
           </div>

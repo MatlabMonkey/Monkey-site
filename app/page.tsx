@@ -580,7 +580,7 @@ export default function Home() {
               <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Ask Zach anything</p>
             </Link>
             <Link
-              href="/usage"
+              href="/ops"
               className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center   hover:scale-105"
             >
               <Activity className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
