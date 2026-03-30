@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const anthropicKey = process.env.ANTHROPIC_SECRET_API_KEY || process.env.ANTHROPIC_API_KEY;
@@ -143,15 +146,32 @@ export async function POST() {
       macros: recipe.macros,
     };
 
-    const { error: dbError } = await supabase
+    const { data: savedRecipe, error: dbError } = await supabase
       .from('meal_prep_weekly')
-      .upsert(payload, { onConflict: 'week_starting' });
+      .upsert(payload, { onConflict: 'week_starting' })
+      .select('*')
+      .single();
 
     if (dbError) {
-      return NextResponse.json({ error: `Database error: ${dbError.message}` }, { status: 500 });
+      return NextResponse.json(
+        { error: `Database error: ${dbError.message}` },
+        {
+          status: 500,
+          headers: {
+            'Cache-Control': 'no-store, max-age=0',
+          },
+        }
+      );
     }
 
-    return NextResponse.json({ recipe: payload, message: 'Recipe generated!' });
+    return NextResponse.json(
+      { recipe: savedRecipe ?? payload, message: 'Recipe generated!' },
+      {
+        headers: {
+          'Cache-Control': 'no-store, max-age=0',
+        },
+      }
+    );
 
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

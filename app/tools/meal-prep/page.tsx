@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
 import { ArrowLeft, Clock, Users, Flame, Check, ShoppingCart, ChefHat, RefreshCw, Loader2 } from "lucide-react"
 
@@ -47,32 +47,66 @@ export default function MealPrepPage() {
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set())
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchLatestRecipe = useCallback(async ({ showLoading = false, resetChecklist = false }: { showLoading?: boolean; resetChecklist?: boolean } = {}) => {
+    if (showLoading) setLoading(true)
+
+    try {
+      const res = await fetch(`/api/meal-prep?t=${Date.now()}`, { cache: 'no-store' })
+      const data = await res.json().catch(() => ({}))
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to fetch meal prep recipe')
+      }
+
+      setRecipe(data.recipe ?? null)
+
+      if (resetChecklist) {
+        setCheckedItems(new Set())
+      }
+
+      return data.recipe ?? null
+    } catch (err: any) {
+      const message = err?.message || 'Unable to load meal prep recipe right now.'
+      setError(message)
+      console.error('Failed to fetch recipe:', err)
+      return null
+    } finally {
+      if (showLoading) setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-    async function fetchRecipe() {
-      try {
-        const res = await fetch('/api/meal-prep')
-        const data = await res.json()
-        if (data.recipe) setRecipe(data.recipe)
-      } catch (err) {
-        console.error('Failed to fetch recipe:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchRecipe()
-  }, [])
+    void fetchLatestRecipe({ showLoading: true })
+  }, [fetchLatestRecipe])
 
   const generateRecipe = async () => {
     setGenerating(true)
+    setError(null)
+
     try {
-      const res = await fetch('/api/meal-prep/generate', { method: 'POST' })
-      const data = await res.json()
-      if (data.recipe) {
+      const res = await fetch('/api/meal-prep/generate', {
+        method: 'POST',
+        cache: 'no-store',
+      })
+      const data = await res.json().catch(() => ({}))
+
+      if (!res.ok || !data.recipe) {
+        throw new Error(data.error || 'Failed to generate a new meal prep recipe')
+      }
+
+      // Re-fetch canonical data after mutation to prevent stale UI/race conditions.
+      const latest = await fetchLatestRecipe({ resetChecklist: true })
+
+      // Fallback to response payload if canonical fetch fails.
+      if (!latest) {
         setRecipe(data.recipe)
         setCheckedItems(new Set())
       }
-    } catch (err) {
+    } catch (err: any) {
+      const message = err?.message || 'Unable to generate a new recipe right now.'
+      setError(message)
       console.error('Failed to generate recipe:', err)
     } finally {
       setGenerating(false)
@@ -121,9 +155,12 @@ export default function MealPrepPage() {
             <ChefHat className="w-16 h-16 mx-auto text-[rgb(var(--brand))] mb-4" />
             <h1 className="text-3xl font-bold mb-2">No Recipe Yet</h1>
             <p className="text-[rgb(var(--text-muted))] max-w-md mx-auto mb-6">
-              Your weekly meal prep recipe will appear here Sunday at 9am. 
+              Your weekly meal prep recipe will appear here Sunday at 9am.
               Or generate one now!
             </p>
+            {error && (
+              <p className="mb-4 text-sm text-red-300">{error}</p>
+            )}
             <button
               onClick={generateRecipe}
               disabled={generating}
@@ -189,7 +226,11 @@ export default function MealPrepPage() {
               )}
             </button>
           </div>
-          
+
+          {error && (
+            <p className="mt-3 text-sm text-red-300">{error}</p>
+          )}
+
           {/* Stats */}
           <div className="flex flex-wrap gap-4 mt-4">
             <div className="flex items-center gap-2 text-[rgb(var(--text-muted))]">
@@ -250,8 +291,8 @@ export default function MealPrepPage() {
                         className={`flex items-center gap-3 cursor-pointer group ${isChecked ? 'opacity-50' : ''}`}
                       >
                         <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
-                          isChecked 
-                            ? 'bg-[rgb(var(--brand))] border-[rgb(var(--brand))]' 
+                          isChecked
+                            ? 'bg-[rgb(var(--brand))] border-[rgb(var(--brand))]'
                             : 'border-[rgb(var(--border))] group-hover:border-[rgb(var(--brand))]'
                         }`}>
                           {isChecked && <Check className="w-3 h-3 text-[rgb(var(--bg))]" />}
