@@ -76,6 +76,51 @@ Respond ONLY with valid JSON in this exact format:
 IMPORTANT: macros are PER SERVING. Ensure calories actually add up to 1,100-1,200 per serving given the ingredient quantities divided by 10.`;
 }
 
+function extractFirstJsonObject(text: string): string | null {
+  const start = text.indexOf('{')
+  if (start === -1) return null
+
+  let depth = 0
+  let inString = false
+  let escaped = false
+
+  for (let i = start; i < text.length; i++) {
+    const ch = text[i]
+
+    if (inString) {
+      if (escaped) {
+        escaped = false
+      } else if (ch === '\\') {
+        escaped = true
+      } else if (ch === '"') {
+        inString = false
+      }
+      continue
+    }
+
+    if (ch === '"') {
+      inString = true
+      continue
+    }
+
+    if (ch === '{') depth++
+    if (ch === '}') {
+      depth--
+      if (depth === 0) return text.slice(start, i + 1)
+    }
+  }
+
+  return null
+}
+
+function sanitizeLikelyJson(raw: string): string {
+  return raw
+    .replace(/```json\s*/gi, '')
+    .replace(/```/g, '')
+    .replace(/,\s*([}\]])/g, '$1')
+    .trim()
+}
+
 export async function POST() {
   if (!anthropicKey) {
     return NextResponse.json({ error: 'ANTHROPIC_SECRET_API_KEY not configured' }, { status: 500 });
@@ -122,13 +167,27 @@ export async function POST() {
     }
 
     const data = await response.json();
-    const content = data.content[0]?.text;
-    const jsonMatch = content.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      return NextResponse.json({ error: 'Failed to parse recipe' }, { status: 500 });
+    const content = data.content?.[0]?.text;
+    if (!content || typeof content !== 'string') {
+      return NextResponse.json({ error: 'Model returned empty recipe content' }, { status: 500 });
     }
 
-    const recipe = JSON.parse(jsonMatch[0]);
+    const extracted = extractFirstJsonObject(content);
+    if (!extracted) {
+      return NextResponse.json({ error: 'Failed to locate JSON recipe in model output' }, { status: 500 });
+    }
+
+    let recipe: any;
+    try {
+      recipe = JSON.parse(extracted);
+    } catch {
+      const repaired = sanitizeLikelyJson(extracted);
+      recipe = JSON.parse(repaired);
+    }
+
+    if (!recipe?.recipe_name || !Array.isArray(recipe?.ingredients) || !Array.isArray(recipe?.instructions) || !recipe?.macros) {
+      return NextResponse.json({ error: 'Recipe JSON missing required fields' }, { status: 500 });
+    }
 
     const today = new Date();
     const sunday = new Date(today);
