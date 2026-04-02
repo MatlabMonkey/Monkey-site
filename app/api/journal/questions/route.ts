@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { supabase } from "../../../../lib/supabaseClient";
 import { JOURNAL_QUESTION_SET } from "../../../../lib/journalSchema";
+import { getLocalDateString } from "../../../../lib/date";
 
 /**
  * GET /api/journal/questions?date=YYYY-MM-DD
@@ -9,7 +10,7 @@ import { JOURNAL_QUESTION_SET } from "../../../../lib/journalSchema";
  */
 export async function GET(request: NextRequest) {
   try {
-    const date = request.nextUrl.searchParams.get("date") || new Date().toISOString().split("T")[0];
+    const date = request.nextUrl.searchParams.get("date") || getLocalDateString();
 
     const { data: rows, error } = await supabase
       .from("question_catalog")

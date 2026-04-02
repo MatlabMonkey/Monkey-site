@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { saveDraft } from "../../../../lib/journalDb";
+import { getLocalDateString } from "../../../../lib/date";
+import { normalizeJournalAnswers } from "../../../../lib/journalValidation";
 
 /**
  * POST /api/journal/draft
@@ -18,7 +20,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const result = await saveDraft(date, answers)
+    const normalizedAnswers = normalizeJournalAnswers(answers)
+    const result = await saveDraft(date, normalizedAnswers)
 
     return NextResponse.json(
       {
@@ -42,7 +45,7 @@ export async function POST(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    const dateStr = request.nextUrl.searchParams.get("date") || new Date().toISOString().split("T")[0];
+    const dateStr = request.nextUrl.searchParams.get("date") || getLocalDateString();
     const body = await request.json();
     const { answers } = body;
 
@@ -50,7 +53,8 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Invalid request body. Expected { answers }" }, { status: 400 });
     }
 
-    const result = await saveDraft(dateStr, answers);
+    const normalizedAnswers = normalizeJournalAnswers(answers);
+    const result = await saveDraft(dateStr, normalizedAnswers);
     return NextResponse.json({ entry: result.entry, answers: result.answers });
   } catch (error) {
     console.error("PATCH /api/journal/draft:", error);

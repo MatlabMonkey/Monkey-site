@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { getEntry } from "../../../../lib/journalDb";
+import { getLocalDateString } from "../../../../lib/date";
 
 /**
  * GET /api/journal/entry?date=YYYY-MM-DD
@@ -8,7 +9,7 @@ import { getEntry } from "../../../../lib/journalDb";
  */
 export async function GET(request: NextRequest) {
   try {
-    const dateStr = request.nextUrl.searchParams.get("date") || new Date().toISOString().split("T")[0];
+    const dateStr = request.nextUrl.searchParams.get("date") || getLocalDateString();
     const { entry, answers } = await getEntry(dateStr);
     return NextResponse.json({ entry, answers, date: dateStr });
   } catch (error) {

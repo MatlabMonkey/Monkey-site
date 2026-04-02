@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { submitEntry } from "../../../../lib/journalDb";
+import { normalizeJournalAnswers } from "../../../../lib/journalValidation";
 
 /**
  * POST /api/journal/submit
@@ -15,7 +16,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid request body. Expected { date, answers }" }, { status: 400 });
     }
 
-    const result = await submitEntry(date, answers);
+    const normalizedAnswers = normalizeJournalAnswers(answers);
+    const result = await submitEntry(date, normalizedAnswers);
     return NextResponse.json({ entry: result.entry, answers: result.answers }, { status: 200 });
   } catch (error) {
     console.error("POST /api/journal/submit:", error);

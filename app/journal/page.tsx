@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import PinGate from "../components/PinGate"
 import { JOURNAL_QUESTION_SET } from "../../lib/journalSchema"
+import { getLocalDateString } from "../../lib/date"
 import { ArrowLeft, ChevronLeft, ChevronRight, CheckCircle2, Save, Loader2, Search, Compass } from "lucide-react"
 
 type Question = {
@@ -42,8 +43,8 @@ function JournalPageContent() {
   const [loadedEntryExists, setLoadedEntryExists] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Get date for entry (default to today)
-  const entryDate = dateParam || new Date().toISOString().split("T")[0]
+  // Get date for entry (default to today's local date)
+  const entryDate = dateParam || getLocalDateString()
   const currentQuestion = questions[currentQuestionIndex]
   const totalQuestions = questions.length
   const progress = totalQuestions > 0 ? ((currentQuestionIndex + 1) / totalQuestions) * 100 : 0
@@ -110,9 +111,11 @@ function JournalPageContent() {
   // Pre-fill day_date from entry date when starting a new entry
   useEffect(() => {
     if (!draftLoaded || loadedEntryExists) return
-    if (answers.day_date != null && answers.day_date !== "") return
-    setAnswers((prev) => ({ ...prev, day_date: entryDate }))
-  }, [draftLoaded, loadedEntryExists, entryDate, answers.day_date])
+    setAnswers((prev) => {
+      if (prev.day_date != null && prev.day_date !== "") return prev
+      return { ...prev, day_date: entryDate }
+    })
+  }, [draftLoaded, loadedEntryExists, entryDate])
 
   // Auto-save draft when answers change (debounced)
   useEffect(() => {
