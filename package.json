@@ -6,7 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "db:push-todos": "node scripts/push-todos-migration.js",
     "import-legacy": "node scripts/import-legacy-journal.js",
     "test:webhook:todo": "bash scripts/test-todo-webhook.sh"
@@ -28,6 +28,8 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "dotenv": "^17.2.3",
+    "eslint": "9.39.4",
+    "eslint-config-next": "16.2.2",
     "supabase": "^2.72.8",
     "tailwindcss": "^4",
     "typescript": "^5"
