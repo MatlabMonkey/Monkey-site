@@ -26,6 +26,8 @@ Use for:
 
 Rule:
 - If work matters later, it must exist in GitHub (issue, PR, or doc).
+- Project-specific docs/specs must live in that project’s repo.
+- Shared process docs/playbooks can live in a shared/home docs repo.
 
 ### Monkey-site / Ops pages (visibility layer)
 Use for:
