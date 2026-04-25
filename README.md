@@ -1,5 +1,11 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Collaboration
+
+- Playbook: [`docs/COLLAB_PLAYBOOK.md`](docs/COLLAB_PLAYBOOK.md)
+- Standard task issue template: `.github/ISSUE_TEMPLATE/work-item.yml`
+- PR template: `.github/pull_request_template.md`
+
 ## Getting Started
 
 First, run the development server:

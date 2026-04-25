@@ -1,0 +1,59 @@
+name: Work Item
+description: Standard task request for features, fixes, docs, or research
+title: "[Work]: "
+labels: ["work-item"]
+body:
+  - type: dropdown
+    id: work_type
+    attributes:
+      label: Work type
+      options:
+        - Feature
+        - Bug fix
+        - Docs
+        - Research
+        - Refactor
+    validations:
+      required: true
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What outcome do we want?
+      placeholder: Build X so Y can happen.
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: Relevant background, links, and constraints.
+      placeholder: Why this matters, links to prior issues/docs, assumptions.
+    validations:
+      required: true
+
+  - type: textarea
+    id: done
+    attributes:
+      label: Definition of done
+      description: Objective acceptance criteria.
+      placeholder: |
+        - [ ] Criterion 1
+        - [ ] Criterion 2
+        - [ ] Criterion 3
+    validations:
+      required: true
+
+  - type: input
+    id: deadline
+    attributes:
+      label: Deadline (optional)
+      placeholder: YYYY-MM-DD
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes / non-goals (optional)
+      placeholder: What should not be changed, risks, etc.
