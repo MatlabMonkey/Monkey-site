@@ -6,6 +6,7 @@ A simple GUI for adding todos quickly
 
 import tkinter as tk
 from tkinter import ttk, messagebox
+import os
 import json
 import urllib.request
 import urllib.parse
@@ -13,9 +14,14 @@ import urllib.error
 import threading
 from datetime import datetime
 
-# Configuration - UPDATE THESE VALUES
-TODO_API_URL = "https://ztbrown.com/api/webhook/todos"  # Replace with your actual domain
-WEBHOOK_SECRET = "your-webhook-secret-here"  # Optional: for authentication
+# Configuration
+TODO_API_URL = os.getenv("TODO_API_URL", "https://ztbrown.com/api/webhook/todos")
+WEBHOOK_SECRET = (
+    os.getenv("TODO_WEBHOOK_SECRET")
+    or os.getenv("WEBHOOK_SECRET")
+    or os.getenv("CAPTURE_API_KEY")
+    or ""
+)
 
 class TodoAdderGUI:
     def __init__(self, root):

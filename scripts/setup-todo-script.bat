@@ -20,9 +20,9 @@ echo    - add-todo.py
 echo    - todo-gui.py
 echo    - Add-Todo.ps1
 echo.
-echo 2. Edit the configuration in each script:
-echo    - Update TODO_API_URL with your domain
-echo    - Set WEBHOOK_SECRET if using authentication
+echo 2. Set environment variables (recommended):
+echo    - TODO_API_URL (optional; defaults to https://ztbrown.com/api/webhook/todos)
+echo    - TODO_WEBHOOK_SECRET (or WEBHOOK_SECRET / CAPTURE_API_KEY)
 echo.
 echo 3. Add %TOOLS_DIR% to your Windows PATH:
 echo    - Press Win+R, type: sysdm.cpl

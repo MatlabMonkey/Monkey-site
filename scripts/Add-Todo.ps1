@@ -21,10 +21,17 @@ param(
     [string]$Source = "PowerShell"
 )
 
-# Configuration - UPDATE THESE VALUES
-$TodoApiUrl = "https://ztbrown.com/api/webhook/todos"
-  # Replace with your actual domain
-$WebhookSecret = "d612e78040136304d6820d862a442372d557f6uclasuckpeniss46a0deaed4fe"   # Optional: for authentication
+# Configuration
+$TodoApiUrl = if (![string]::IsNullOrWhiteSpace($env:TODO_API_URL)) { $env:TODO_API_URL } else { "https://ztbrown.com/api/webhook/todos" }
+$WebhookSecret = if (![string]::IsNullOrWhiteSpace($env:TODO_WEBHOOK_SECRET)) {
+    $env:TODO_WEBHOOK_SECRET
+} elseif (![string]::IsNullOrWhiteSpace($env:WEBHOOK_SECRET)) {
+    $env:WEBHOOK_SECRET
+} elseif (![string]::IsNullOrWhiteSpace($env:CAPTURE_API_KEY)) {
+    $env:CAPTURE_API_KEY
+} else {
+    ""
+}
 
 function Add-TodoItem {
     param(

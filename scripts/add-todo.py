@@ -5,15 +5,21 @@ Usage: python add-todo.py "Your todo item here"
 """
 
 import sys
+import os
 import json
 import urllib.request
 import urllib.parse
 import urllib.error
 from datetime import datetime
 
-# Configuration - UPDATE THESE VALUES
-TODO_API_URL = "https://ztbrown.com/api/webhook/todos"  # Replace with your actual domain
-WEBHOOK_SECRET = "d612e78040136304d6820d862a442372d557f6uclasuckpeniss46a0deaed4fe"  # Optional: for authentication
+# Configuration
+TODO_API_URL = os.getenv("TODO_API_URL", "https://ztbrown.com/api/webhook/todos")
+WEBHOOK_SECRET = (
+    os.getenv("TODO_WEBHOOK_SECRET")
+    or os.getenv("WEBHOOK_SECRET")
+    or os.getenv("CAPTURE_API_KEY")
+    or ""
+)
 
 def add_todo(content, source="Desktop"):
     """Add a todo item via the webhook API"""

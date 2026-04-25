@@ -4,7 +4,6 @@ const encoder = new TextEncoder()
 
 export const PIN_SESSION_COOKIE = "pin_session"
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 14 // 14 days
-const LEGACY_PIN_FALLBACK = "2245"
 
 type PinSessionPayload = {
   v: 1
@@ -63,7 +62,9 @@ function resolveSessionSecret(): string {
 }
 
 export function resolveExpectedPin(): string {
-  return process.env.PIN_GATE_PIN?.trim() || LEGACY_PIN_FALLBACK
+  const pin = process.env.PIN_GATE_PIN?.trim()
+  if (pin) return pin
+  throw new Error("Missing PIN_GATE_PIN")
 }
 
 async function importSigningKey() {
