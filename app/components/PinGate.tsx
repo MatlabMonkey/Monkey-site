@@ -3,26 +3,32 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
 import { Lock, Unlock } from "lucide-react"
-
-const CORRECT_PIN = "2245" // ← Change this to your real pin
 
 const BACKGROUND_PATTERN =
   "data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fillRule='evenodd'%3E%3Cg fill='%239C92AC' fillOpacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"
 
 export default function PinGate({ children }: { children: React.ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [pin, setPin] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
-  const router = useRouter()
 
   useEffect(() => {
-    const stored = localStorage.getItem("dashboard_pin")
-    if (stored === CORRECT_PIN) {
-      setIsAuthenticated(true)
+    const checkAuth = async () => {
+      try {
+        const response = await fetch("/api/auth/status", { cache: "no-store" })
+        const data = (await response.json()) as { authenticated?: boolean }
+        setIsAuthenticated(response.ok && Boolean(data.authenticated))
+      } catch {
+        setIsAuthenticated(false)
+      } finally {
+        setIsCheckingAuth(false)
+      }
     }
+
+    void checkAuth()
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -33,14 +39,35 @@ export default function PinGate({ children }: { children: React.ReactNode }) {
     // Add a small delay for better UX
     await new Promise((resolve) => setTimeout(resolve, 500))
 
-    if (pin === CORRECT_PIN) {
-      localStorage.setItem("dashboard_pin", pin)
-      setIsAuthenticated(true)
-    } else {
-      setError("Incorrect PIN. Please try again.")
+    try {
+      const response = await fetch("/api/auth/pin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin }),
+      })
+
+      const data = (await response.json().catch(() => ({}))) as { authenticated?: boolean; error?: string }
+      if (response.ok && data.authenticated) {
+        setIsAuthenticated(true)
+      } else {
+        setError(data.error || "Incorrect PIN. Please try again.")
+        setPin("")
+      }
+    } catch {
+      setError("Unable to verify PIN right now. Please try again.")
       setPin("")
+    } finally {
+      setIsLoading(false)
     }
-    setIsLoading(false)
+  }
+
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex flex-col items-center justify-center p-4">
+        <div className={`absolute inset-0 opacity-20`} style={{ backgroundImage: `url('${BACKGROUND_PATTERN}')` }}></div>
+        <div className="relative w-10 h-10 animate-spin rounded-full border-4 border-white/20 border-t-white" />
+      </div>
+    )
   }
 
   if (isAuthenticated) return <>{children}</>

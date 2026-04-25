@@ -3,9 +3,6 @@
 import Link from "next/link"
 import { BookOpen, CheckSquare, Wrench, Activity, MessageCircle, BarChart3, BriefcaseBusiness, Lock, Unlock, SquarePen } from "lucide-react"
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-
-const CORRECT_PIN = "2245"
 
 // Daily nature photo system with dynamic Unsplash API
 const UNSPLASH_ACCESS_KEY = process.env.NEXT_PUBLIC_UNSPLASH_ACCESS_KEY
@@ -399,7 +396,6 @@ function getDailyQuoteIndex() {
 }
 
 export default function Home() {
-  const router = useRouter()
   const [dailyPhoto, setDailyPhoto] = useState(getDailyPhoto())
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageData, setImageData] = useState<{
@@ -414,32 +410,56 @@ export default function Home() {
   const [pinError, setPinError] = useState("")
   const quoteIndex = getDailyQuoteIndex()
 
-  useEffect(() => {
-    const stored = localStorage.getItem("dashboard_pin")
-    if (stored === CORRECT_PIN) {
-      setIsAuthenticated(true)
+  const checkAuthStatus = async () => {
+    try {
+      const response = await fetch("/api/auth/status", { cache: "no-store" })
+      const data = (await response.json()) as { authenticated?: boolean }
+      setIsAuthenticated(response.ok && Boolean(data.authenticated))
+    } catch {
+      setIsAuthenticated(false)
     }
+  }
+
+  useEffect(() => {
+    void checkAuthStatus()
   }, [])
 
-  const handlePinSubmit = (e: React.FormEvent) => {
+  const handlePinSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setPinError("")
-    if (pin === CORRECT_PIN) {
-      localStorage.setItem("dashboard_pin", pin)
-      setIsAuthenticated(true)
-      setShowPinInput(false)
+
+    try {
+      const response = await fetch("/api/auth/pin", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin }),
+      })
+      const data = (await response.json().catch(() => ({}))) as { authenticated?: boolean; error?: string }
+
+      if (response.ok && data.authenticated) {
+        setIsAuthenticated(true)
+        setShowPinInput(false)
+        setPin("")
+        return
+      }
+
+      setPinError(data.error || "Incorrect PIN")
       setPin("")
-    } else {
-      setPinError("Incorrect PIN")
+    } catch {
+      setPinError("Unable to sign in right now")
       setPin("")
     }
   }
 
-  const handleSignOut = () => {
-    localStorage.removeItem("dashboard_pin")
-    setIsAuthenticated(false)
-    setShowPinInput(false)
-    setPin("")
+  const handleSignOut = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" })
+    } finally {
+      setIsAuthenticated(false)
+      setShowPinInput(false)
+      setPin("")
+      setPinError("")
+    }
   }
 
   useEffect(() => {
@@ -453,13 +473,6 @@ export default function Home() {
     }
     return () => { cancelled = true }
   }, [])
-
-  const openWorkspace = () => {
-    router.push("/workspace")
-  }
-
-  const backgroundPattern =
-    "data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fillRule='evenodd'%3E%3Cg fill='%239C92AC' fillOpacity='0.05'%3E%3Ccircle cx='30' cy='30' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"
 
   return (
     <main className="min-h-screen relative overflow-hidden">
@@ -606,22 +619,21 @@ export default function Home() {
               <p className="text-[rgb(var(--text)_/_0.7)] text-sm">View OpenClaw usage dashboard</p>
             </Link>
             {isAuthenticated && (
-              <button
-                type="button"
-                onClick={openWorkspace}
+              <Link
+                href="/workspace"
                 className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center hover:scale-105"
               >
                 <BriefcaseBusiness className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
                 <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Workspace</h3>
                 <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Quick capture dashboard</p>
-              </button>
+              </Link>
             )}
           </div>
 
           {/* Daily Photo Credit */}
           <div className="mt-16 text-center">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-[rgb(var(--bg)_/_0.2)] backdrop-blur-sm rounded-full border border-[rgb(var(--border))] text-[rgb(var(--text)_/_0.6)] text-sm">
-              Today's view: {dailyPhoto.location}
+              Today&apos;s view: {dailyPhoto.location}
               {imageData?.photographer && (
                 <span className="text-[rgb(var(--text)_/_0.4)]">
                   • Photo by <a href={imageData.unsplashLink} target="_blank" rel="noopener noreferrer" className="underline hover:text-[rgb(var(--text)_/_0.8)]">{imageData.photographer}</a> on <a href="https://unsplash.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-[rgb(var(--text)_/_0.8)]">Unsplash</a>
