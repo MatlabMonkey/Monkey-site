@@ -6,6 +6,7 @@ import { Suspense, useEffect, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import PinGate from "../components/PinGate"
+import PrivateSectionNav from "../components/PrivateSectionNav"
 import { JOURNAL_QUESTION_SET } from "../../lib/journalSchema"
 import { getLocalDateString } from "../../lib/date"
 import { ArrowLeft, ChevronLeft, ChevronRight, CheckCircle2, Save, Loader2, Search, Compass } from "lucide-react"
@@ -455,6 +456,7 @@ function JournalPageContent() {
         {/* Header */}
         <div className="bg-slate-950/80 backdrop-blur-sm border-b border-slate-800/60 sticky top-0 z-40">
           <div className="max-w-3xl mx-auto px-6 py-4">
+            <PrivateSectionNav className="mb-3" />
             <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
               <div className="flex items-center gap-4">
                 <Link

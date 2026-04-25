@@ -25,6 +25,7 @@ import {
   GripVertical,
 } from "lucide-react"
 import PinGate from "../components/PinGate"
+import PrivateSectionNav from "../components/PrivateSectionNav"
 import { describeRecurringRRule } from "../../lib/recurring"
 import { isTodoBucket, normalizeTodoContext, type TodoBucket, type TodoContext } from "../../lib/todos"
 
@@ -851,6 +852,7 @@ export default function TodosPage() {
                 </Link>
                 <h1 className="text-3xl md:text-4xl font-bold mt-2">GTD Organizer</h1>
                 <p className="text-[rgb(var(--text-muted))] mt-1">Clarify inbox fast, then run from Next Actions.</p>
+                <PrivateSectionNav className="mt-3" />
               </div>
               <div className="flex flex-wrap gap-2 text-sm">
                 <span className="px-3 py-1.5 rounded-full border border-[rgb(var(--brand))] bg-[rgb(var(--brand-weak)_/_0.65)]">

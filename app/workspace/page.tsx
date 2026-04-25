@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { ArrowLeft, Lightbulb, PlusCircle, LockKeyhole, Archive, Users } from "lucide-react"
 import PinGate from "../components/PinGate"
+import PrivateSectionNav from "../components/PrivateSectionNav"
 
 type IdeasSummary = {
   total: number
@@ -43,6 +44,7 @@ export default function WorkspacePage() {
             <div>
               <h1 className="text-3xl md:text-4xl font-bold">Workspace</h1>
               <p className="text-[rgb(var(--text-muted))] mt-1">Quick capture and idea triage.</p>
+              <PrivateSectionNav className="mt-3" />
             </div>
           </div>
 

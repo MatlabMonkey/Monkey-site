@@ -13,6 +13,7 @@ import {
   GitBranch,
   Plus,
 } from "lucide-react"
+import PrivateSectionNav from "../components/PrivateSectionNav"
 
 type Focus = {
   now_working_on: string | null
@@ -227,6 +228,7 @@ export default function OpsProjectIndexPage() {
           <p className="text-slate-400 mt-1 text-sm md:text-base">
             Project index. Open a project to view scoped reports, checkpoints, tasks, and GitHub activity.
           </p>
+          <PrivateSectionNav className="mt-3" />
         </header>
 
         {error && <div className="rounded-xl border border-red-800 bg-red-900/30 p-3 text-red-200 text-sm">{error}</div>}
