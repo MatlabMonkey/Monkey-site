@@ -138,21 +138,17 @@ function drawGrid(
 }
 
 export default function PdControllerPage() {
-  const [params, setParams] = useState<SimParams>(DEFAULT_PARAMS)
+  const [params, setParams] = useState<SimParams>(() => {
+    if (typeof window === "undefined") return DEFAULT_PARAMS
+    return parseQueryParams()
+  })
   const [isPlaying, setIsPlaying] = useState(true)
   const [simTime, setSimTime] = useState(0)
   const [copied, setCopied] = useState(false)
-  const initialized = useRef(false)
 
   const responseCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const phaseCanvasRef = useRef<HTMLCanvasElement | null>(null)
   const fieldCanvasRef = useRef<HTMLCanvasElement | null>(null)
-
-  useEffect(() => {
-    if (initialized.current) return
-    initialized.current = true
-    setParams(parseQueryParams())
-  }, [])
 
   const trajectory = useMemo(() => simulate(params), [params])
 
@@ -161,12 +157,9 @@ export default function PdControllerPage() {
 
   const updateParam = useCallback((key: keyof SimParams, value: number) => {
     setParams((prev) => ({ ...prev, [key]: value }))
-  }, [])
-
-  useEffect(() => {
     setSimTime(0)
     setIsPlaying(true)
-  }, [params])
+  }, [])
 
   useEffect(() => {
     const q = new URLSearchParams()

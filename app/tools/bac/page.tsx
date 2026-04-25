@@ -148,6 +148,10 @@ function createDrink(drinkType: DrinkType, alcoholOz: number): Drink {
   }
 }
 
+function getNowMs(): number {
+  return Date.now()
+}
+
 export default function BacPage() {
   const [profile, setProfile] = useState<BacProfile | null>(null)
   const [weightInput, setWeightInput] = useState("")
@@ -156,9 +160,10 @@ export default function BacPage() {
   const [session, setSession] = useState<Drink[]>([])
   const [showPicker, setShowPicker] = useState(false)
   const [customAlcoholInput, setCustomAlcoholInput] = useState("")
-  const [nowMs, setNowMs] = useState(Date.now())
+  const [nowMs, setNowMs] = useState(0)
   const [isHydrated, setIsHydrated] = useState(false)
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     const storedProfile = parseStoredProfile(localStorage.getItem(PROFILE_STORAGE_KEY))
     const storedSession = parseStoredSession(localStorage.getItem(SESSION_STORAGE_KEY))
@@ -171,8 +176,10 @@ export default function BacPage() {
     }
 
     setSession(storedSession)
+    setNowMs(getNowMs())
     setIsHydrated(true)
   }, [])
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -215,7 +222,7 @@ export default function BacPage() {
     setSession((prev) => [...prev, createDrink(drinkType, alcoholOz)])
     setShowPicker(false)
     setCustomAlcoholInput("")
-    setNowMs(Date.now())
+    setNowMs(getNowMs())
   }
 
   const handleAddCustom = () => {
@@ -226,12 +233,12 @@ export default function BacPage() {
 
   const removeDrink = (id: string) => {
     setSession((prev) => prev.filter((drink) => drink.id !== id))
-    setNowMs(Date.now())
+    setNowMs(getNowMs())
   }
 
   const clearSession = () => {
     setSession([])
-    setNowMs(Date.now())
+    setNowMs(getNowMs())
   }
 
   const isProfileValid = Number.parseFloat(weightInput) > 0

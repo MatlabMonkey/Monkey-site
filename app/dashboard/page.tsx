@@ -499,7 +499,7 @@ export default function Dashboard() {
                     />
                   </div>
                 ) : (
-                  <p className="text-[rgb(var(--text-muted))] text-sm">Fill in today's entry to seed tomorrow.</p>
+                  <p className="text-[rgb(var(--text-muted))] text-sm">Fill in today&apos;s entry to seed tomorrow.</p>
                 )}
               </div>
 
