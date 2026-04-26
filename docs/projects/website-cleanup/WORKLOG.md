@@ -1,6 +1,6 @@
 # Website Cleanup Worklog
 
-Last updated: 2026-04-25 18:09 PDT
+Last updated: 2026-04-25 18:42 PDT
 
 ## Current state
 
@@ -33,9 +33,14 @@ Last updated: 2026-04-25 18:09 PDT
 - `eeb81de` Extend private section nav to journal/workspace secondary pages
 
 ## Remaining cleanup items
-- Publish milestone issue set in GitHub from execution pack.
 - Execute route canonicalization matrix in tracked PR units.
 - Continue section-level consistency pass for any remaining edge pages.
 
+## GitHub tracking issues opened
+- #3 `[Work]: Complete private nav on contacts subpages`
+- #4 `[Work]: Unify contact flow shell styling`
+- #5 `[Work]: Create route cleanup execution board`
+- #6 `[Work]: Execute canonical redirect matrix`
+
 ## Next action
-- Open the listed Wave 1 issues in GitHub and begin redirect matrix execution branch.
+- Start issue #6 implementation branch (canonical redirect matrix execution).

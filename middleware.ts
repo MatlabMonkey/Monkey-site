@@ -33,6 +33,7 @@ export const config = {
     "/todos/:path*",
     "/workspace/:path*",
     "/ops/:path*",
+    "/tools/adderall-xr/:path*",
     "/api/journal/:path*",
     "/api/todos/:path*",
     "/api/ideas/:path*",
