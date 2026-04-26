@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { ArrowLeft, ChevronDown, ChevronUp, Clock3, Plus, Trash2, User } from "lucide-react"
+import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 type Gender = "male" | "female"
 type DrinkType = "Beer" | "Wine" | "Shot" | "Strong Beer" | "Custom"
@@ -204,6 +205,29 @@ export default function BacPage() {
     return [...session].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
   }, [session])
 
+  const bacSeries = useMemo(() => {
+    if (!profile) return []
+
+    const drinkTimes = session.map((drink) => new Date(drink.timestamp).getTime()).filter(Number.isFinite)
+    const earliestDrink = drinkTimes.length > 0 ? Math.min(...drinkTimes) : nowMs
+    const startMs = Math.min(nowMs - 2 * 60 * 60 * 1000, earliestDrink - 60 * 60 * 1000)
+    const projectionHours = Math.max(2, Math.ceil((minutesUntilSober ?? 120) / 60) + 1)
+    const endMs = nowMs + projectionHours * 60 * 60 * 1000
+    const stepMs = 15 * 60 * 1000
+
+    const points: Array<{ t: number; bac: number; label: string }> = []
+    for (let ms = startMs; ms <= endMs; ms += stepMs) {
+      const date = new Date(ms)
+      points.push({
+        t: ms,
+        bac: Number(totalBacAtTime(session, profile, ms).toFixed(4)),
+        label: date.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }),
+      })
+    }
+
+    return points
+  }, [minutesUntilSober, nowMs, profile, session])
+
   const handleSaveProfile = () => {
     const weight = Number.parseFloat(weightInput)
     if (!Number.isFinite(weight) || weight <= 0) return
@@ -257,6 +281,28 @@ export default function BacPage() {
           <div className="mt-4 inline-flex items-center gap-2 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.40)] px-3 py-2 text-sm text-[rgb(var(--text))]">
             <Clock3 className="w-4 h-4" />
             Time until sober: {formatDuration(minutesUntilSober)}
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.60)] p-6">
+          <h2 className="text-lg font-semibold mb-2">BAC curve</h2>
+          <p className="text-sm text-[rgb(var(--text-muted))] mb-4">Live estimate + projection to sober. Dashed line is 0.08%.</p>
+          <div className="h-[260px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={bacSeries} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+                <CartesianGrid stroke="rgba(148,163,184,0.18)" strokeDasharray="4 4" />
+                <XAxis dataKey="t" type="number" tickFormatter={(v) => new Date(v).toLocaleTimeString("en-US", { hour: "numeric" })} tick={{ fill: "rgb(var(--text-muted))", fontSize: 11 }} />
+                <YAxis domain={[0, "dataMax + 0.02"]} tickFormatter={(v) => `${Number(v).toFixed(2)}`} tick={{ fill: "rgb(var(--text-muted))", fontSize: 11 }} />
+                <Tooltip
+                  formatter={(value: number) => [`${value.toFixed(3)}%`, "BAC"]}
+                  labelFormatter={(label: number) => new Date(label).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                  contentStyle={{ background: "rgb(15 23 42 / 0.95)", border: "1px solid rgb(71 85 105 / 0.8)", borderRadius: 12, color: "rgb(226 232 240)" }}
+                />
+                <ReferenceLine y={0.08} stroke="rgb(251 191 36)" strokeDasharray="6 6" />
+                <ReferenceLine x={nowMs} stroke="rgb(148 163 184)" strokeDasharray="4 4" />
+                <Line type="monotone" dataKey="bac" stroke="rgb(59 130 246)" strokeWidth={2.5} dot={false} isAnimationActive={false} />
+              </LineChart>
+            </ResponsiveContainer>
           </div>
         </section>
 

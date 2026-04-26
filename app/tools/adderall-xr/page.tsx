@@ -1,8 +1,8 @@
 "use client"
 
-import { type ReactNode, useMemo, useState } from "react"
+import { type ReactNode, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, BookOpenCheck, BriefcaseBusiness, Clock3, FlaskConical, Moon, Pill, Sun, TrendingUp } from "lucide-react"
+import { ArrowLeft, Clock3, FlaskConical, Home, Moon, Pill, Sun, TrendingUp } from "lucide-react"
 import { CartesianGrid, Line, LineChart, ReferenceArea, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { simulateAdderallXR } from "../../../lib/tools/adderallXrModel"
 
@@ -62,43 +62,6 @@ function RangeInput({ label, icon, value, min, max, step = 0.5, onChange, valueL
   )
 }
 
-type WindowRangeProps = {
-  label: string
-  icon?: ReactNode
-  start: number
-  end: number
-  min: number
-  max: number
-  onChangeStart: (value: number) => void
-  onChangeEnd: (value: number) => void
-}
-
-function WindowRange({ label, icon, start, end, min, max, onChangeStart, onChangeEnd }: WindowRangeProps) {
-  return (
-    <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.65)] p-4 space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <span className="inline-flex items-center gap-2 text-sm font-medium">
-          {icon}
-          {label}
-        </span>
-        <span className="text-sm text-[rgb(var(--text-muted))]">
-          {formatExtendedHour(start)} → {formatExtendedHour(end)}
-        </span>
-      </div>
-
-      <div>
-        <p className="text-xs text-[rgb(var(--text-muted))] mb-1">Start</p>
-        <input type="range" min={min} max={max} step={0.5} value={start} onChange={(e) => onChangeStart(Number(e.target.value))} className="w-full" />
-      </div>
-
-      <div>
-        <p className="text-xs text-[rgb(var(--text-muted))] mb-1">End</p>
-        <input type="range" min={min} max={max} step={0.5} value={end} onChange={(e) => onChangeEnd(Number(e.target.value))} className="w-full" />
-      </div>
-    </div>
-  )
-}
-
 function clipRange(start: number, end: number, min = 0, max = 31) {
   const s = Math.max(min, Math.min(max, start))
   const e = Math.max(min, Math.min(max, end))
@@ -109,86 +72,71 @@ function clipRange(start: number, end: number, min = 0, max = 31) {
 export default function AdderallXRPage() {
   const [doseMg, setDoseMg] = useState(10)
   const [wakeHour, setWakeHour] = useState(7.5)
+  const [bedHour, setBedHour] = useState(23)
   const [firstDoseHour, setFirstDoseHour] = useState(8)
   const [secondDoseHour, setSecondDoseHour] = useState(12)
 
   const [vitaminCEnabled, setVitaminCEnabled] = useState(false)
   const [vitaminCHour, setVitaminCHour] = useState(22)
-  const [vitaminCDoseGrams, setVitaminCDoseGrams] = useState(1)
+  const vitaminCDoseGrams = 1
 
-  const [bedHour, setBedHour] = useState(23)
-
-  const [workStartHour, setWorkStartHour] = useState(9)
-  const [workEndHour, setWorkEndHour] = useState(17)
-  const [homeworkStartHour, setHomeworkStartHour] = useState(19)
-  const [homeworkEndHour, setHomeworkEndHour] = useState(22)
+  const workStartHour = 9
+  const workEndHour = 17
+  const homeworkStartHour = 19
+  const homeworkEndHour = 22
 
   const safeFirstDose = clamp(firstDoseHour, wakeHour, 22)
   const safeSecondDose = clamp(secondDoseHour, safeFirstDose + 1, 24)
 
-  const safeWorkRange = normalizeRange(clamp(workStartHour, 6, 26), clamp(workEndHour, 6, 26))
-  const safeHomeworkRange = normalizeRange(clamp(homeworkStartHour, 6, 26), clamp(homeworkEndHour, 6, 26))
+  const safeWorkRange = normalizeRange(workStartHour, workEndHour)
+  const safeHomeworkRange = normalizeRange(homeworkStartHour, homeworkEndHour)
 
-  const sleepRange = { start: bedHour, end: wakeHour + 24 }
+  const model = simulateAdderallXR({
+    days: 1,
+    dtMinutes: 10,
+    doseMg,
+    firstDoseHour: safeFirstDose,
+    secondDoseHour: safeSecondDose,
+    vitaminCEnabled,
+    vitaminCHour,
+    vitaminCDoseGrams,
+    wakeHour,
+    bedHour,
+    workStartHour,
+    workEndHour,
+    homeworkStartHour,
+    homeworkEndHour,
+  })
 
-  const model = useMemo(
-    () =>
-      simulateAdderallXR({
-        days: 1,
-        dtMinutes: 10,
-        doseMg,
-        firstDoseHour: safeFirstDose,
-        secondDoseHour: safeSecondDose,
-        vitaminCEnabled,
-        vitaminCHour,
-        vitaminCDoseGrams,
-        wakeHour,
-        bedHour,
-        workStartHour: safeWorkRange.start,
-        workEndHour: safeWorkRange.end,
-        homeworkStartHour: safeHomeworkRange.start,
-        homeworkEndHour: safeHomeworkRange.end,
-      }),
-    [
-      bedHour,
-      doseMg,
-      safeFirstDose,
-      safeSecondDose,
-      safeHomeworkRange.end,
-      safeHomeworkRange.start,
-      safeWorkRange.end,
-      safeWorkRange.start,
-      vitaminCDoseGrams,
-      vitaminCEnabled,
-      vitaminCHour,
-      wakeHour,
-    ],
-  )
-
-  const chartData = useMemo(
-    () =>
-      model.points.map((point) => ({
-        x: point.tHours,
-        concentration: Number(point.concentration.toFixed(4)),
-        effect: Number(point.effect.toFixed(2)),
-      })),
-    [model.points],
-  )
+  const chartData = model.points.map((point) => ({
+    x: point.tHours,
+    concentration: Number(point.concentration.toFixed(4)),
+    effect: Number(point.effect.toFixed(2)),
+  }))
 
   const workHighlight = clipRange(safeWorkRange.start, safeWorkRange.end)
   const homeworkHighlight = clipRange(safeHomeworkRange.start, safeHomeworkRange.end)
-  const sleepHighlight = clipRange(sleepRange.start, sleepRange.end)
+  const sleepHighlightEarly = clipRange(0, wakeHour)
+  const sleepHighlightLate = clipRange(bedHour, 31)
 
   return (
     <main className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--text))]">
       <div className="mx-auto max-w-7xl px-6 py-10">
-        <Link
-          href="/tools"
-          className="inline-flex items-center gap-2 text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))] transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Tools
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/tools"
+            className="inline-flex items-center gap-2 text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))] transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Tools
+          </Link>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[rgb(var(--border))] text-xs text-[rgb(var(--text-muted))] hover:bg-[rgb(var(--surface-2)_/_0.75)]"
+          >
+            <Home className="h-3.5 w-3.5" /> Home
+          </Link>
+        </div>
 
         <header className="mt-6 mb-6 rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.65)] p-6">
           <h1 className="text-3xl md:text-4xl font-bold">Adderall XR Schedule Visualizer</h1>
@@ -200,6 +148,7 @@ export default function AdderallXRPage() {
 
         <section className="grid gap-6 xl:grid-cols-[380px_1fr]">
           <aside className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-1">
             <RangeInput
               label="Dose per XR capsule"
               icon={<Pill className="h-4 w-4" />}
@@ -226,6 +175,18 @@ export default function AdderallXRPage() {
             />
 
             <RangeInput
+              label="Bedtime"
+              icon={<Moon className="h-4 w-4" />}
+              value={bedHour}
+              min={20}
+              max={28}
+              step={0.5}
+              onChange={setBedHour}
+              valueLabel={formatExtendedHour(bedHour)}
+            />
+            </div>
+
+            <RangeInput
               label="Dose 1 time"
               icon={<Clock3 className="h-4 w-4" />}
               value={safeFirstDose}
@@ -250,17 +211,6 @@ export default function AdderallXRPage() {
               valueLabel={formatExtendedHour(safeSecondDose)}
             />
 
-            <RangeInput
-              label="Bedtime"
-              icon={<Moon className="h-4 w-4" />}
-              value={bedHour}
-              min={20}
-              max={28}
-              step={0.5}
-              onChange={setBedHour}
-              valueLabel={formatExtendedHour(bedHour)}
-            />
-
             <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.65)] p-4 space-y-3">
               <label className="inline-flex items-center gap-2 text-sm font-medium">
                 <input
@@ -272,48 +222,23 @@ export default function AdderallXRPage() {
                 Vitamin C (acidification model)
               </label>
 
-              <RangeInput
-                label="Vitamin C time"
-                value={vitaminCHour}
-                min={16}
-                max={28}
-                step={0.5}
-                onChange={setVitaminCHour}
-                valueLabel={formatExtendedHour(vitaminCHour)}
-              />
-
-              <RangeInput
-                label="Vitamin C dose"
-                value={vitaminCDoseGrams}
-                min={0}
-                max={2}
-                step={0.1}
-                onChange={setVitaminCDoseGrams}
-                valueLabel={`${vitaminCDoseGrams.toFixed(1)} g`}
-              />
+              {vitaminCEnabled && (
+                <RangeInput
+                  label="Vitamin C time"
+                  value={vitaminCHour}
+                  min={16}
+                  max={28}
+                  step={0.5}
+                  onChange={setVitaminCHour}
+                  valueLabel={`${formatExtendedHour(vitaminCHour)} · 1.0 g`}
+                />
+              )}
             </div>
 
-            <WindowRange
-              label="Work window"
-              icon={<BriefcaseBusiness className="h-4 w-4" />}
-              start={workStartHour}
-              end={workEndHour}
-              min={6}
-              max={26}
-              onChangeStart={setWorkStartHour}
-              onChangeEnd={setWorkEndHour}
-            />
-
-            <WindowRange
-              label="Homework window"
-              icon={<BookOpenCheck className="h-4 w-4" />}
-              start={homeworkStartHour}
-              end={homeworkEndHour}
-              min={6}
-              max={26}
-              onChangeStart={setHomeworkStartHour}
-              onChangeEnd={setHomeworkEndHour}
-            />
+            <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.65)] p-4">
+              <p className="text-xs uppercase tracking-wide text-[rgb(var(--text-muted))] mb-1">Fixed score windows</p>
+              <p className="text-sm text-[rgb(var(--text-muted))]">Work: 9 AM–5 PM · Homework: 7 PM–10 PM</p>
+            </div>
           </aside>
 
           <div className="space-y-4">
@@ -331,7 +256,8 @@ export default function AdderallXRPage() {
                   <LineChart data={chartData} margin={{ top: 10, right: 24, left: 0, bottom: 10 }}>
                     <CartesianGrid stroke="rgba(148,163,184,0.18)" strokeDasharray="4 4" />
 
-                    {sleepHighlight && <ReferenceArea x1={sleepHighlight.start} x2={sleepHighlight.end} fill="rgba(56,189,248,0.12)" />}
+                    {sleepHighlightEarly && <ReferenceArea x1={sleepHighlightEarly.start} x2={sleepHighlightEarly.end} fill="rgba(56,189,248,0.14)" />}
+                    {sleepHighlightLate && <ReferenceArea x1={sleepHighlightLate.start} x2={sleepHighlightLate.end} fill="rgba(56,189,248,0.14)" />}
                     {workHighlight && <ReferenceArea x1={workHighlight.start} x2={workHighlight.end} fill="rgba(34,197,94,0.10)" />}
                     {homeworkHighlight && <ReferenceArea x1={homeworkHighlight.start} x2={homeworkHighlight.end} fill="rgba(168,85,247,0.10)" />}
 

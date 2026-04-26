@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Archive, ArchiveRestore, Pin, PinOff, Plus, Trash2 } from "lucide-react"
+import { ArrowLeft, Archive, ArchiveRestore, Home, Pin, PinOff, Plus, Trash2 } from "lucide-react"
 import PinGate from "../../components/PinGate"
 import PrivateSectionNav from "../../components/PrivateSectionNav"
 
@@ -134,11 +134,16 @@ export default function WorkspaceIdeasPage() {
       <div className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--text))]">
         <div className="max-w-4xl mx-auto px-6 py-10">
           <div className="mb-8 flex items-center gap-4">
-            <Link href="/workspace" className="p-2 rounded-xl hover:bg-[rgb(var(--surface-2))] transition-colors">
-              <ArrowLeft className="w-5 h-5 text-[rgb(var(--text-muted))]" />
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link href="/workspace" className="p-2 rounded-xl hover:bg-[rgb(var(--surface-2))] transition-colors">
+                <ArrowLeft className="w-5 h-5 text-[rgb(var(--text-muted))]" />
+              </Link>
+              <Link href="/" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[rgb(var(--border))] text-xs text-[rgb(var(--text-muted))] hover:bg-[rgb(var(--surface-2)_/_0.75)]">
+                <Home className="w-3.5 h-3.5" /> Home
+              </Link>
+            </div>
             <div className="flex-1">
-              <h1 className="text-3xl md:text-4xl font-bold">Ideas</h1>
+              <h1 className="text-3xl md:text-4xl font-bold">Idea Inbox</h1>
               <p className="text-[rgb(var(--text-muted))] mt-1">{ideaCountLabel}</p>
               <PrivateSectionNav className="mt-3" />
             </div>

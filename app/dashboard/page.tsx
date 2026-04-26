@@ -5,7 +5,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from "recharts"
 import PinGate from "../components/PinGate"
-import { Calendar, Heart, Zap, Activity, Brain, Target, Sparkles, ArrowRight, Compass } from "lucide-react"
+import { Calendar, Heart, Zap, Activity, Brain, Target, Sparkles, ArrowRight, Compass, Home } from "lucide-react"
 
 type QuestionType = "text" | "number" | "rating" | "boolean" | "multiselect" | "date"
 
@@ -256,6 +256,13 @@ export default function Dashboard() {
             <p className="text-[rgb(var(--text-muted))] text-sm">{error || "Unable to load dashboard data."}</p>
             <div className="flex items-center justify-center gap-3">
               <Link
+                href="/"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-sm font-medium hover:bg-[rgb(var(--surface-2))] transition-all"
+              >
+                <Home className="w-4 h-4" />
+                Home
+              </Link>
+              <Link
                 href="/journal"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[rgb(var(--brand))] text-sm font-medium hover:bg-[rgb(var(--brand-strong))] transition-all"
               >
@@ -287,7 +294,7 @@ export default function Dashboard() {
       <div className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--text))]">
         {/* Header */}
         <div className="bg-[rgb(var(--bg)_/_0.80)] backdrop-blur-sm border-b border-[rgb(var(--border))] sticky top-0 z-40">
-          <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between">
+          <div className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between gap-3 flex-wrap">
             <div>
               <h1 className="text-4xl font-bold text-[rgb(var(--text))]">
                 Journal dashboard
@@ -297,6 +304,13 @@ export default function Dashboard() {
               </p>
             </div>
             <div className="flex items-center gap-3">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.70)] text-sm font-medium hover:bg-[rgb(var(--surface-2))] transition-all"
+              >
+                <Home className="w-4 h-4" />
+                Home
+              </Link>
               <Link
                 href="/journal"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[rgb(var(--brand))] text-sm font-medium  hover:bg-[rgb(var(--brand-strong))] transition-all"

@@ -9,7 +9,7 @@ import PinGate from "../components/PinGate"
 import PrivateSectionNav from "../components/PrivateSectionNav"
 import { JOURNAL_QUESTION_SET } from "../../lib/journalSchema"
 import { formatIsoDateForDisplay, getLocalDateString, normalizeIsoDate } from "../../lib/date"
-import { ArrowLeft, ChevronLeft, ChevronRight, CheckCircle2, Save, Loader2, Search, Compass } from "lucide-react"
+import { ArrowLeft, CalendarDays, ChevronLeft, ChevronRight, CheckCircle2, Home, Save, Loader2, Search, Compass } from "lucide-react"
 
 type Question = {
   id: string
@@ -25,6 +25,14 @@ type Answer = {
   question_key: string
   answer_value: any
   answer_type: string
+}
+
+function toIsoUTC(date: Date) {
+  return date.toISOString().slice(0, 10)
+}
+
+function monthLabel(date: Date) {
+  return date.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" })
 }
 
 function JournalPageContent() {
@@ -44,6 +52,10 @@ function JournalPageContent() {
   const [loadedEntryExists, setLoadedEntryExists] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [dateInput, setDateInput] = useState("")
+  const [calendarOpen, setCalendarOpen] = useState(false)
+  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date(`${(normalizeIsoDate(rawDateParam) ?? getLocalDateString())}T00:00:00Z`))
+  const [monthEntryDates, setMonthEntryDates] = useState<Set<string>>(new Set())
+  const [calendarLoading, setCalendarLoading] = useState(false)
 
   // Get date for entry (default to today's local date)
   const today = getLocalDateString()
@@ -60,7 +72,37 @@ function JournalPageContent() {
 
   useEffect(() => {
     setDateInput(entryDate)
+    setCalendarMonth(new Date(`${entryDate}T00:00:00Z`))
   }, [entryDate])
+
+  useEffect(() => {
+    if (!calendarOpen) return
+
+    const y = calendarMonth.getUTCFullYear()
+    const m = calendarMonth.getUTCMonth()
+    const monthStart = new Date(Date.UTC(y, m, 1))
+    const monthEnd = new Date(Date.UTC(y, m + 1, 0))
+
+    const loadMonthEntries = async () => {
+      setCalendarLoading(true)
+      try {
+        const res = await fetch(`/api/journal/search?from=${toIsoUTC(monthStart)}&to=${toIsoUTC(monthEnd)}`, { cache: "no-store" })
+        const data = await res.json()
+        if (!res.ok) {
+          setMonthEntryDates(new Set())
+          return
+        }
+        const dates = new Set<string>((data.entries || []).map((entry: { date?: string }) => entry.date).filter((d: unknown): d is string => typeof d === "string"))
+        setMonthEntryDates(dates)
+      } catch {
+        setMonthEntryDates(new Set())
+      } finally {
+        setCalendarLoading(false)
+      }
+    }
+
+    void loadMonthEntries()
+  }, [calendarMonth, calendarOpen])
 
   const commitDateInput = (value: string) => {
     const normalized = normalizeIsoDate(value)
@@ -472,6 +514,13 @@ function JournalPageContent() {
     answerKeysWithValues.length > 0 &&
     answerKeysWithValues.some(([key]) => !currentAppKeys.has(key))
 
+  const calYear = calendarMonth.getUTCFullYear()
+  const calMonth = calendarMonth.getUTCMonth()
+  const daysInMonth = new Date(Date.UTC(calYear, calMonth + 1, 0)).getUTCDate()
+  const firstWeekday = new Date(Date.UTC(calYear, calMonth, 1)).getUTCDay()
+  const blanks = Array.from({ length: firstWeekday })
+  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
+
   return (
     <PinGate>
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100">
@@ -480,13 +529,19 @@ function JournalPageContent() {
           <div className="max-w-3xl mx-auto px-6 py-4">
             <PrivateSectionNav className="mb-3" />
             <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-4 flex-wrap">
                 <Link
                   href="/dashboard"
                   className="flex items-center gap-2 text-slate-300 hover:text-slate-50 transition-colors"
                 >
                   <ArrowLeft className="w-5 h-5" />
                   <span className="font-medium">Back</span>
+                </Link>
+                <Link
+                  href="/"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-700 text-xs text-slate-300 hover:bg-slate-800"
+                >
+                  <Home className="w-3.5 h-3.5" /> Home
                 </Link>
                 <label className="flex items-center gap-2 text-slate-300">
                   <span className="text-sm font-medium">Entry date:</span>
@@ -510,6 +565,68 @@ function JournalPageContent() {
                     Today
                   </button>
                 </label>
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={() => setCalendarOpen((prev) => !prev)}
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800"
+                  >
+                    <CalendarDays className="w-4 h-4" />
+                    Calendar
+                  </button>
+                  {calendarOpen && (
+                    <div className="absolute left-0 mt-2 w-[320px] rounded-2xl border border-slate-700 bg-slate-950/95 shadow-2xl p-3 z-50">
+                      <div className="flex items-center justify-between mb-3">
+                        <button
+                          type="button"
+                          onClick={() => setCalendarMonth((prev) => new Date(Date.UTC(prev.getUTCFullYear(), prev.getUTCMonth() - 1, 1)))}
+                          className="p-1 rounded-md hover:bg-slate-800"
+                        >
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        <p className="text-sm font-medium">{monthLabel(calendarMonth)}</p>
+                        <button
+                          type="button"
+                          onClick={() => setCalendarMonth((prev) => new Date(Date.UTC(prev.getUTCFullYear(), prev.getUTCMonth() + 1, 1)))}
+                          className="p-1 rounded-md hover:bg-slate-800"
+                        >
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-7 gap-1 text-[10px] text-slate-500 mb-2">
+                        {['S','M','T','W','T','F','S'].map((d, i) => (<div key={`${d}-${i}`} className="text-center">{d}</div>))}
+                      </div>
+
+                      <div className="grid grid-cols-7 gap-1">
+                        {blanks.map((_, i) => <div key={`blank-${i}`} />)}
+                        {days.map((day) => {
+                          const iso = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+                          const selected = iso === entryDate
+                          const hasEntry = monthEntryDates.has(iso)
+                          return (
+                            <button
+                              key={iso}
+                              type="button"
+                              onClick={() => {
+                                setDateInput(iso)
+                                commitDateInput(iso)
+                                setCalendarOpen(false)
+                              }}
+                              className={`h-9 rounded-lg text-xs border transition-colors ${selected ? "border-purple-400 bg-purple-500/20 text-purple-200" : hasEntry ? "border-sky-700 bg-sky-900/30 text-slate-100" : "border-slate-800 text-slate-400 hover:bg-slate-800"}`}
+                            >
+                              <span>{day}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+
+                      <p className="mt-2 text-[11px] text-slate-500">
+                        {calendarLoading ? "Loading month..." : "Blue dates already have entries."}
+                      </p>
+                    </div>
+                  )}
+                </div>
                 <Link
                   href="/journal/search"
                   className="flex items-center gap-2 text-sm text-slate-300 hover:text-purple-400 transition-colors"
