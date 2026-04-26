@@ -1,10 +1,17 @@
 # Website Cleanup Worklog
 
-Last updated: 2026-04-25 17:24 PDT
+Last updated: 2026-04-25 18:09 PDT
 
 ## Current state
 
 ### Completed in this sprint
+- Applied private-section nav to remaining contact subpages:
+  - `/workspace/contacts/capture`
+  - `/workspace/contacts/review`
+  - `/workspace/contacts/[id]`
+- Completed contact-flow shell consistency pass (header card and spacing alignment).
+- Added milestone execution pack for cleanup issues/PRs:
+  - `docs/projects/website-cleanup/MILESTONE_WAVE_EXECUTION_2026-04-25.md`
 - Added `/ops/usage` as canonical usage surface and wired permanent redirect `/arias -> /ops/usage`.
 - Added production-only redirects for `/test-env` and `/test-supabase` to `/`.
 - Rewrote `/about` to a clean production-ready page.
@@ -26,9 +33,9 @@ Last updated: 2026-04-25 17:24 PDT
 - `eeb81de` Extend private section nav to journal/workspace secondary pages
 
 ## Remaining cleanup items
-- Apply private-section nav to remaining workspace contact subpages (`/workspace/contacts/capture`, `/workspace/contacts/review`, `/workspace/contacts/[id]`).
-- Continue shell and section-level visual consistency pass.
-- Convert architecture cleanup waves into executable milestone issues/PRs (using templates).
+- Publish milestone issue set in GitHub from execution pack.
+- Execute route canonicalization matrix in tracked PR units.
+- Continue section-level consistency pass for any remaining edge pages.
 
 ## Next action
-- Start full implementation of Adderall XR visualizer under `/tools` while preserving this cleanup stream as active-but-stable.
+- Open the listed Wave 1 issues in GitHub and begin redirect matrix execution branch.

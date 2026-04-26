@@ -5,6 +5,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ArrowLeft, Sparkles } from "lucide-react"
 import PinGate from "../../../components/PinGate"
+import PrivateSectionNav from "../../../components/PrivateSectionNav"
 import type { ContactDraft } from "../../../../lib/contacts"
 
 const DRAFT_STORAGE_KEY = "contacts.reviewDraft"
@@ -57,15 +58,18 @@ export default function CaptureContactPage() {
     <PinGate>
       <div className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--text))]">
         <div className="mx-auto max-w-4xl px-6 py-10">
-          <div className="mb-8 flex items-center gap-4">
-            <Link href="/workspace/contacts" className="rounded-xl p-2 transition-colors hover:bg-[rgb(var(--surface-2))]">
-              <ArrowLeft className="h-5 w-5 text-[rgb(var(--text-muted))]" />
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold md:text-4xl">Capture Contact</h1>
-              <p className="mt-1 text-[rgb(var(--text-muted))]">Paste your transcript and extract contact details.</p>
+          <header className="mb-8 rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.75)] p-6">
+            <div className="flex items-start gap-4">
+              <Link href="/workspace/contacts" className="rounded-xl p-2 transition-colors hover:bg-[rgb(var(--surface-2))]">
+                <ArrowLeft className="h-5 w-5 text-[rgb(var(--text-muted))]" />
+              </Link>
+              <div>
+                <h1 className="text-3xl font-bold md:text-4xl">Capture Contact</h1>
+                <p className="mt-1 text-[rgb(var(--text-muted))]">Paste your transcript and extract contact details.</p>
+                <PrivateSectionNav className="mt-3" />
+              </div>
             </div>
-          </div>
+          </header>
 
           <form onSubmit={onSubmit} className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.75)] p-6">
             <label className="mb-4 block space-y-2">

@@ -6,6 +6,7 @@ import { useParams, useRouter } from "next/navigation"
 import { ArrowLeft, PencilLine, Save, Trash2, X } from "lucide-react"
 import ContactForm from "../../../components/ContactForm"
 import PinGate from "../../../components/PinGate"
+import PrivateSectionNav from "../../../components/PrivateSectionNav"
 import { coerceContactDraft, type ContactDraft, type ContactRecord } from "../../../../lib/contacts"
 
 type ContactApiResponse = {
@@ -151,33 +152,36 @@ export default function ContactDetailPage() {
     <PinGate>
       <div className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--text))]">
         <div className="mx-auto max-w-5xl px-6 py-10">
-          <div className="mb-8 flex items-center gap-4">
-            <Link href="/workspace/contacts" className="rounded-xl p-2 transition-colors hover:bg-[rgb(var(--surface-2))]">
-              <ArrowLeft className="h-5 w-5 text-[rgb(var(--text-muted))]" />
-            </Link>
-            <div className="flex-1">
-              <h1 className="text-3xl font-bold md:text-4xl">{contact?.name || "Contact details"}</h1>
-              {contact && <p className="mt-1 text-[rgb(var(--text-muted))]">Updated {formatDate(contact.updated_at)}</p>}
+          <header className="mb-8 rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.75)] p-6">
+            <div className="flex flex-wrap items-start gap-4">
+              <Link href="/workspace/contacts" className="rounded-xl p-2 transition-colors hover:bg-[rgb(var(--surface-2))]">
+                <ArrowLeft className="h-5 w-5 text-[rgb(var(--text-muted))]" />
+              </Link>
+              <div className="flex-1 min-w-[220px]">
+                <h1 className="text-3xl font-bold md:text-4xl">{contact?.name || "Contact details"}</h1>
+                {contact && <p className="mt-1 text-[rgb(var(--text-muted))]">Updated {formatDate(contact.updated_at)}</p>}
+                <PrivateSectionNav className="mt-3" />
+              </div>
+              {contact && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError("")
+                    setEditing((prev) => {
+                      if (prev && contact) {
+                        setDraft(coerceContactDraft(contact))
+                      }
+                      return !prev
+                    })
+                  }}
+                  className="inline-flex items-center gap-2 rounded-xl border border-[rgb(var(--border))] px-4 py-2 text-sm transition-colors hover:bg-[rgb(var(--surface)_/_0.75)]"
+                >
+                  <PencilLine className="h-4 w-4" />
+                  {editing ? "Stop Editing" : "Edit"}
+                </button>
+              )}
             </div>
-            {contact && (
-              <button
-                type="button"
-                onClick={() => {
-                  setError("")
-                  setEditing((prev) => {
-                    if (prev && contact) {
-                      setDraft(coerceContactDraft(contact))
-                    }
-                    return !prev
-                  })
-                }}
-                className="inline-flex items-center gap-2 rounded-xl border border-[rgb(var(--border))] px-4 py-2 text-sm transition-colors hover:bg-[rgb(var(--surface)_/_0.75)]"
-              >
-                <PencilLine className="h-4 w-4" />
-                {editing ? "Stop Editing" : "Edit"}
-              </button>
-            )}
-          </div>
+          </header>
 
           {error && (
             <div className="mb-4 rounded-2xl border border-[rgb(127_29_29)] bg-[rgb(127_29_29_/_0.3)] p-3 text-sm text-[rgb(248_113_113)]">

@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { ArrowLeft, Save, X } from "lucide-react"
 import ContactForm from "../../../components/ContactForm"
 import PinGate from "../../../components/PinGate"
+import PrivateSectionNav from "../../../components/PrivateSectionNav"
 import { coerceContactDraft, type ContactDraft } from "../../../../lib/contacts"
 
 const DRAFT_STORAGE_KEY = "contacts.reviewDraft"
@@ -92,15 +93,18 @@ function ReviewContactContent() {
   return (
     <div className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--text))]">
       <div className="mx-auto max-w-4xl px-6 py-10">
-        <div className="mb-8 flex items-center gap-4">
-          <Link href="/workspace/contacts/capture" className="rounded-xl p-2 transition-colors hover:bg-[rgb(var(--surface-2))]">
-            <ArrowLeft className="h-5 w-5 text-[rgb(var(--text-muted))]" />
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold md:text-4xl">Review Contact</h1>
-            <p className="mt-1 text-[rgb(var(--text-muted))]">Edit extracted fields before saving.</p>
+        <header className="mb-8 rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.75)] p-6">
+          <div className="flex items-start gap-4">
+            <Link href="/workspace/contacts/capture" className="rounded-xl p-2 transition-colors hover:bg-[rgb(var(--surface-2))]">
+              <ArrowLeft className="h-5 w-5 text-[rgb(var(--text-muted))]" />
+            </Link>
+            <div>
+              <h1 className="text-3xl font-bold md:text-4xl">Review Contact</h1>
+              <p className="mt-1 text-[rgb(var(--text-muted))]">Edit extracted fields before saving.</p>
+              <PrivateSectionNav className="mt-3" />
+            </div>
           </div>
-        </div>
+        </header>
 
         {!draft && (
           <div className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.75)] p-8 text-center">
