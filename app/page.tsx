@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useSearchParams } from "next/navigation"
 import { BookOpen, CheckSquare, Wrench, Activity, MessageCircle, BriefcaseBusiness, Lock, Unlock, SquarePen } from "lucide-react"
 import { useEffect, useState } from "react"
 
@@ -396,6 +397,7 @@ function getDailyQuoteIndex() {
 }
 
 export default function Home() {
+  const searchParams = useSearchParams()
   const [dailyPhoto, setDailyPhoto] = useState(getDailyPhoto())
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageData, setImageData] = useState<{
@@ -409,6 +411,8 @@ export default function Home() {
   const [pin, setPin] = useState("")
   const [pinError, setPinError] = useState("")
   const quoteIndex = getDailyQuoteIndex()
+  const authRequired = searchParams.get("auth") === "required"
+  const blockedPath = searchParams.get("from")
 
   const checkAuthStatus = async () => {
     try {
@@ -423,6 +427,12 @@ export default function Home() {
   useEffect(() => {
     void checkAuthStatus()
   }, [])
+
+  useEffect(() => {
+    if (authRequired && !isAuthenticated) {
+      setShowPinInput(true)
+    }
+  }, [authRequired, isAuthenticated])
 
   const handlePinSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -555,6 +565,12 @@ export default function Home() {
           </div>
 
           {/* Feature Buttons */}
+          {authRequired && !isAuthenticated && (
+            <div className="mx-auto max-w-2xl rounded-2xl border border-amber-300/40 bg-amber-500/15 px-4 py-3 text-sm text-amber-100">
+              Access to <span className="font-semibold">{blockedPath || "that section"}</span> requires PIN sign-in.
+            </div>
+          )}
+
           <div className="grid gap-6 mt-12 md:grid-cols-3">
             {isAuthenticated && (
               <Link
@@ -602,14 +618,16 @@ export default function Home() {
               <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Q&A</h3>
               <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Ask Zach anything</p>
             </Link>
-            <Link
-              href="/ops"
-              className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center   hover:scale-105"
-            >
-              <Activity className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
-              <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Ops Dashboard</h3>
-              <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Track current work, updates, and inbox tasks</p>
-            </Link>
+            {isAuthenticated && (
+              <Link
+                href="/ops"
+                className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center   hover:scale-105"
+              >
+                <Activity className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
+                <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Ops Dashboard</h3>
+                <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Track current work, updates, and inbox tasks</p>
+              </Link>
+            )}
             {isAuthenticated && (
               <Link
                 href="/workspace"

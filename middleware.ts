@@ -22,7 +22,8 @@ export async function middleware(request: NextRequest) {
 
   const redirectUrl = request.nextUrl.clone()
   redirectUrl.pathname = "/"
-  redirectUrl.search = ""
+  redirectUrl.searchParams.set("auth", "required")
+  redirectUrl.searchParams.set("from", pathname)
   return NextResponse.redirect(redirectUrl)
 }
 
