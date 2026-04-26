@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { ArrowLeft, ChevronDown, ChevronUp, Clock3, Plus, Trash2, User } from "lucide-react"
-import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
+import { CartesianGrid, Line, LineChart, ReferenceArea, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 
 type Gender = "male" | "female"
 type DrinkType = "Beer" | "Wine" | "Shot" | "Strong Beer" | "Custom"
@@ -285,12 +285,15 @@ export default function BacPage() {
         </section>
 
         <section className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.60)] p-6">
-          <h2 className="text-lg font-semibold mb-2">BAC curve</h2>
-          <p className="text-sm text-[rgb(var(--text-muted))] mb-4">Live estimate + projection to sober. Dashed line is 0.08%.</p>
+          <h2 className="text-lg font-semibold mb-2">BAC over time</h2>
+          <p className="text-sm text-[rgb(var(--text-muted))] mb-4">Live estimate + projection to sober. Green/yellow/red zones mirror risk bands.</p>
           <div className="h-[260px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={bacSeries} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
                 <CartesianGrid stroke="rgba(148,163,184,0.18)" strokeDasharray="4 4" />
+                <ReferenceArea y1={0} y2={0.04} fill="rgba(16,185,129,0.08)" />
+                <ReferenceArea y1={0.04} y2={0.08} fill="rgba(250,204,21,0.08)" />
+                <ReferenceArea y1={0.08} y2={0.15} fill="rgba(249,115,22,0.08)" />
                 <XAxis dataKey="t" type="number" tickFormatter={(v) => new Date(v).toLocaleTimeString("en-US", { hour: "numeric" })} tick={{ fill: "rgb(var(--text-muted))", fontSize: 11 }} />
                 <YAxis domain={[0, "dataMax + 0.02"]} tickFormatter={(v) => `${Number(v).toFixed(2)}`} tick={{ fill: "rgb(var(--text-muted))", fontSize: 11 }} />
                 <Tooltip
@@ -300,7 +303,7 @@ export default function BacPage() {
                 />
                 <ReferenceLine y={0.08} stroke="rgb(251 191 36)" strokeDasharray="6 6" />
                 <ReferenceLine x={nowMs} stroke="rgb(148 163 184)" strokeDasharray="4 4" />
-                <Line type="monotone" dataKey="bac" stroke="rgb(59 130 246)" strokeWidth={2.5} dot={false} isAnimationActive={false} />
+                <Line type="monotone" dataKey="bac" stroke="rgb(59 130 246)" strokeWidth={2.8} dot={false} isAnimationActive={false} />
               </LineChart>
             </ResponsiveContainer>
           </div>

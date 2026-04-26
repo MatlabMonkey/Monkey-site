@@ -139,7 +139,7 @@ export default function AdderallXRPage() {
         </div>
 
         <header className="mt-6 mb-6 rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.65)] p-6">
-          <h1 className="text-3xl md:text-4xl font-bold">Adderall XR Schedule Visualizer</h1>
+          <h1 className="text-3xl md:text-4xl font-bold">Medication Concentration Visualizer</h1>
           <p className="mt-2 text-[rgb(var(--text-muted))] max-w-4xl">
             Single-day planner (midnight → next-day 7 AM). Baseline carryover is fixed from a standard 8:00 AM + 12:00 PM routine,
             so your sliders adjust only the simulated day.
@@ -339,7 +339,7 @@ export default function AdderallXRPage() {
             <div className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.6)] p-4 md:p-6">
               <h3 className="text-lg font-semibold mb-3">Model notes</h3>
               <ul className="space-y-2 text-sm text-[rgb(var(--text-muted))] list-disc pl-5">
-                <li>Each XR capsule is modeled as 50% immediate release + 50% delayed release (~4h lag).</li>
+                <li>Each extended-release dose is modeled as 50% immediate release + 50% delayed release (~4h lag).</li>
                 <li>Effect uses an effect-compartment delay, so effect can stay elevated after plasma starts dropping.</li>
                 <li>
                   Vitamin C uses a pH-elimination heuristic anchored to literature-like ranges (amphetamine half-life ~11.5h baseline,
