@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ArrowLeft, Calculator, ChefHat, Dumbbell, Gauge } from "lucide-react"
+import { ArrowLeft, Calculator, ChefHat, Dumbbell, Gauge, Pill } from "lucide-react"
 
 export default function ToolsPage() {
   return (
@@ -19,6 +19,20 @@ export default function ToolsPage() {
         </header>
 
         <div className="grid gap-4 md:grid-cols-2">
+          <Link
+            href="/tools/adderall-xr"
+            className="group rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.60)] p-5 hover:bg-[rgb(var(--surface-2)_/_0.70)] transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl border border-[rgb(var(--brand)_/_0.45)] bg-[rgb(var(--brand-weak)_/_0.8)] p-2">
+                <Pill className="w-5 h-5 text-[rgb(var(--brand))]" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Adderall XR Visualizer</h2>
+                <p className="text-sm text-[rgb(var(--text-muted))]">Dose timing, concentration/effect, and sleep scoring</p>
+              </div>
+            </div>
+          </Link>
           <Link
             href="/tools/bac"
             className="group rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.60)] p-5 hover:bg-[rgb(var(--surface-2)_/_0.70)] transition-colors"
