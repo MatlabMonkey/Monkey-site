@@ -851,7 +851,7 @@ export default function TodosPage() {
                   Back Home
                 </Link>
                 <h1 className="text-3xl md:text-4xl font-bold mt-2">GTD Organizer</h1>
-                <p className="text-[rgb(var(--text-muted))] mt-1">Clarify inbox fast, then run from Next Actions.</p>
+                <p className="text-[rgb(var(--text-muted))] mt-1">Process inbox first. Organize lists second.</p>
                 <PrivateSectionNav className="mt-3" />
               </div>
               <div className="flex flex-wrap gap-2 text-sm">
@@ -886,7 +886,82 @@ export default function TodosPage() {
                 </button>
               ))}
             </div>
+          </header>
 
+          {error && (
+            <div className="rounded-xl border border-[rgb(127_29_29)] bg-[rgb(127_29_29_/_0.30)] p-3 text-sm text-[rgb(248_113_113)]">
+              {error}
+            </div>
+          )}
+
+          <section className="rounded-3xl border border-[rgb(var(--brand))] bg-[rgb(var(--brand-weak)_/_0.22)] p-6">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="space-y-2">
+                <p className="text-xs uppercase tracking-wide text-[rgb(var(--text-muted))]">Primary GTD step</p>
+                <h2 className="text-2xl font-semibold inline-flex items-center gap-2">
+                  <PlayCircle className="w-6 h-6 text-[rgb(var(--brand))]" />
+                  Process Inbox
+                </h2>
+                <p className="text-sm text-[rgb(var(--text-muted))]">
+                  {buckets.inbox.length} unprocessed item{buckets.inbox.length === 1 ? "" : "s"}. Clarify each item through the decision tree.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Link
+                  href={`/todos/process?context=${activeContext}&bucket=inbox`}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] transition-colors"
+                >
+                  Start processing
+                  <ChevronRight className="w-4 h-4" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => void refresh()}
+                  className="px-4 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.7)] transition-colors"
+                >
+                  {refreshing ? "Refreshing..." : "Refresh"}
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <section className="grid lg:grid-cols-3 gap-4">
+            <form onSubmit={addInboxTodo} className="lg:col-span-2 rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-5">
+              <div className="flex items-center gap-2 mb-3">
+                <Plus className="w-5 h-5 text-[rgb(var(--brand))]" />
+                <h2 className="text-xl font-semibold">Quick Capture ({activeContext === "work" ? "Work" : "Personal"})</h2>
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={newTodo}
+                  onChange={(event) => setNewTodo(event.target.value)}
+                  placeholder="Capture to inbox, then process..."
+                  className="flex-1 px-4 py-3 rounded-2xl bg-[rgb(var(--surface-2)_/_0.7)] border border-[rgb(var(--border))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand))]"
+                  disabled={adding}
+                />
+                <button
+                  type="submit"
+                  disabled={!newTodo.trim() || adding}
+                  className="px-4 py-3 rounded-2xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60 transition-colors"
+                >
+                  {adding ? "Adding..." : "Capture"}
+                </button>
+              </div>
+            </form>
+
+            <div className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-5">
+              <h2 className="text-xl font-semibold mb-3">Engage Snapshot</h2>
+              <div className="space-y-2 text-sm">
+                <p className="text-[rgb(var(--text-muted))]">Next actions: <span className="text-[rgb(var(--text))] font-medium">{buckets.next_action.length}</span></p>
+                <p className="text-[rgb(var(--text-muted))]">Calendar: <span className="text-[rgb(var(--text))] font-medium">{buckets.calendar.length}</span></p>
+                <p className="text-[rgb(var(--text-muted))]">Waiting for: <span className="text-[rgb(var(--text))] font-medium">{buckets.waiting_for.length}</span></p>
+              </div>
+            </div>
+          </section>
+
+          <details className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.55)] p-4">
+            <summary className="cursor-pointer text-sm font-medium text-[rgb(var(--text-muted))]">Open bucket navigation</summary>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               {BUCKET_TABS.map((tab) => (
                 <button
@@ -903,65 +978,7 @@ export default function TodosPage() {
                 </button>
               ))}
             </div>
-          </header>
-
-          {error && (
-            <div className="rounded-xl border border-[rgb(127_29_29)] bg-[rgb(127_29_29_/_0.30)] p-3 text-sm text-[rgb(248_113_113)]">
-              {error}
-            </div>
-          )}
-
-          <section className="grid lg:grid-cols-3 gap-4">
-            <form onSubmit={addInboxTodo} className="lg:col-span-2 rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-5">
-              <div className="flex items-center gap-2 mb-3">
-                <Plus className="w-5 h-5 text-[rgb(var(--brand))]" />
-                <h2 className="text-xl font-semibold">Quick Capture to Inbox ({activeContext === "work" ? "Work" : "Personal"})</h2>
-              </div>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newTodo}
-                  onChange={(event) => setNewTodo(event.target.value)}
-                  placeholder="Capture something quickly..."
-                  className="flex-1 px-4 py-3 rounded-2xl bg-[rgb(var(--surface-2)_/_0.7)] border border-[rgb(var(--border))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand))]"
-                  disabled={adding}
-                />
-                <button
-                  type="submit"
-                  disabled={!newTodo.trim() || adding}
-                  className="px-4 py-3 rounded-2xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60 transition-colors"
-                >
-                  {adding ? "Adding..." : "Add"}
-                </button>
-              </div>
-            </form>
-
-            <div className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-5 flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <PlayCircle className="w-5 h-5 text-[rgb(var(--brand))]" />
-                  <h2 className="text-xl font-semibold">Process Inbox</h2>
-                </div>
-                <p className="text-sm text-[rgb(var(--text-muted))]">{buckets.inbox.length} unprocessed item{buckets.inbox.length === 1 ? "" : "s"}</p>
-              </div>
-              <div className="mt-4 flex gap-2">
-                <Link
-                  href={`/todos/process?context=${activeContext}&bucket=inbox`}
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] transition-colors"
-                >
-                  Open
-                  <ChevronRight className="w-4 h-4" />
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => void refresh()}
-                  className="px-4 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.7)] transition-colors"
-                >
-                  {refreshing ? "Refreshing..." : "Refresh"}
-                </button>
-              </div>
-            </div>
-          </section>
+          </details>
 
           <section className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
             <div className="flex items-center gap-2 mb-4">
@@ -1198,7 +1215,7 @@ export default function TodosPage() {
             )}
           </section>
 
-          <details id="bucket-waiting_for" open className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
+          <details id="bucket-waiting_for" open={activeBucket === "waiting_for"} className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
             <summary className="cursor-pointer font-semibold inline-flex items-center gap-2">
               <Users className="w-5 h-5 text-[rgb(var(--brand))]" />
               Waiting For ({buckets.waiting_for.length})
@@ -1212,7 +1229,7 @@ export default function TodosPage() {
             </div>
           </details>
 
-          <details id="bucket-calendar" open className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
+          <details id="bucket-calendar" open={activeBucket === "calendar"} className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
             <summary className="cursor-pointer font-semibold inline-flex items-center gap-2">
               <CalendarClock className="w-5 h-5 text-[rgb(var(--brand))]" />
               Calendar ({buckets.calendar.length})
@@ -1227,7 +1244,7 @@ export default function TodosPage() {
           </details>
 
           <section className="grid lg:grid-cols-2 gap-4">
-            <details id="bucket-someday_maybe" open className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
+            <details id="bucket-someday_maybe" open={activeBucket === "someday_maybe"} className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
               <summary className="cursor-pointer font-semibold inline-flex items-center gap-2">
                 <Archive className="w-5 h-5 text-[rgb(var(--brand))]" />
                 Someday/Maybe ({buckets.someday_maybe.length})
@@ -1241,7 +1258,7 @@ export default function TodosPage() {
               </div>
             </details>
 
-            <details id="bucket-reference" open className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
+            <details id="bucket-reference" open={activeBucket === "reference"} className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
               <summary className="cursor-pointer font-semibold inline-flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-[rgb(var(--brand))]" />
                 Reference ({buckets.reference.length})
@@ -1256,7 +1273,7 @@ export default function TodosPage() {
             </details>
           </section>
 
-          <details id="bucket-inbox" className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
+          <details id="bucket-inbox" open={activeBucket === "inbox"} className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
             <summary className="cursor-pointer font-semibold inline-flex items-center gap-2">
               <Inbox className="w-5 h-5 text-[rgb(var(--brand))]" />
               Inbox Backlog ({buckets.inbox.length})

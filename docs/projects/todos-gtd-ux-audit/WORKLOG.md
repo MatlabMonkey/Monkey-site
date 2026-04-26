@@ -14,9 +14,13 @@ User feedback: current GTD implementation works functionally but feels like "a t
 ## Notes
 - Attempted Codex audit run, but CLI quota error blocked it.
 - Continued with in-session audit and produced architecture + UX recommendations.
+- Logged incident details in `docs/ops/model-runtime-issues.md`.
 
 ## Current output
 - `docs/projects/todos-gtd-ux-audit/AUDIT_2026-04-25.md`
 
 ## Next step
-- Align on target interaction model (process-first vs board-first), then implement Phase 1 UX changes.
+- ✅ Phase 1 started and shipped:
+  - `app/todos/process/page.tsx` moved to guided GTD decision flow (question-by-question)
+  - `app/todos/page.tsx` reframed to process-first dashboard with bucket nav de-emphasized
+- Follow-up: collect usage feedback and tune wording/step friction.

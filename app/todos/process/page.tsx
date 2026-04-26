@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, CalendarClock, CheckCircle2, Clock3, Layers, ListTodo, RotateCcw, Trash2 } from "lucide-react"
+import { ArrowLeft, CalendarClock, CheckCircle2, Clock3, GitBranch, ListTodo, RotateCcw, Trash2 } from "lucide-react"
 import PinGate from "../../components/PinGate"
 import { normalizeTodoContext, type TodoContext, type TodoOutcome } from "../../../lib/todos"
 
@@ -28,33 +28,55 @@ type LastTransition = {
   outcome: TodoOutcome
 }
 
-type OutcomeAction = {
-  key: string
-  outcome: TodoOutcome
-  label: string
-  description: string
+type ClarifyAnswers = {
+  actionable: boolean | null
+  nonActionableOutcome: Extract<TodoOutcome, "trash" | "reference" | "someday_maybe"> | null
+  twoMinute: boolean | null
+  delegated: boolean | null
+  timeSpecific: boolean | null
+  multiStep: boolean | null
 }
 
-const OUTCOME_ACTIONS: OutcomeAction[] = [
-  { key: "D", outcome: "do_now", label: "Do Now", description: "Complete immediately" },
-  { key: "N", outcome: "next_action", label: "Next Action", description: "Move to actionable queue" },
-  { key: "P", outcome: "project", label: "Project", description: "Convert to multi-step project" },
-  { key: "W", outcome: "waiting_for", label: "Waiting For", description: "Blocked by someone/something" },
-  { key: "C", outcome: "calendar", label: "Calendar", description: "Put on a specific date/time" },
-  { key: "S", outcome: "someday_maybe", label: "Someday/Maybe", description: "Keep for later" },
-  { key: "R", outcome: "reference", label: "Reference", description: "Store for information" },
-  { key: "T", outcome: "trash", label: "Trash", description: "Drop it" },
-]
+const DEFAULT_ANSWERS: ClarifyAnswers = {
+  actionable: null,
+  nonActionableOutcome: null,
+  twoMinute: null,
+  delegated: null,
+  timeSpecific: null,
+  multiStep: null,
+}
 
-const HOTKEY_TO_OUTCOME: Record<string, TodoOutcome> = {
-  d: "do_now",
-  n: "next_action",
-  p: "project",
-  w: "waiting_for",
-  c: "calendar",
-  s: "someday_maybe",
-  r: "reference",
-  t: "trash",
+const OUTCOME_LABELS: Record<TodoOutcome, string> = {
+  do_now: "Do now",
+  next_action: "Next action",
+  project: "Project",
+  waiting_for: "Waiting for",
+  calendar: "Calendar",
+  someday_maybe: "Someday/Maybe",
+  reference: "Reference",
+  trash: "Trash",
+}
+
+const DECISION_STEPS = ["Actionable?", "<2 min?", "Delegated?", "Time-specific?", "Multi-step?"]
+
+function resolveOutcomeFromAnswers(answers: ClarifyAnswers): TodoOutcome | null {
+  if (answers.actionable === null) return null
+
+  if (answers.actionable === false) {
+    return answers.nonActionableOutcome
+  }
+
+  if (answers.twoMinute === null) return null
+  if (answers.twoMinute) return "do_now"
+
+  if (answers.delegated === null) return null
+  if (answers.delegated) return "waiting_for"
+
+  if (answers.timeSpecific === null) return null
+  if (answers.timeSpecific) return "calendar"
+
+  if (answers.multiStep === null) return null
+  return answers.multiStep ? "project" : "next_action"
 }
 
 function toLocalDateTimeInput(iso: string | null): string {
@@ -100,10 +122,20 @@ export default function ProcessTodosPage() {
   const [waitingNote, setWaitingNote] = useState("")
   const [calendarTime, setCalendarTime] = useState("")
   const [savingDetails, setSavingDetails] = useState(false)
+  const [answers, setAnswers] = useState<ClarifyAnswers>(DEFAULT_ANSWERS)
 
   const currentTodo = queue[0] || null
   const processedCount = Math.max(0, initialQueueSize - queue.length)
   const dashboardHref = `/todos?context=${activeContext}&bucket=inbox`
+  const resolvedOutcome = useMemo(() => resolveOutcomeFromAnswers(answers), [answers])
+
+  const resetAnswers = useCallback(() => {
+    setAnswers(DEFAULT_ANSWERS)
+  }, [])
+
+  useEffect(() => {
+    resetAnswers()
+  }, [currentTodo?.id, resetAnswers])
 
   useEffect(() => {
     const syncContext = () => {
@@ -182,13 +214,15 @@ export default function ProcessTodosPage() {
         } else {
           setCalendarTime("")
         }
+
+        resetAnswers()
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to process todo")
       } finally {
         setBusy(false)
       }
     },
-    [busy, currentTodo],
+    [busy, currentTodo, resetAnswers],
   )
 
   const undoLast = useCallback(async () => {
@@ -289,6 +323,52 @@ export default function ProcessTodosPage() {
     }
   }, [calendarTime, lastTransition])
 
+  const setActionable = useCallback((value: boolean) => {
+    setAnswers((prev) => ({
+      actionable: value,
+      nonActionableOutcome: value ? null : prev.nonActionableOutcome,
+      twoMinute: value ? prev.twoMinute : null,
+      delegated: value ? prev.delegated : null,
+      timeSpecific: value ? prev.timeSpecific : null,
+      multiStep: value ? prev.multiStep : null,
+    }))
+  }, [])
+
+  const setNonActionableOutcome = useCallback((outcome: Extract<TodoOutcome, "trash" | "reference" | "someday_maybe">) => {
+    setAnswers((prev) => ({ ...prev, nonActionableOutcome: outcome }))
+  }, [])
+
+  const setTwoMinute = useCallback((value: boolean) => {
+    setAnswers((prev) => ({
+      ...prev,
+      twoMinute: value,
+      delegated: value ? null : prev.delegated,
+      timeSpecific: value ? null : prev.timeSpecific,
+      multiStep: value ? null : prev.multiStep,
+    }))
+  }, [])
+
+  const setDelegated = useCallback((value: boolean) => {
+    setAnswers((prev) => ({
+      ...prev,
+      delegated: value,
+      timeSpecific: value ? null : prev.timeSpecific,
+      multiStep: value ? null : prev.multiStep,
+    }))
+  }, [])
+
+  const setTimeSpecific = useCallback((value: boolean) => {
+    setAnswers((prev) => ({
+      ...prev,
+      timeSpecific: value,
+      multiStep: value ? null : prev.multiStep,
+    }))
+  }, [])
+
+  const setMultiStep = useCallback((value: boolean) => {
+    setAnswers((prev) => ({ ...prev, multiStep: value }))
+  }, [])
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
@@ -311,18 +391,15 @@ export default function ProcessTodosPage() {
         return
       }
 
-      const outcome = HOTKEY_TO_OUTCOME[key]
-      if (!outcome) return
-
-      event.preventDefault()
-      void processCurrentTodo(outcome)
+      if (key === "enter" && resolvedOutcome) {
+        event.preventDefault()
+        void processCurrentTodo(resolvedOutcome)
+      }
     }
 
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [dashboardHref, processCurrentTodo, router, undoLast])
-
-  const legendText = useMemo(() => OUTCOME_ACTIONS.map((action) => `${action.key} ${action.label}`).join(" • "), [])
+  }, [dashboardHref, processCurrentTodo, resolvedOutcome, router, undoLast])
 
   if (loading) {
     return (
@@ -357,7 +434,7 @@ export default function ProcessTodosPage() {
                 <p className="text-[rgb(var(--text-muted))]">Remaining: {queue.length}</p>
               </div>
             </div>
-            <p className="mt-4 text-xs text-[rgb(var(--text-muted))]">Hotkeys: {legendText} • U Undo • Esc Exit</p>
+            <p className="mt-4 text-xs text-[rgb(var(--text-muted))]">Hotkeys: Enter apply decision • U undo • Esc exit</p>
           </header>
 
           {error && (
@@ -390,22 +467,110 @@ export default function ProcessTodosPage() {
               </section>
 
               <section className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.75)] p-6">
-                <h3 className="text-lg font-semibold mb-4">Clarify outcome</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {OUTCOME_ACTIONS.map((action) => (
-                    <button
-                      key={action.outcome}
-                      type="button"
-                      onClick={() => void processCurrentTodo(action.outcome)}
-                      disabled={busy}
-                      className="text-left p-4 rounded-2xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.65)] transition-colors disabled:opacity-60"
-                    >
-                      <p className="font-semibold">{action.key} · {action.label}</p>
-                      <p className="text-sm text-[rgb(var(--text-muted))] mt-1">{action.description}</p>
-                    </button>
-                  ))}
+                <h3 className="text-lg font-semibold mb-2">GTD clarify flow</h3>
+                <p className="text-sm text-[rgb(var(--text-muted))] mb-4">Answer the decision tree and apply the resolved outcome.</p>
+
+                <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2)_/_0.5)] p-4 space-y-4">
+                  {answers.actionable === null && (
+                    <div className="space-y-2">
+                      <p className="font-medium">1) Is it actionable?</p>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setActionable(true)}
+                          disabled={busy}
+                          className="px-4 py-2 rounded-xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60"
+                        >
+                          Yes
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setActionable(false)}
+                          disabled={busy}
+                          className="px-4 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60"
+                        >
+                          No
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {answers.actionable === false && answers.nonActionableOutcome === null && (
+                    <div className="space-y-2">
+                      <p className="font-medium">2) What should happen with this non-actionable item?</p>
+                      <div className="grid sm:grid-cols-3 gap-2">
+                        <button type="button" onClick={() => setNonActionableOutcome("trash")} disabled={busy} className="px-3 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60">Trash</button>
+                        <button type="button" onClick={() => setNonActionableOutcome("reference")} disabled={busy} className="px-3 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60">Reference</button>
+                        <button type="button" onClick={() => setNonActionableOutcome("someday_maybe")} disabled={busy} className="px-3 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60">Someday/Maybe</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {answers.actionable === true && answers.twoMinute === null && (
+                    <div className="space-y-2">
+                      <p className="font-medium">2) Will this take less than 2 minutes?</p>
+                      <div className="flex flex-wrap gap-2">
+                        <button type="button" onClick={() => setTwoMinute(true)} disabled={busy} className="px-4 py-2 rounded-xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60">Yes, do now</button>
+                        <button type="button" onClick={() => setTwoMinute(false)} disabled={busy} className="px-4 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60">No</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {answers.actionable === true && answers.twoMinute === false && answers.delegated === null && (
+                    <div className="space-y-2">
+                      <p className="font-medium">3) Is this delegated or blocked by someone else?</p>
+                      <div className="flex flex-wrap gap-2">
+                        <button type="button" onClick={() => setDelegated(true)} disabled={busy} className="px-4 py-2 rounded-xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60">Yes</button>
+                        <button type="button" onClick={() => setDelegated(false)} disabled={busy} className="px-4 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60">No</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {answers.actionable === true && answers.twoMinute === false && answers.delegated === false && answers.timeSpecific === null && (
+                    <div className="space-y-2">
+                      <p className="font-medium">4) Must it happen on a specific date/time?</p>
+                      <div className="flex flex-wrap gap-2">
+                        <button type="button" onClick={() => setTimeSpecific(true)} disabled={busy} className="px-4 py-2 rounded-xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60">Yes</button>
+                        <button type="button" onClick={() => setTimeSpecific(false)} disabled={busy} className="px-4 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60">No</button>
+                      </div>
+                    </div>
+                  )}
+
+                  {answers.actionable === true && answers.twoMinute === false && answers.delegated === false && answers.timeSpecific === false && answers.multiStep === null && (
+                    <div className="space-y-2">
+                      <p className="font-medium">5) Is it a multi-step outcome?</p>
+                      <div className="flex flex-wrap gap-2">
+                        <button type="button" onClick={() => setMultiStep(true)} disabled={busy} className="px-4 py-2 rounded-xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60">Yes, project</button>
+                        <button type="button" onClick={() => setMultiStep(false)} disabled={busy} className="px-4 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60">No, next action</button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="mt-4">
+
+                <div className="mt-4 flex flex-wrap items-center gap-2">
+                  <span className="text-sm text-[rgb(var(--text-muted))]">Resolved outcome:</span>
+                  <span className="px-2.5 py-1 rounded-lg border border-[rgb(var(--border))] bg-[rgb(var(--surface-2)_/_0.8)] text-sm font-medium">
+                    {resolvedOutcome ? OUTCOME_LABELS[resolvedOutcome] : "Incomplete"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={resetAnswers}
+                    disabled={busy}
+                    className="ml-auto px-3 py-1.5 rounded-lg border border-[rgb(var(--border))] text-xs hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60"
+                  >
+                    Reset flow
+                  </button>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => resolvedOutcome && void processCurrentTodo(resolvedOutcome)}
+                    disabled={!resolvedOutcome || busy}
+                    className="px-4 py-2 rounded-xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60"
+                  >
+                    {busy ? "Applying..." : "Apply decision"}
+                  </button>
                   <button
                     type="button"
                     onClick={() => void undoLast()}
@@ -486,14 +651,14 @@ export default function ProcessTodosPage() {
 
           <section className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.65)] p-6">
             <h3 className="text-lg font-semibold mb-3 inline-flex items-center gap-2">
-              <Layers className="w-5 h-5" />
+              <GitBranch className="w-5 h-5" />
               Decision Map
             </h3>
-            <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
-              {OUTCOME_ACTIONS.map((action) => (
-                <div key={action.outcome} className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2)_/_0.7)] px-3 py-2">
-                  <p className="font-semibold text-sm">{action.key}</p>
-                  <p className="text-xs text-[rgb(var(--text-muted))]">{action.label}</p>
+            <div className="grid gap-2 grid-cols-2 md:grid-cols-5">
+              {DECISION_STEPS.map((step, index) => (
+                <div key={step} className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2)_/_0.7)] px-3 py-2">
+                  <p className="font-semibold text-sm">{index + 1}</p>
+                  <p className="text-xs text-[rgb(var(--text-muted))]">{step}</p>
                 </div>
               ))}
             </div>
