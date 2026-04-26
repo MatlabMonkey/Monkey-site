@@ -980,29 +980,32 @@ export default function TodosPage() {
             </div>
           </details>
 
-          <section className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <Repeat2 className="w-5 h-5 text-[rgb(var(--brand))]" />
-              <h2 className="text-xl font-semibold">Recurring</h2>
-              <span className="text-sm text-[rgb(var(--text-muted))]">{recurringTodos.length}</span>
-            </div>
+          <details className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
+            <summary className="cursor-pointer list-none">
+              <div className="flex items-center gap-2 mb-1">
+                <Repeat2 className="w-5 h-5 text-[rgb(var(--brand))]" />
+                <h2 className="text-xl font-semibold">Recurring</h2>
+                <span className="text-sm text-[rgb(var(--text-muted))]">{recurringTodos.length}</span>
+              </div>
+              <p className="text-xs text-[rgb(var(--text-muted))]">Compact view for routines. Expand to edit/add.</p>
+            </summary>
 
+            <div className="mt-4 space-y-4">
             {recurringTodos.length === 0 ? (
               <p className="text-sm text-[rgb(var(--text-muted))] mb-5">No recurring todos yet. Add one below.</p>
             ) : (
-              <div className="space-y-3 mb-5">
+              <div className="space-y-2 mb-5">
                 {recurringTodos.map((todo) => {
                   const busy = recurringActionId === todo.id
                   return (
                     <article
                       key={todo.id}
-                      className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2)_/_0.65)] p-4"
+                      className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2)_/_0.55)] px-3 py-2"
                     >
-                      <div className="flex flex-wrap items-start gap-3 justify-between">
+                      <div className="flex flex-wrap items-center gap-3 justify-between">
                         <div className="min-w-0 flex-1">
-                          <p className={todo.active ? "font-medium" : "font-medium text-[rgb(var(--text-muted))]"}>{todo.content}</p>
-                          <p className="text-xs text-[rgb(var(--text-muted))] mt-1">{describeRecurringRuleLabel(todo.rrule)}</p>
-                          <p className="text-xs text-[rgb(var(--text-muted))] mt-1">Next run: {formatDateOnly(todo.next_run_at)}</p>
+                          <p className={todo.active ? "font-medium text-sm" : "font-medium text-sm text-[rgb(var(--text-muted))]"}>{todo.content}</p>
+                          <p className="text-xs text-[rgb(var(--text-muted))] mt-0.5">{describeRecurringRuleLabel(todo.rrule)} • Next {formatDateOnly(todo.next_run_at)}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
@@ -1116,7 +1119,8 @@ export default function TodosPage() {
                 </button>
               </div>
             </form>
-          </section>
+            </div>
+          </details>
 
           <section id="bucket-next_action" className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-6">
             <div className="flex items-center gap-2 mb-4">

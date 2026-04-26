@@ -48,6 +48,9 @@ export default function MealPrepPage() {
   const [generating, setGenerating] = useState(false)
   const [checkedItems, setCheckedItems] = useState<Set<string>>(new Set())
   const [error, setError] = useState<string | null>(null)
+  const [mode, setMode] = useState<"grocery" | "cook">("grocery")
+
+  const checklistStorageKey = recipe ? `mealprep-checklist:${recipe.week_starting}:${recipe.recipe_name}` : null
 
   const fetchLatestRecipe = useCallback(async ({ showLoading = false, resetChecklist = false }: { showLoading?: boolean; resetChecklist?: boolean } = {}) => {
     if (showLoading) setLoading(true)
@@ -80,6 +83,29 @@ export default function MealPrepPage() {
   useEffect(() => {
     void fetchLatestRecipe({ showLoading: true })
   }, [fetchLatestRecipe])
+
+  useEffect(() => {
+    if (!checklistStorageKey) return
+    try {
+      const raw = window.localStorage.getItem(checklistStorageKey)
+      if (!raw) return
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) {
+        setCheckedItems(new Set(parsed.filter((v) => typeof v === "string")))
+      }
+    } catch {
+      // ignore local storage parse errors
+    }
+  }, [checklistStorageKey])
+
+  useEffect(() => {
+    if (!checklistStorageKey) return
+    try {
+      window.localStorage.setItem(checklistStorageKey, JSON.stringify(Array.from(checkedItems)))
+    } catch {
+      // ignore local storage write failures
+    }
+  }, [checklistStorageKey, checkedItems])
 
   const generateRecipe = async () => {
     setGenerating(true)
@@ -264,7 +290,30 @@ export default function MealPrepPage() {
           </div>
         </header>
 
+        <section className="mb-6 sticky top-3 z-10 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.9)] backdrop-blur p-3">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="inline-flex rounded-xl border border-[rgb(var(--border))] overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setMode("grocery")}
+                className={`px-3 py-1.5 text-sm ${mode === "grocery" ? "bg-[rgb(var(--brand-weak)_/_0.7)] text-[rgb(var(--text))]" : "text-[rgb(var(--text-muted))]"}`}
+              >
+                Grocery
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("cook")}
+                className={`px-3 py-1.5 text-sm ${mode === "cook" ? "bg-[rgb(var(--brand-weak)_/_0.7)] text-[rgb(var(--text))]" : "text-[rgb(var(--text-muted))]"}`}
+              >
+                Cook
+              </button>
+            </div>
+            <div className="text-sm text-[rgb(var(--text-muted))]">{checkedItems.size}/{recipe.ingredients.length} items</div>
+          </div>
+        </section>
+
         {/* Shopping List */}
+        {mode === "grocery" && (
         <section className="mb-8">
           <div className="flex items-center gap-3 mb-4">
             <ShoppingCart className="w-5 h-5 text-[rgb(var(--brand))]" />
@@ -288,14 +337,14 @@ export default function MealPrepPage() {
                       <li
                         key={key}
                         onClick={() => toggleItem(key)}
-                        className={`flex items-center gap-3 cursor-pointer group ${isChecked ? 'opacity-50' : ''}`}
+                        className={`flex items-center gap-3 cursor-pointer group rounded-xl px-2 py-2 active:scale-[0.99] ${isChecked ? 'opacity-50' : ''}`}
                       >
-                        <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+                        <div className={`w-7 h-7 rounded border flex items-center justify-center transition-colors ${
                           isChecked
                             ? 'bg-[rgb(var(--brand))] border-[rgb(var(--brand))]'
                             : 'border-[rgb(var(--border))] group-hover:border-[rgb(var(--brand))]'
                         }`}>
-                          {isChecked && <Check className="w-3 h-3 text-[rgb(var(--bg))]" />}
+                          {isChecked && <Check className="w-4 h-4 text-[rgb(var(--bg))]" />}
                         </div>
                         <span className={isChecked ? 'line-through' : ''}>
                           <span className="font-medium">{ing.item}</span>
@@ -309,8 +358,10 @@ export default function MealPrepPage() {
             ))}
           </div>
         </section>
+        )}
 
         {/* Instructions */}
+        {mode === "cook" && (
         <section>
           <div className="flex items-center gap-3 mb-4">
             <ChefHat className="w-5 h-5 text-[rgb(var(--brand))]" />
@@ -331,6 +382,7 @@ export default function MealPrepPage() {
             ))}
           </div>
         </section>
+        )}
       </div>
     </main>
   )

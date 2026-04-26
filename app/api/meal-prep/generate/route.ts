@@ -6,7 +6,7 @@ export const revalidate = 0;
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const anthropicKey = process.env.ANTHROPIC_SECRET_API_KEY || process.env.ANTHROPIC_API_KEY;
+const openaiKey = process.env.OPENAI_API_KEY;
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
@@ -47,10 +47,16 @@ INGREDIENT GUIDELINES:
 - Vegetables should be cheap and in-season (broccoli, green beans, bell peppers, zucchini, cabbage, etc.)
 
 PORTIONS MATTER:
-- This feeds a 210 lb active male for the ENTIRE week
+- This feeds a 200 lb active male for the ENTIRE week
 - Each serving should be genuinely filling — think restaurant-sized portions
 - A typical serving should be ~2 cups rice + 8-10oz protein + 1.5 cups vegetables
 - Total batch should use 5-7 lbs of protein, 4-5 cups dry rice, and 3-4 lbs of vegetables
+
+STYLE:
+- Prioritize FAST prep and LOW-friction cooking.
+- Prefer 1-pan, sheet-pan, air fryer, or rice-cooker flows.
+- Keep total active cook effort as low as possible.
+- Grocery-list readability matters: clean, practical ingredient names.
 
 This week's protein: ${protein.toUpperCase()}
 
@@ -74,6 +80,27 @@ Respond ONLY with valid JSON in this exact format:
 }
 
 IMPORTANT: macros are PER SERVING. Ensure calories actually add up to 1,100-1,200 per serving given the ingredient quantities divided by 10.`;
+}
+
+function extractTextFromOpenAIResponse(payload: any): string {
+  if (typeof payload?.output_text === 'string' && payload.output_text.trim()) {
+    return payload.output_text;
+  }
+
+  if (Array.isArray(payload?.output)) {
+    const chunks: string[] = [];
+    for (const item of payload.output) {
+      if (!Array.isArray(item?.content)) continue;
+      for (const part of item.content) {
+        if (part?.type === 'output_text' && typeof part?.text === 'string') {
+          chunks.push(part.text);
+        }
+      }
+    }
+    if (chunks.length > 0) return chunks.join('\n');
+  }
+
+  return '';
 }
 
 function extractFirstJsonObject(text: string): string | null {
@@ -122,8 +149,8 @@ function sanitizeLikelyJson(raw: string): string {
 }
 
 export async function POST() {
-  if (!anthropicKey) {
-    return NextResponse.json({ error: 'ANTHROPIC_SECRET_API_KEY not configured' }, { status: 500 });
+  if (!openaiKey) {
+    return NextResponse.json({ error: 'OPENAI_API_KEY not configured' }, { status: 500 });
   }
 
   const protein = pickProtein();
@@ -146,28 +173,41 @@ export async function POST() {
   }
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': anthropicKey,
-        'anthropic-version': '2023-06-01',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-3-haiku-20240307',
-        max_tokens: 2000,
-        system: getMealPrepPrompt(protein) + avoidClause,
-        messages: [{ role: 'user', content: `Generate this week's ${protein} meal prep recipe.` }],
-      }),
-    });
+    const prompt = `${getMealPrepPrompt(protein)}${avoidClause}\n\nGenerate this week's ${protein} meal prep recipe.`;
+    const primaryModel = process.env.MEAL_PREP_OPENAI_MODEL || 'gpt-5.3-codex';
+    const fallbackModel = 'gpt-4.1-mini';
 
+    async function callModel(model: string) {
+      return fetch('https://api.openai.com/v1/responses', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${openaiKey}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          input: prompt,
+          max_output_tokens: 2200,
+        }),
+      });
+    }
+
+    let response = await callModel(primaryModel);
     if (!response.ok) {
-      const error = await response.text();
-      return NextResponse.json({ error: `Anthropic error: ${error}` }, { status: 500 });
+      const firstErr = await response.text();
+      if (primaryModel !== fallbackModel) {
+        response = await callModel(fallbackModel);
+        if (!response.ok) {
+          const secondErr = await response.text();
+          return NextResponse.json({ error: `OpenAI error: ${secondErr || firstErr}` }, { status: 500 });
+        }
+      } else {
+        return NextResponse.json({ error: `OpenAI error: ${firstErr}` }, { status: 500 });
+      }
     }
 
     const data = await response.json();
-    const content = data.content?.[0]?.text;
+    const content = extractTextFromOpenAIResponse(data);
     if (!content || typeof content !== 'string') {
       return NextResponse.json({ error: 'Model returned empty recipe content' }, { status: 500 });
     }
@@ -177,7 +217,7 @@ export async function POST() {
       return NextResponse.json({ error: 'Failed to locate JSON recipe in model output' }, { status: 500 });
     }
 
-    let recipe: any;
+    let recipe: Record<string, any>;
     try {
       recipe = JSON.parse(extracted);
     } catch {
@@ -232,7 +272,8 @@ export async function POST() {
       }
     );
 
-  } catch (err: any) {
-    return NextResponse.json({ error: err.message }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown generate error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
