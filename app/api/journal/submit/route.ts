@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { submitEntry } from "../../../../lib/journalDb";
 import { normalizeJournalAnswers } from "../../../../lib/journalValidation";
+import { normalizeIsoDate } from "../../../../lib/date";
 
 /**
  * POST /api/journal/submit
@@ -11,13 +12,14 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { date, answers } = body;
+    const normalizedDate = normalizeIsoDate(date);
 
-    if (!date || !answers || !Array.isArray(answers)) {
+    if (!normalizedDate || !answers || !Array.isArray(answers)) {
       return NextResponse.json({ error: "Invalid request body. Expected { date, answers }" }, { status: 400 });
     }
 
     const normalizedAnswers = normalizeJournalAnswers(answers);
-    const result = await submitEntry(date, normalizedAnswers);
+    const result = await submitEntry(normalizedDate, normalizedAnswers);
     return NextResponse.json({ entry: result.entry, answers: result.answers }, { status: 200 });
   } catch (error) {
     console.error("POST /api/journal/submit:", error);

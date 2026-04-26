@@ -8,7 +8,7 @@ import Link from "next/link"
 import PinGate from "../components/PinGate"
 import PrivateSectionNav from "../components/PrivateSectionNav"
 import { JOURNAL_QUESTION_SET } from "../../lib/journalSchema"
-import { getLocalDateString } from "../../lib/date"
+import { formatIsoDateForDisplay, getLocalDateString, normalizeIsoDate, shiftLocalDateString } from "../../lib/date"
 import { ArrowLeft, ChevronLeft, ChevronRight, CheckCircle2, Save, Loader2, Search, Compass } from "lucide-react"
 
 type Question = {
@@ -30,7 +30,7 @@ type Answer = {
 function JournalPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const dateParam = searchParams.get("date")
+  const rawDateParam = searchParams.get("date")
 
   const [questions, setQuestions] = useState<Question[]>([])
   const [answers, setAnswers] = useState<Record<string, any>>({})
@@ -43,12 +43,34 @@ function JournalPageContent() {
   const [draftLoaded, setDraftLoaded] = useState(false)
   const [loadedEntryExists, setLoadedEntryExists] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [dateInput, setDateInput] = useState("")
 
   // Get date for entry (default to today's local date)
-  const entryDate = dateParam || getLocalDateString()
+  const today = getLocalDateString()
+  const entryDate = normalizeIsoDate(rawDateParam) ?? today
   const currentQuestion = questions[currentQuestionIndex]
   const totalQuestions = questions.length
   const progress = totalQuestions > 0 ? ((currentQuestionIndex + 1) / totalQuestions) * 100 : 0
+
+  useEffect(() => {
+    if (rawDateParam == null) return
+    if (normalizeIsoDate(rawDateParam)) return
+    router.replace(`/journal?date=${today}`)
+  }, [rawDateParam, router, today])
+
+  useEffect(() => {
+    setDateInput(entryDate)
+  }, [entryDate])
+
+  const commitDateInput = (value: string) => {
+    const normalized = normalizeIsoDate(value)
+    if (!normalized) {
+      setDateInput(entryDate)
+      return
+    }
+    if (normalized === entryDate) return
+    router.replace(`/journal?date=${normalized}`)
+  }
 
   // Load questions on mount
   useEffect(() => {
@@ -470,10 +492,39 @@ function JournalPageContent() {
                   <span className="text-sm font-medium">Entry date:</span>
                   <input
                     type="date"
-                    value={entryDate}
-                    onChange={(e) => router.replace(`/journal?date=${e.target.value}`)}
+                    value={dateInput}
+                    onChange={(e) => {
+                      setDateInput(e.target.value)
+                      if (e.target.value.length === 10) {
+                        commitDateInput(e.target.value)
+                      }
+                    }}
+                    onBlur={(e) => commitDateInput(e.target.value)}
                     className="px-3 py-1.5 border border-slate-700 rounded-lg bg-slate-900 text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => router.replace(`/journal?date=${shiftLocalDateString(entryDate, -1)}`)}
+                      className="px-2 py-1 text-xs rounded-md border border-slate-700 text-slate-300 hover:text-slate-100 hover:bg-slate-800"
+                    >
+                      Yesterday
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => router.replace(`/journal?date=${today}`)}
+                      className="px-2 py-1 text-xs rounded-md border border-slate-700 text-slate-300 hover:text-slate-100 hover:bg-slate-800"
+                    >
+                      Today
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => router.replace(`/journal?date=${shiftLocalDateString(entryDate, 1)}`)}
+                      className="px-2 py-1 text-xs rounded-md border border-slate-700 text-slate-300 hover:text-slate-100 hover:bg-slate-800"
+                    >
+                      Tomorrow
+                    </button>
+                  </div>
                 </label>
                 <Link
                   href="/journal/search"
@@ -544,8 +595,8 @@ function JournalPageContent() {
           {draftLoaded && loadedEntryExists && (
             <div className={`mb-6 p-4 rounded-xl border border-sky-700/60 bg-sky-950/40 text-sky-200 transition-opacity duration-200 ${isSaving ? "opacity-0" : "opacity-100"}`}>
               {isDraft
-                ? `Resuming your draft from ${new Date(entryDate).toLocaleDateString()}`
-                : `Editing submitted entry from ${new Date(entryDate).toLocaleDateString()}`}
+                ? `Resuming your draft from ${formatIsoDateForDisplay(entryDate)}`
+                : `Editing submitted entry from ${formatIsoDateForDisplay(entryDate)}`}
             </div>
           )}
 
@@ -554,7 +605,7 @@ function JournalPageContent() {
             <div className="mb-6 rounded-2xl border border-slate-700 bg-slate-900/80 shadow-xl overflow-hidden">
               <div className="px-6 py-4 border-b border-slate-700 bg-slate-800/50">
                 <h2 className="text-lg font-semibold text-slate-100">
-                  View only — {new Date(entryDate).toLocaleDateString()}
+                  View only — {formatIsoDateForDisplay(entryDate)}
                 </h2>
                 <p className="text-sm text-slate-400 mt-1">
                   This entry was imported or uses a different question set. Showing all answers.

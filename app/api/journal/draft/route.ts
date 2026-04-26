@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { saveDraft } from "../../../../lib/journalDb";
-import { getLocalDateString } from "../../../../lib/date";
+import { getLocalDateString, normalizeIsoDate } from "../../../../lib/date";
 import { normalizeJournalAnswers } from "../../../../lib/journalValidation";
 
 /**
@@ -12,8 +12,9 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const { date, answers } = body
+    const normalizedDate = normalizeIsoDate(date)
 
-    if (!date || !answers || !Array.isArray(answers)) {
+    if (!normalizedDate || !answers || !Array.isArray(answers)) {
       return NextResponse.json(
         { error: "Invalid request body. Expected { date, answers }" },
         { status: 400 }
@@ -21,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     const normalizedAnswers = normalizeJournalAnswers(answers)
-    const result = await saveDraft(date, normalizedAnswers)
+    const result = await saveDraft(normalizedDate, normalizedAnswers)
 
     return NextResponse.json(
       {
@@ -45,7 +46,7 @@ export async function POST(request: NextRequest) {
  */
 export async function PATCH(request: NextRequest) {
   try {
-    const dateStr = request.nextUrl.searchParams.get("date") || getLocalDateString();
+    const dateStr = normalizeIsoDate(request.nextUrl.searchParams.get("date")) ?? getLocalDateString();
     const body = await request.json();
     const { answers } = body;
 

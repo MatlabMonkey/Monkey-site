@@ -1,10 +1,15 @@
 # Website Cleanup Worklog
 
-Last updated: 2026-04-25 18:42 PDT
+Last updated: 2026-04-25 18:58 PDT
 
 ## Current state
 
 ### Completed in this sprint
+- Hardened journal date handling + DB date normalization:
+  - stabilized date input state sync on `/journal`
+  - added quick date actions (Yesterday/Today/Tomorrow)
+  - fixed local date display formatting (avoids UTC day-shift)
+  - validated/normalized journal dates in API and DB layer
 - Applied private-section nav to remaining contact subpages:
   - `/workspace/contacts/capture`
   - `/workspace/contacts/review`

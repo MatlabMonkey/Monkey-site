@@ -4,6 +4,7 @@
  */
 
 import { supabase } from "./supabaseClient";
+import { normalizeIsoDate } from "./date";
 
 export type AnswerInput = {
   question_key: string;
@@ -30,6 +31,14 @@ export type EntryWithAnswers = {
   entry: JournalEntryRow | null;
   answers: AnswerOutput[];
 };
+
+function requireJournalDate(date: string): string {
+  const normalized = normalizeIsoDate(date);
+  if (!normalized) {
+    throw new Error(`Invalid journal date: ${date}`);
+  }
+  return normalized;
+}
 
 // Map answer_value + answer_type into value_* columns
 function toValueCols(
@@ -88,7 +97,7 @@ async function getQuestionIds(keys: string[]): Promise<Map<string, string>> {
  * Get entry and answers for a date (draft or submitted). Returns { entry: null, answers: [] } if none.
  */
 export async function getEntry(date: string): Promise<EntryWithAnswers> {
-  const dateStr = String(date).slice(0, 10);
+  const dateStr = requireJournalDate(date);
 
   const { data: entryRow, error: eErr } = await supabase
     .from("journal_entry")
@@ -137,7 +146,7 @@ export async function getEntry(date: string): Promise<EntryWithAnswers> {
  * Save or update a draft (is_draft=true, no completed_at).
  */
 export async function saveDraft(date: string, answers: AnswerInput[]): Promise<EntryWithAnswers> {
-  const dateStr = String(date).slice(0, 10);
+  const dateStr = requireJournalDate(date);
   const keys = answers.map((a) => a.question_key);
   const keyToId = await getQuestionIds(keys);
 
@@ -181,7 +190,7 @@ export async function saveDraft(date: string, answers: AnswerInput[]): Promise<E
  * Submit entry (is_draft=false, completed_at=now). Allows overwriting an existing submitted entry.
  */
 export async function submitEntry(date: string, answers: AnswerInput[]): Promise<EntryWithAnswers> {
-  const dateStr = String(date).slice(0, 10);
+  const dateStr = requireJournalDate(date);
   const keys = answers.map((a) => a.question_key);
   const keyToId = await getQuestionIds(keys);
 
@@ -229,7 +238,7 @@ export async function submitEntry(date: string, answers: AnswerInput[]): Promise
  * Check if an entry exists for the date and whether it is a draft.
  */
 export async function entryExists(date: string): Promise<{ exists: boolean; is_draft: boolean }> {
-  const dateStr = String(date).slice(0, 10);
+  const dateStr = requireJournalDate(date);
   const { data, error } = await supabase
     .from("journal_entry")
     .select("is_draft")
@@ -274,8 +283,10 @@ export async function searchEntries(params: SearchParams): Promise<SearchResultI
     .select("id, date, is_draft, completed_at")
     .order("date", { ascending: false })
     .limit(200);
-  if (from) qb = qb.gte("date", from.slice(0, 10));
-  if (to) qb = qb.lte("date", to.slice(0, 10));
+  const fromDate = normalizeIsoDate(from);
+  const toDate = normalizeIsoDate(to);
+  if (fromDate) qb = qb.gte("date", fromDate);
+  if (toDate) qb = qb.lte("date", toDate);
   if (entryIds && entryIds.length > 0) qb = qb.in("id", entryIds);
 
   const { data: entries, error: eErr } = await qb;
@@ -529,8 +540,10 @@ export async function exploreEntries(params: ExploreParams): Promise<SearchResul
 
     // We'll filter entries by date, then check if they match the pattern
     let qb = supabase.from("journal_entry").select("id, date");
-    if (from) qb = qb.gte("date", from.slice(0, 10));
-    if (to) qb = qb.lte("date", to.slice(0, 10));
+    const fromDate = normalizeIsoDate(from);
+    const toDate = normalizeIsoDate(to);
+    if (fromDate) qb = qb.gte("date", fromDate);
+    if (toDate) qb = qb.lte("date", toDate);
 
     const { data: entries, error } = await qb;
     if (error || !entries || entries.length === 0) return [];
@@ -657,8 +670,10 @@ export async function exploreEntries(params: ExploreParams): Promise<SearchResul
     .order("date", { ascending: false })
     .limit(500);
 
-  if (from) qb = qb.gte("date", from.slice(0, 10));
-  if (to) qb = qb.lte("date", to.slice(0, 10));
+  const fromDate = normalizeIsoDate(from);
+  const toDate = normalizeIsoDate(to);
+  if (fromDate) qb = qb.gte("date", fromDate);
+  if (toDate) qb = qb.lte("date", toDate);
   if (entryIds && entryIds.length > 0) {
     qb = qb.in("id", entryIds);
   } else if (entryIds !== null && entryIds.length === 0) {
