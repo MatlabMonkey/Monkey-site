@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
 import { BookOpen, CheckSquare, Wrench, Activity, MessageCircle, BriefcaseBusiness, Lock, Unlock, SquarePen } from "lucide-react"
 import { useEffect, useState } from "react"
 
@@ -397,7 +396,6 @@ function getDailyQuoteIndex() {
 }
 
 export default function Home() {
-  const searchParams = useSearchParams()
   const [dailyPhoto, setDailyPhoto] = useState(getDailyPhoto())
   const [imageLoaded, setImageLoaded] = useState(false)
   const [imageData, setImageData] = useState<{
@@ -410,9 +408,9 @@ export default function Home() {
   const [showPinInput, setShowPinInput] = useState(false)
   const [pin, setPin] = useState("")
   const [pinError, setPinError] = useState("")
+  const [authRequired, setAuthRequired] = useState(false)
+  const [blockedPath, setBlockedPath] = useState<string | null>(null)
   const quoteIndex = getDailyQuoteIndex()
-  const authRequired = searchParams.get("auth") === "required"
-  const blockedPath = searchParams.get("from")
 
   const checkAuthStatus = async () => {
     try {
@@ -426,6 +424,13 @@ export default function Home() {
 
   useEffect(() => {
     void checkAuthStatus()
+
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search)
+      const required = params.get("auth") === "required"
+      setAuthRequired(required)
+      setBlockedPath(params.get("from"))
+    }
   }, [])
 
   useEffect(() => {
