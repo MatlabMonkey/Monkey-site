@@ -8,7 +8,7 @@ import Link from "next/link"
 import PinGate from "../components/PinGate"
 import PrivateSectionNav from "../components/PrivateSectionNav"
 import { JOURNAL_QUESTION_SET } from "../../lib/journalSchema"
-import { formatIsoDateForDisplay, getLocalDateString, normalizeIsoDate, shiftLocalDateString } from "../../lib/date"
+import { formatIsoDateForDisplay, getLocalDateString, normalizeIsoDate } from "../../lib/date"
 import { ArrowLeft, ChevronLeft, ChevronRight, CheckCircle2, Save, Loader2, Search, Compass } from "lucide-react"
 
 type Question = {
@@ -502,29 +502,13 @@ function JournalPageContent() {
                     onBlur={(e) => commitDateInput(e.target.value)}
                     className="px-3 py-1.5 border border-slate-700 rounded-lg bg-slate-900 text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                   />
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => router.replace(`/journal?date=${shiftLocalDateString(entryDate, -1)}`)}
-                      className="px-2 py-1 text-xs rounded-md border border-slate-700 text-slate-300 hover:text-slate-100 hover:bg-slate-800"
-                    >
-                      Yesterday
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => router.replace(`/journal?date=${today}`)}
-                      className="px-2 py-1 text-xs rounded-md border border-slate-700 text-slate-300 hover:text-slate-100 hover:bg-slate-800"
-                    >
-                      Today
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => router.replace(`/journal?date=${shiftLocalDateString(entryDate, 1)}`)}
-                      className="px-2 py-1 text-xs rounded-md border border-slate-700 text-slate-300 hover:text-slate-100 hover:bg-slate-800"
-                    >
-                      Tomorrow
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => router.replace(`/journal?date=${today}`)}
+                    className="px-2 py-1 text-xs rounded-md border border-slate-700 text-slate-300 hover:text-slate-100 hover:bg-slate-800"
+                  >
+                    Today
+                  </button>
                 </label>
                 <Link
                   href="/journal/search"
