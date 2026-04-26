@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react";
 import Link from "next/link";
 import PinGate from "../../components/PinGate";
+import PrivateSectionNav from "../../components/PrivateSectionNav";
 import { ArrowLeft, Search, Loader2, Calendar } from "lucide-react";
 
 type SearchResult = {
@@ -66,6 +67,7 @@ export default function JournalSearchPage() {
             </Link>
             <h1 className="text-xl font-bold text-[rgb(var(--text))]">Search entries</h1>
           </div>
+          <PrivateSectionNav className="mb-6" />
 
           <div className="bg-[rgb(var(--surface))] rounded-2xl border border-[rgb(var(--border))] p-6  space-y-4 mb-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

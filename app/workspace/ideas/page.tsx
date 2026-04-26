@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { ArrowLeft, Archive, ArchiveRestore, Pin, PinOff, Plus, Trash2 } from "lucide-react"
 import PinGate from "../../components/PinGate"
+import PrivateSectionNav from "../../components/PrivateSectionNav"
 
 type Idea = {
   id: string
@@ -139,6 +140,7 @@ export default function WorkspaceIdeasPage() {
             <div className="flex-1">
               <h1 className="text-3xl md:text-4xl font-bold">Ideas</h1>
               <p className="text-[rgb(var(--text-muted))] mt-1">{ideaCountLabel}</p>
+              <PrivateSectionNav className="mt-3" />
             </div>
             <button
               type="button"

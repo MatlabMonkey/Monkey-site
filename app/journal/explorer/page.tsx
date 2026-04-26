@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import type React from "react";
 import Link from "next/link";
 import PinGate from "../../components/PinGate";
+import PrivateSectionNav from "../../components/PrivateSectionNav";
 import { ArrowLeft, Loader2, Calendar, List, Filter, BarChart3, Users, Search, Activity, Dumbbell, CheckSquare, FileText, CalendarDays, TrendingUp, X } from "lucide-react";
 import { JOURNAL_QUESTION_SET } from "../../../lib/journalSchema";
 import type { SearchResultItem } from "../../../lib/journalDb";
@@ -135,39 +136,42 @@ export default function JournalExplorerPage() {
           {/* Main Content */}
           <div className="flex-1 flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="border-b border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.50)] p-4 flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                {!sidebarOpen && (
-                  <button
-                    onClick={() => setSidebarOpen(true)}
-                    className="p-2 hover:bg-[rgb(var(--surface-2))] rounded"
+            <div className="border-b border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.50)] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-4">
+                  {!sidebarOpen && (
+                    <button
+                      onClick={() => setSidebarOpen(true)}
+                      className="p-2 hover:bg-[rgb(var(--surface-2))] rounded"
+                    >
+                      <Filter className="w-5 h-5" />
+                    </button>
+                  )}
+                  <Link
+                    href="/journal"
+                    className="flex items-center gap-2 text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))]"
                   >
-                    <Filter className="w-5 h-5" />
+                    <ArrowLeft className="w-5 h-5" />
+                    <span className="font-medium">Journal</span>
+                  </Link>
+                  <h1 className="text-xl font-bold text-[rgb(var(--text))]">Explorer</h1>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setViewMode("list")}
+                    className={`p-2 rounded ${viewMode === "list" ? "bg-[rgb(var(--brand-weak)_/_0.75)] text-[rgb(var(--brand))]" : "text-[rgb(var(--text-muted))] hover:bg-[rgb(var(--surface-2))]"}`}
+                  >
+                    <List className="w-5 h-5" />
                   </button>
-                )}
-                <Link
-                  href="/journal"
-                  className="flex items-center gap-2 text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))]"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                  <span className="font-medium">Journal</span>
-                </Link>
-                <h1 className="text-xl font-bold text-[rgb(var(--text))]">Explorer</h1>
+                  <button
+                    onClick={() => setViewMode("calendar")}
+                    className={`p-2 rounded ${viewMode === "calendar" ? "bg-[rgb(var(--brand-weak)_/_0.75)] text-[rgb(var(--brand))]" : "text-[rgb(var(--text-muted))] hover:bg-[rgb(var(--surface-2))]"}`}
+                  >
+                    <Calendar className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`p-2 rounded ${viewMode === "list" ? "bg-[rgb(var(--brand-weak)_/_0.75)] text-[rgb(var(--brand))]" : "text-[rgb(var(--text-muted))] hover:bg-[rgb(var(--surface-2))]"}`}
-                >
-                  <List className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => setViewMode("calendar")}
-                  className={`p-2 rounded ${viewMode === "calendar" ? "bg-[rgb(var(--brand-weak)_/_0.75)] text-[rgb(var(--brand))]" : "text-[rgb(var(--text-muted))] hover:bg-[rgb(var(--surface-2))]"}`}
-                >
-                  <Calendar className="w-5 h-5" />
-                </button>
-              </div>
+              <PrivateSectionNav className="mt-3" />
             </div>
 
             {/* Filter Form */}

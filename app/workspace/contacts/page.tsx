@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
 import { ArrowLeft, Building2, Plus, Search, UserRound, RefreshCw, AlertCircle } from "lucide-react"
 import PinGate from "../../components/PinGate"
+import PrivateSectionNav from "../../components/PrivateSectionNav"
 import type { ContactSearchResult } from "../../../lib/contacts"
 
 type SearchApiResponse = {
@@ -133,6 +134,7 @@ export default function ContactsPage() {
             </Link>
             <div className="flex-1">
               <h1 className="text-3xl font-bold md:text-4xl">Contacts</h1>
+              <PrivateSectionNav className="mt-3" />
             </div>
             <Link
               href="/workspace/contacts/capture"
