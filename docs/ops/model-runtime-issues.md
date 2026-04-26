@@ -46,3 +46,25 @@ openai embeddings failed: 429
 ### Impact
 - Could not retrieve prior memory corpus via semantic search.
 - No data loss in project files; only retrieval path temporarily unavailable.
+
+---
+
+## 2026-04-26 00:19 PDT — Codex health-check still quota blocked
+
+- **Task:** verify if Codex recovered by running a minimal `codex exec` smoke test.
+- **Prompt:** `Reply with exactly: CODEx_OK`
+- **Result:** same provider quota error; command exited before model response.
+
+### Raw stderr excerpt
+
+```text
+OpenAI Codex v0.104.0
+model: gpt-5.5
+provider: openai
+ERROR: Quota exceeded. Check your plan and billing details.
+(Command exited with code 1)
+```
+
+### Notes
+- This confirms Codex is currently unavailable for new runs on this host/account until quota/billing is restored.
+- Codex CLI help output shows no built-in command to query remaining quota/limits.
