@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useEffect, useState } from "react"
-import { ArrowLeft, MessageCircle, Send } from "lucide-react"
+import { ArrowLeft, Home, MessageCircle, Send, Trash2 } from "lucide-react"
 
 type Question = {
   id: string
@@ -25,6 +25,9 @@ export default function QuestionsPage() {
   const [responsePin, setResponsePin] = useState("")
   const [responseText, setResponseText] = useState("")
   const [responding, setResponding] = useState(false)
+  const [activeDeleteId, setActiveDeleteId] = useState<string | null>(null)
+  const [deletePin, setDeletePin] = useState("")
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     void fetchQuestions(true)
@@ -124,6 +127,33 @@ export default function QuestionsPage() {
     }
   }
 
+  const deleteQuestion = async (id: string, e: React.FormEvent) => {
+    e.preventDefault()
+    if (!deletePin || deleting) return
+
+    setDeleting(true)
+    setError("")
+    try {
+      const res = await fetch(`/api/questions/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pin: deletePin }),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to delete question")
+      }
+
+      setActiveDeleteId(null)
+      setDeletePin("")
+      await fetchQuestions(false)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete question")
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   const formatRelativeTime = (iso: string) => {
     const timestamp = new Date(iso).getTime()
     const now = Date.now()
@@ -147,9 +177,14 @@ export default function QuestionsPage() {
     <div className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--text))]">
       <div className="max-w-3xl mx-auto px-6 py-10">
         <div className="mb-8 flex items-center gap-4">
-          <Link href="/" className="p-2 rounded-xl hover:bg-[rgb(var(--surface-2))] transition-colors">
-            <ArrowLeft className="w-5 h-5 text-[rgb(var(--text-muted))]" />
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href="/" className="p-2 rounded-xl hover:bg-[rgb(var(--surface-2))] transition-colors" title="Back home">
+              <ArrowLeft className="w-5 h-5 text-[rgb(var(--text-muted))]" />
+            </Link>
+            <Link href="/" className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl border border-[rgb(var(--border))] text-[rgb(var(--text-muted))] hover:bg-[rgb(var(--surface-2)_/_0.8)]">
+              <Home className="w-3.5 h-3.5" /> Home
+            </Link>
+          </div>
           <div>
             <h1 className="text-3xl md:text-4xl font-bold text-[rgb(var(--text))]">
               Questions & Advice for Zach
@@ -220,23 +255,40 @@ export default function QuestionsPage() {
                 )}
 
                 <div className="mt-4">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (activeResponseId === question.id) {
-                        setActiveResponseId(null)
-                        setResponsePin("")
-                        setResponseText("")
-                      } else {
-                        setActiveResponseId(question.id)
-                        setResponsePin("")
-                        setResponseText("")
-                      }
-                    }}
-                    className="text-xs px-3 py-1.5 rounded-lg border border-[rgb(var(--border))] text-[rgb(var(--text-muted))] hover:bg-[rgb(var(--surface-2)_/_0.8)] transition-colors"
-                  >
-                    Respond
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (activeResponseId === question.id) {
+                          setActiveResponseId(null)
+                          setResponsePin("")
+                          setResponseText("")
+                        } else {
+                          setActiveResponseId(question.id)
+                          setResponsePin("")
+                          setResponseText("")
+                        }
+                      }}
+                      className="text-xs px-3 py-1.5 rounded-lg border border-[rgb(var(--border))] text-[rgb(var(--text-muted))] hover:bg-[rgb(var(--surface-2)_/_0.8)] transition-colors"
+                    >
+                      Respond
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (activeDeleteId === question.id) {
+                          setActiveDeleteId(null)
+                          setDeletePin("")
+                        } else {
+                          setActiveDeleteId(question.id)
+                          setDeletePin("")
+                        }
+                      }}
+                      className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg border border-[rgb(127_29_29)] text-[rgb(248_113_113)] hover:bg-[rgb(127_29_29_/_0.25)] transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Delete
+                    </button>
+                  </div>
                 </div>
 
                 {activeResponseId === question.id && (
@@ -264,6 +316,29 @@ export default function QuestionsPage() {
                     >
                       {responding ? "Saving..." : "Save response"}
                     </button>
+                  </form>
+                )}
+
+                {activeDeleteId === question.id && (
+                  <form onSubmit={(e) => deleteQuestion(question.id, e)} className="mt-4 space-y-2 rounded-xl border border-[rgb(127_29_29)] bg-[rgb(127_29_29_/_0.18)] p-3">
+                    <p className="text-xs text-[rgb(248_113_113)]">Delete this question (PIN required)</p>
+                    <div className="flex gap-2">
+                      <input
+                        type="password"
+                        value={deletePin}
+                        onChange={(e) => setDeletePin(e.target.value)}
+                        placeholder="PIN"
+                        required
+                        className="flex-1 rounded-xl bg-[rgb(var(--surface)_/_0.70)] border border-[rgb(var(--border))] px-3 py-2 text-sm"
+                      />
+                      <button
+                        type="submit"
+                        disabled={deleting}
+                        className="px-3 py-2 text-sm rounded-xl bg-[rgb(185_28_28)] hover:bg-[rgb(153_27_27)] disabled:opacity-60 text-white"
+                      >
+                        {deleting ? "Deleting..." : "Confirm"}
+                      </button>
+                    </div>
                   </form>
                 )}
               </article>

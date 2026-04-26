@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
-import { ArrowLeft, Clock, Users, Flame, Check, ShoppingCart, ChefHat, RefreshCw, Loader2 } from "lucide-react"
+import { ArrowLeft, Clock, Users, Flame, Check, ShoppingCart, ChefHat, RefreshCw, Loader2, Home } from "lucide-react"
 
 interface Ingredient {
   item: string
@@ -169,13 +169,21 @@ export default function MealPrepPage() {
     return (
       <main className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--text))]">
         <div className="max-w-4xl mx-auto px-6 py-10">
-          <Link
-            href="/tools"
-            className="inline-flex items-center gap-2 text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))] transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Tools
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/tools"
+              className="inline-flex items-center gap-2 text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))] transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Tools
+            </Link>
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[rgb(var(--border))] text-xs text-[rgb(var(--text-muted))] hover:bg-[rgb(var(--surface-2)_/_0.75)]"
+            >
+              <Home className="w-3.5 h-3.5" /> Home
+            </Link>
+          </div>
 
           <div className="mt-12 text-center">
             <ChefHat className="w-16 h-16 mx-auto text-[rgb(var(--brand))] mb-4" />
@@ -214,13 +222,21 @@ export default function MealPrepPage() {
       )}
       <div className="max-w-4xl mx-auto px-6 py-10">
         {/* Header */}
-        <Link
-          href="/tools"
-          className="inline-flex items-center gap-2 text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))] transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Tools
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/tools"
+            className="inline-flex items-center gap-2 text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))] transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Tools
+          </Link>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[rgb(var(--border))] text-xs text-[rgb(var(--text-muted))] hover:bg-[rgb(var(--surface-2)_/_0.75)]"
+          >
+            <Home className="w-3.5 h-3.5" /> Home
+          </Link>
+        </div>
 
         <header className="mt-6 mb-8">
           <div className="flex items-center gap-3 mb-2">

@@ -4,6 +4,14 @@ import { supabase } from "../../../../lib/supabaseClient"
 
 const RESPONSE_PIN = "2245"
 
+function getDbClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  return supabaseUrl && serviceRoleKey
+    ? createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } })
+    : supabase
+}
+
 export async function PATCH(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await context.params
@@ -18,12 +26,7 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
       return NextResponse.json({ error: "Response is required" }, { status: 400 })
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    const dbClient =
-      supabaseUrl && serviceRoleKey
-        ? createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } })
-        : supabase
+    const dbClient = getDbClient()
 
     const { data: question, error } = await dbClient
       .from("questions")
@@ -49,6 +52,31 @@ export async function PATCH(request: NextRequest, context: { params: Promise<{ i
     return NextResponse.json(
       { error: "Internal server error", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  try {
+    const { id } = await context.params
+    const body = await request.json().catch(() => ({})) as { pin?: string }
+
+    if (body.pin !== RESPONSE_PIN) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const dbClient = getDbClient()
+    const { error } = await dbClient.from("questions").delete().eq("id", id)
+
+    if (error) {
+      return NextResponse.json({ error: "Failed to delete question", details: error.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Internal server error", details: error instanceof Error ? error.message : String(error) },
+      { status: 500 },
     )
   }
 }
