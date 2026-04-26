@@ -5,16 +5,19 @@ export type AdderallModelInput = {
   firstDoseHour: number
   secondDoseHour: number
   vitaminCEnabled: boolean
-  vitaminCHour: number
-  vitaminCIntensity: number // 0..1
-  wakeHour: number // 0..24
-  bedHour: number // 20..30 (can cross midnight)
+  vitaminCHour: number // 16..28 (4 PM to 4 AM next day)
+  vitaminCDoseGrams?: number // 0..2
+  vitaminCIntensity?: number // backward-compat fallback 0..1
+  wakeHour: number // 4..12
+  bedHour: number // 20..28
+  workStartHour?: number // 6..26
+  workEndHour?: number // 6..26
+  homeworkStartHour?: number // 6..26
+  homeworkEndHour?: number // 6..26
 }
 
 export type SimPoint = {
-  tHours: number
-  day: number
-  hourOfDay: number
+  tHours: number // relative to day start, 0..31 in UI window
   concentration: number
   effectSite: number
   effect: number
@@ -33,13 +36,12 @@ export type AdderallModelResult = {
   points: SimPoint[]
   dayScores: DayScore[]
   summary: {
-    wakeEffectMean: number
-    sleepEffectMean: number
-    focusScore: number
-    sleepScore: number
-    compositeScore: number
+    workScore: number
+    homeworkScore: number
+    sleepScore: number // lower is better (mean effect during sleep window)
     concentrationPeak: number
     effectPeak: number
+    baselineMidnightConcentration: number
   }
 }
 
@@ -54,86 +56,115 @@ const XR_DELAY_HOURS = 4
 const KA_IMMEDIATE = 1.2
 const KA_DELAYED = 0.55
 const BASE_HALF_LIFE_HOURS = 11.5
+const ACID_HALF_LIFE_HOURS = 7.0 // approximate acidic-urine lower bound for amphetamine half-life
 const APPARENT_VD_L = 190
 const KE0 = 0.55
 const EMAX = 100
 const EC50 = 0.03
 const HILL = 1.6
 
+const BASELINE_DOSE_MG = 10
+const BASELINE_FIRST_DOSE_HOUR = 8
+const BASELINE_SECOND_DOSE_HOUR = 12
+
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value))
 }
 
-function circHourDistance(a: number, b: number) {
-  const diff = Math.abs(a - b)
-  return Math.min(diff, 24 - diff)
-}
-
-function localHour(tHours: number) {
-  const normalized = tHours % 24
-  return normalized < 0 ? normalized + 24 : normalized
-}
-
-function vitaminCEliminationMultiplier(
-  tHours: number,
-  enabled: boolean,
-  vitaminCHour: number,
-  intensity: number,
-): number {
-  if (!enabled) return 1
-  const h = localHour(tHours)
-  const sigma = 2.5
-  const distance = circHourDistance(h, vitaminCHour)
-  const bump = Math.exp(-(distance * distance) / (2 * sigma * sigma))
-  return 1 + 0.85 * clamp(intensity, 0, 1) * bump
-}
-
-function schedulePulseEvents(daysTotal: number, firstDoseHour: number, secondDoseHour: number, doseMg: number) {
-  const events = new Map<number, Array<{ amountMg: number; ka: number }>>()
-  for (let day = 0; day < daysTotal; day += 1) {
-    const dayStart = day * 24
-    const doseTimes = [firstDoseHour, secondDoseHour]
-
-    for (const doseHour of doseTimes) {
-      const t1 = dayStart + doseHour
-      const t2 = t1 + XR_DELAY_HOURS
-
-      const push = (timeHours: number, amountMg: number, ka: number) => {
-        const key = Math.round(timeHours * 60)
-        const existing = events.get(key) ?? []
-        existing.push({ amountMg, ka })
-        events.set(key, existing)
-      }
-
-      push(t1, doseMg * XR_SPLIT, KA_IMMEDIATE)
-      push(t2, doseMg * XR_SPLIT, KA_DELAYED)
-    }
-  }
-
-  return events
+function normalizeRange(start: number, end: number): { start: number; end: number } {
+  if (end <= start) return { start, end: end + 24 }
+  return { start, end }
 }
 
 function averageEffectBetween(points: SimPoint[], startHour: number, endHour: number) {
   if (endHour <= startHour) return 0
   const selected = points.filter((p) => p.tHours >= startHour && p.tHours < endHour)
   if (selected.length === 0) return 0
-  const sum = selected.reduce((acc, p) => acc + p.effect, 0)
-  return sum / selected.length
+  return selected.reduce((acc, p) => acc + p.effect, 0) / selected.length
+}
+
+function vitaminCEliminationMultiplier(
+  relHours: number,
+  enabled: boolean,
+  vitaminCHour: number,
+  vitaminCDoseGrams: number,
+): number {
+  if (!enabled) return 1
+
+  const doseFactor = clamp(vitaminCDoseGrams / 2, 0, 1)
+  if (doseFactor <= 0) return 1
+
+  const sigmaHours = 2.2
+  const distance = relHours - vitaminCHour
+  const bump = Math.exp(-(distance * distance) / (2 * sigmaHours * sigmaHours))
+
+  const maxMultiplier = BASE_HALF_LIFE_HOURS / ACID_HALF_LIFE_HOURS // ~1.64
+  return 1 + (maxMultiplier - 1) * doseFactor * bump
+}
+
+function scheduleDoseForDay(events: Map<number, Array<{ amountMg: number; ka: number }>>, day: number, doseMg: number, firstDoseHour: number, secondDoseHour: number) {
+  const dayStart = day * 24
+  const doseTimes = [firstDoseHour, secondDoseHour]
+
+  for (const doseHour of doseTimes) {
+    const t1 = dayStart + doseHour
+    const t2 = t1 + XR_DELAY_HOURS
+
+    const push = (timeHours: number, amountMg: number, ka: number) => {
+      const key = Math.round(timeHours * 60)
+      const existing = events.get(key) ?? []
+      existing.push({ amountMg, ka })
+      events.set(key, existing)
+    }
+
+    push(t1, doseMg * XR_SPLIT, KA_IMMEDIATE)
+    push(t2, doseMg * XR_SPLIT, KA_DELAYED)
+  }
 }
 
 export function simulateAdderallXR(input: AdderallModelInput): AdderallModelResult {
-  const days = clamp(Math.round(input.days), 1, 10)
   const dtHours = clamp(input.dtMinutes, 2, 30) / 60
 
-  const totalDays = PRE_ROLL_DAYS + days + 1
+  const wakeHour = clamp(input.wakeHour, 4, 12)
+  const bedHour = clamp(input.bedHour, 20, 28)
+
+  const firstDoseHour = clamp(input.firstDoseHour, wakeHour, 22)
+  const secondDoseHour = clamp(input.secondDoseHour, firstDoseHour + 1, 24)
+  const doseMg = clamp(input.doseMg, 2.5, 40)
+
+  const vitaminCHour = clamp(input.vitaminCHour, 16, 28)
+  const vitaminCDoseGrams = clamp(
+    input.vitaminCDoseGrams ?? (input.vitaminCIntensity ?? 0) * 2,
+    0,
+    2,
+  )
+
+  const workStartHour = clamp(input.workStartHour ?? 9, 6, 26)
+  const workEndHour = clamp(input.workEndHour ?? 17, 6, 26)
+  const homeworkStartHour = clamp(input.homeworkStartHour ?? 19, 6, 26)
+  const homeworkEndHour = clamp(input.homeworkEndHour ?? 22, 6, 26)
+
+  const analysisDayIndex = PRE_ROLL_DAYS + 1
+  const analysisStartAbs = analysisDayIndex * 24
+  const displayStartAbs = analysisStartAbs
+  const displayEndAbs = analysisStartAbs + 31 // one-day view + into next morning
+
+  const totalDays = PRE_ROLL_DAYS + 3
   const totalHours = totalDays * 24
   const steps = Math.floor(totalHours / dtHours)
 
-  const firstDoseHour = clamp(input.firstDoseHour, 4, 16)
-  const secondDoseHour = clamp(input.secondDoseHour, firstDoseHour + 1, 20)
-  const doseMg = clamp(input.doseMg, 2.5, 40)
+  const eventSchedule = new Map<number, Array<{ amountMg: number; ka: number }>>()
 
-  const eventSchedule = schedulePulseEvents(totalDays, firstDoseHour, secondDoseHour, doseMg)
+  for (let day = 0; day < totalDays; day += 1) {
+    if (day < analysisDayIndex) {
+      scheduleDoseForDay(eventSchedule, day, BASELINE_DOSE_MG, BASELINE_FIRST_DOSE_HOUR, BASELINE_SECOND_DOSE_HOUR)
+      continue
+    }
+
+    if (day === analysisDayIndex) {
+      scheduleDoseForDay(eventSchedule, day, doseMg, firstDoseHour, secondDoseHour)
+    }
+  }
 
   const compartments: AbsorptionCompartment[] = []
   const baseKel = Math.log(2) / BASE_HALF_LIFE_HOURS
@@ -142,10 +173,12 @@ export function simulateAdderallXR(input: AdderallModelInput): AdderallModelResu
   let effectSite = 0
 
   const allPoints: SimPoint[] = []
+  let baselineMidnightConcentration = 0
 
   for (let i = 0; i <= steps; i += 1) {
-    const tHours = i * dtHours
-    const eventKey = Math.round(tHours * 60)
+    const tAbs = i * dtHours
+    const eventKey = Math.round(tAbs * 60)
+
     const events = eventSchedule.get(eventKey)
     if (events && events.length > 0) {
       for (const event of events) {
@@ -163,16 +196,16 @@ export function simulateAdderallXR(input: AdderallModelInput): AdderallModelResu
 
     centralAmountMg += absorbedThisStep
 
-    const kelMultiplier = vitaminCEliminationMultiplier(
-      tHours,
-      input.vitaminCEnabled,
-      input.vitaminCHour,
-      input.vitaminCIntensity,
-    )
+    const relHours = tAbs - analysisStartAbs
+    const kelMultiplier = vitaminCEliminationMultiplier(relHours, input.vitaminCEnabled, vitaminCHour, vitaminCDoseGrams)
     const kel = baseKel * kelMultiplier
     centralAmountMg *= Math.exp(-kel * dtHours)
 
     const concentration = Math.max(0, centralAmountMg / APPARENT_VD_L)
+
+    if (Math.abs(relHours) < dtHours / 2) {
+      baselineMidnightConcentration = concentration
+    }
 
     effectSite += KE0 * (concentration - effectSite) * dtHours
     effectSite = Math.max(0, effectSite)
@@ -181,74 +214,37 @@ export function simulateAdderallXR(input: AdderallModelInput): AdderallModelResu
     const denominator = Math.pow(EC50, HILL) + numerator
     const effect = denominator > 0 ? (EMAX * numerator) / denominator : 0
 
-    allPoints.push({
-      tHours,
-      day: Math.floor(tHours / 24),
-      hourOfDay: localHour(tHours),
-      concentration,
-      effectSite,
-      effect,
-    })
+    if (tAbs >= displayStartAbs && tAbs <= displayEndAbs) {
+      allPoints.push({
+        tHours: tAbs - analysisStartAbs,
+        concentration,
+        effectSite,
+        effect,
+      })
+    }
   }
-
-  const displayStart = PRE_ROLL_DAYS * 24
-  const displayEnd = displayStart + days * 24
 
   const points = allPoints
-    .filter((p) => p.tHours >= displayStart && p.tHours <= displayEnd)
-    .map((p) => ({ ...p, tHours: p.tHours - displayStart, day: Math.floor((p.tHours - displayStart) / 24) + 1 }))
 
-  const wakeHour = clamp(input.wakeHour, 3, 14)
-  const bedHour = clamp(input.bedHour, 20, 30)
+  const sleepEnd = wakeHour + 24
+  const sleepEffectMean = averageEffectBetween(points, bedHour, sleepEnd)
 
-  const dayScores: DayScore[] = []
-  for (let d = 0; d < days; d += 1) {
-    const dayStart = d * 24
-    const wakeStart = dayStart + wakeHour
-    const wakeEnd = dayStart + bedHour
+  const workRange = normalizeRange(workStartHour, workEndHour)
+  const homeworkRange = normalizeRange(homeworkStartHour, homeworkEndHour)
 
-    const sleepStart = wakeEnd
-    const sleepEnd = (d + 1) * 24 + wakeHour
-
-    const wakeEffectMean = averageEffectBetween(points, wakeStart, wakeEnd)
-    const sleepEffectMean = averageEffectBetween(points, sleepStart, sleepEnd)
-
-    const focusScore = clamp((wakeEffectMean / 70) * 100, 0, 100)
-    const sleepScore = clamp(100 - (sleepEffectMean / 35) * 100, 0, 100)
-    const compositeScore = clamp(0.65 * focusScore + 0.35 * sleepScore, 0, 100)
-
-    dayScores.push({
-      day: d + 1,
-      wakeEffectMean,
-      sleepEffectMean,
-      focusScore,
-      sleepScore,
-      compositeScore,
-    })
-  }
-
-  const safeMean = (values: number[]) => {
-    if (values.length === 0) return 0
-    return values.reduce((a, b) => a + b, 0) / values.length
-  }
-
-  const wakeMeans = dayScores.map((s) => s.wakeEffectMean)
-  const sleepMeans = dayScores.map((s) => s.sleepEffectMean)
-  const focusScores = dayScores.map((s) => s.focusScore)
-  const sleepScores = dayScores.map((s) => s.sleepScore)
-  const compositeScores = dayScores.map((s) => s.compositeScore)
+  const workEffectMean = averageEffectBetween(points, workRange.start, workRange.end)
+  const homeworkEffectMean = averageEffectBetween(points, homeworkRange.start, homeworkRange.end)
 
   return {
     points,
-    dayScores,
+    dayScores: [],
     summary: {
-      wakeEffectMean: safeMean(wakeMeans),
-      sleepEffectMean: safeMean(sleepMeans),
-      focusScore: safeMean(focusScores),
-      sleepScore: safeMean(sleepScores),
-      compositeScore: safeMean(compositeScores),
+      workScore: workEffectMean,
+      homeworkScore: homeworkEffectMean,
+      sleepScore: sleepEffectMean,
       concentrationPeak: Math.max(...points.map((p) => p.concentration), 0),
       effectPeak: Math.max(...points.map((p) => p.effect), 0),
+      baselineMidnightConcentration,
     },
   }
 }
