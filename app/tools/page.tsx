@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ArrowLeft, Calculator, CalendarClock, ChefHat, Dumbbell, Gauge, Home, Pill } from "lucide-react"
+import { ArrowLeft, Calculator, CalendarClock, ChefHat, Dumbbell, Gauge, Home, Music2, Pill } from "lucide-react"
 
 export default function ToolsPage() {
   return (
@@ -108,6 +108,20 @@ export default function ToolsPage() {
               <div>
                 <h2 className="text-lg font-semibold">Focus Day Planner</h2>
                 <p className="text-sm text-[rgb(var(--text-muted))]">Auto-build a realistic day block schedule</p>
+              </div>
+            </div>
+          </Link>
+          <Link
+            href="/tools/helical-pitch-visualizer"
+            className="group rounded-2xl border border-[rgb(var(--border))] bg-gradient-to-br from-[rgb(var(--surface)_/_0.7)] to-[rgb(var(--surface-2)_/_0.65)] p-5 hover:border-[rgb(var(--brand)_/_0.4)] transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl border border-[rgb(var(--brand)_/_0.45)] bg-[rgb(var(--brand-weak)_/_0.8)] p-2">
+                <Music2 className="w-5 h-5 text-[rgb(var(--brand))]" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">Helical Pitch Visualizer</h2>
+                <p className="text-sm text-[rgb(var(--text-muted))]">Music, microphone, and generated-note pitch visualization</p>
               </div>
             </div>
           </Link>

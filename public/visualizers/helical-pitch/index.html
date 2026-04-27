@@ -1,0 +1,2256 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Helical Pitch Visualizer</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #090b0f;
+      --panel: rgba(15, 19, 27, 0.88);
+      --line: rgba(255, 255, 255, 0.14);
+      --text: #eef3ff;
+      --muted: #96a2b8;
+      --accent: #46d7b4;
+      --warn: #ffc15a;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      background:
+        radial-gradient(circle at 50% 45%, rgba(72, 94, 124, 0.18), transparent 42%),
+        linear-gradient(180deg, #0c1017, #07080b 68%, #050608);
+    }
+
+    .topbar {
+      position: fixed;
+      left: 16px;
+      right: 16px;
+      top: 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      min-height: 44px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.28);
+    }
+
+    .brand {
+      min-width: 192px;
+      font-weight: 650;
+      letter-spacing: 0;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(4, max-content) minmax(180px, 1fr);
+      align-items: start;
+      gap: 8px 10px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .control-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .control-group.view-group {
+      grid-column: span 2;
+    }
+
+    .control-group.status-group {
+      grid-column: 1 / -1;
+    }
+
+    .help-button {
+      position: relative;
+      flex: 0 0 auto;
+      height: 38px;
+      padding: 0 16px 0 38px;
+      border-color: rgba(70, 215, 180, 0.58);
+      background:
+        radial-gradient(circle at 18px 50%, rgba(70, 215, 180, 0.32), transparent 18px),
+        linear-gradient(135deg, rgba(70, 215, 180, 0.2), rgba(211, 92, 255, 0.16));
+      box-shadow: 0 0 22px rgba(70, 215, 180, 0.12);
+      color: #f4fffb;
+      font-weight: 650;
+    }
+
+    .topbar > .help-button {
+      margin-left: auto;
+      align-self: flex-start;
+    }
+
+    .help-button::before {
+      content: "?";
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      width: 18px;
+      height: 18px;
+      transform: translateY(-50%);
+      border: 1px solid rgba(244, 255, 251, 0.52);
+      border-radius: 999px;
+      color: #d8fff5;
+      font-size: 12px;
+      line-height: 17px;
+      text-align: center;
+    }
+
+    .help-button:hover {
+      background:
+        radial-gradient(circle at 18px 50%, rgba(70, 215, 180, 0.42), transparent 18px),
+        linear-gradient(135deg, rgba(70, 215, 180, 0.28), rgba(211, 92, 255, 0.24));
+    }
+
+    .display-menu {
+      position: relative;
+    }
+
+    .display-menu summary {
+      display: flex;
+      align-items: center;
+      height: 30px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 0 9px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      font-size: 13px;
+      cursor: pointer;
+      list-style: none;
+      white-space: nowrap;
+    }
+
+    .display-menu summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .display-menu[open] summary {
+      background: rgba(255, 255, 255, 0.11);
+    }
+
+    .display-menu-content {
+      position: absolute;
+      z-index: 5;
+      top: 34px;
+      right: 0;
+      min-width: 180px;
+      padding: 8px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(9, 12, 18, 0.96);
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.32);
+    }
+
+    .display-menu-content label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    .display-menu-content input {
+      accent-color: var(--accent);
+    }
+
+    button,
+    label.file-button,
+    select {
+      height: 30px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 0 9px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text);
+      font: inherit;
+      font-size: 13px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    button:hover,
+    label.file-button:hover,
+    select:hover {
+      background: rgba(255, 255, 255, 0.11);
+    }
+
+    select {
+      color-scheme: dark;
+    }
+
+    button.primary {
+      border-color: rgba(70, 215, 180, 0.42);
+      background: rgba(70, 215, 180, 0.16);
+    }
+
+    button.toggle.active {
+      border-color: rgba(238, 243, 255, 0.28);
+      background: rgba(238, 243, 255, 0.14);
+    }
+
+    input[type="file"] {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .status {
+      color: var(--muted);
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .readout {
+      position: fixed;
+      left: 16px;
+      bottom: 16px;
+      width: min(440px, calc(100vw - 32px));
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(9, 12, 18, 0.72);
+      color: var(--muted);
+      backdrop-filter: blur(12px);
+    }
+
+    .readout strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .tuning-panel {
+      position: fixed;
+      left: 16px;
+      top: 136px;
+      width: min(420px, calc(100vw - 32px));
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(9, 12, 18, 0.76);
+      color: var(--muted);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.24);
+    }
+
+    .tuning-panel strong {
+      display: block;
+      color: var(--text);
+      font-weight: 650;
+      margin-bottom: 8px;
+    }
+
+    .tuning-row {
+      display: grid;
+      grid-template-columns: 92px 1fr 66px;
+      align-items: center;
+      gap: 10px;
+      margin: 8px 0;
+      font-size: 12px;
+    }
+
+    .tuning-row input {
+      width: 100%;
+      accent-color: var(--accent);
+    }
+
+    .tuning-value {
+      color: var(--text);
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .tuning-note {
+      margin: 10px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .help-panel {
+      position: fixed;
+      inset: 0;
+      z-index: 10;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: rgba(0, 0, 0, 0.46);
+    }
+
+    .help-panel.open {
+      display: flex;
+    }
+
+    .help-card {
+      width: min(760px, calc(100vw - 32px));
+      max-height: min(760px, calc(100vh - 32px));
+      overflow: auto;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(9, 12, 18, 0.96);
+      box-shadow: 0 24px 80px rgba(0, 0, 0, 0.46);
+    }
+
+    .help-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .help-header strong {
+      color: var(--text);
+      font-size: 18px;
+    }
+
+    .help-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .help-section {
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.035);
+      color: var(--muted);
+    }
+
+    .help-section strong {
+      display: block;
+      color: var(--text);
+      margin-bottom: 6px;
+    }
+
+    .help-section p {
+      margin: 0 0 8px;
+    }
+
+    .help-section ul {
+      margin: 0;
+      padding-left: 18px;
+    }
+
+    .help-section li {
+      margin: 4px 0;
+    }
+
+    .note-panel {
+      position: fixed;
+      left: 16px;
+      bottom: 92px;
+      width: min(620px, calc(100vw - 32px));
+      max-height: min(360px, calc(100vh - 240px));
+      overflow: auto;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(9, 12, 18, 0.76);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 18px 48px rgba(0, 0, 0, 0.24);
+    }
+
+    .note-panel-header,
+    .note-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .note-panel-header {
+      justify-content: space-between;
+      margin-bottom: 8px;
+      color: var(--muted);
+    }
+
+    .note-panel-header strong {
+      color: var(--text);
+      font-weight: 650;
+    }
+
+    .selected-notes {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .note-actions {
+      margin-bottom: 10px;
+    }
+
+    .note-actions button {
+      height: 28px;
+      padding: 0 9px;
+      font-size: 12px;
+    }
+
+    .note-grid {
+      display: grid;
+      grid-template-columns: 42px repeat(12, minmax(34px, 1fr));
+      gap: 4px;
+      align-items: center;
+    }
+
+    .note-grid-label {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: right;
+      padding-right: 4px;
+    }
+
+    .note-cell {
+      height: 28px;
+      min-width: 0;
+      padding: 0 3px;
+      border-radius: 6px;
+      font-size: 12px;
+    }
+
+    .note-cell.sharp {
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .note-cell.active {
+      border-color: rgba(70, 215, 180, 0.72);
+      background: rgba(70, 215, 180, 0.22);
+      color: #f4fffb;
+    }
+
+    @media (max-width: 760px) {
+      .topbar {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .brand {
+        min-width: 0;
+      }
+
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+      }
+
+      .status {
+        width: 100%;
+      }
+
+      .tuning-panel {
+        display: none;
+      }
+
+      .note-panel {
+        bottom: 86px;
+        max-height: min(330px, calc(100vh - 260px));
+      }
+
+      .help-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .note-grid {
+        grid-template-columns: 34px repeat(12, minmax(28px, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="view"></canvas>
+
+  <div class="topbar">
+    <div class="brand">Helical Pitch Visualizer</div>
+    <div class="controls">
+      <div class="control-group">
+        <select id="sourceSelect" title="Audio source">
+          <option value="bach">Bach</option>
+          <option value="cello">Yo-Yo Ma Cello</option>
+          <option value="debussy">Debussy</option>
+          <option value="dod">D.O.D</option>
+          <option value="prydz">Prydz</option>
+          <option value="loaded">Loaded file</option>
+        </select>
+        <button id="playSourceButton" class="primary">Play source</button>
+        <label class="file-button">
+          Load audio
+          <input id="fileInput" type="file" accept="audio/*">
+        </label>
+        <button id="micButton">Mic</button>
+        <button id="stopButton">Stop</button>
+      </div>
+      <div class="control-group">
+        <button id="testNoteButton">Test A note</button>
+        <button id="testChordButton">Test A chord</button>
+      </div>
+      <div class="control-group view-group">
+        <select id="viewSelect" title="Camera view">
+          <option value="reset">View: angled</option>
+          <option value="top">View: top</option>
+          <option value="bottom">View: bottom</option>
+        </select>
+        <details class="display-menu">
+          <summary>Show</summary>
+          <div class="display-menu-content">
+            <label><input id="octavesCheckbox" type="checkbox"> Octaves</label>
+            <label><input id="notesCheckbox" type="checkbox" checked> Notes</label>
+            <label><input id="spectrogramCheckbox" type="checkbox" checked> Spectrogram</label>
+          </div>
+        </details>
+      </div>
+      <div class="control-group">
+        <select id="analysisSelect" title="Analysis method">
+          <option value="fft">Analysis: FFT peaks</option>
+          <option value="cq">Analysis: Constant Q</option>
+          <option value="note">Analysis: Note bins</option>
+        </select>
+        <select id="normalizationSelect" title="Note-bin brightness normalization">
+          <option value="frame">Norm: frame</option>
+          <option value="adaptive" selected>Norm: adaptive</option>
+          <option value="hybrid">Norm: hybrid</option>
+          <option value="track">Norm: track</option>
+        </select>
+      </div>
+      <div class="control-group status-group">
+        <div id="status" class="status">Ready. Load audio, use the mic, or start the generated test chord.</div>
+      </div>
+    </div>
+    <button id="helpButton" class="help-button">How to use</button>
+  </div>
+
+  <div class="note-panel">
+    <div class="note-panel-header">
+      <strong>Note test</strong>
+      <span id="selectedNotesText" class="selected-notes">Pick notes from the grid</span>
+    </div>
+    <div class="note-actions">
+      <button id="playSelectedButton">Play selected</button>
+      <button id="clearNotesButton">Clear</button>
+      <button data-preset="cmaj">C major</button>
+      <button data-preset="amin">A minor</button>
+      <button data-preset="cmaj7">Cmaj7</button>
+      <button data-preset="chromatic">C chromatic</button>
+    </div>
+    <div id="noteGrid" class="note-grid"></div>
+  </div>
+
+  <div class="readout">
+    <strong>Mapping:</strong> p = log2(f), theta = 2pi * frac(p), z = k * p. Drag to orbit, wheel to zoom, Shift-drag to pan.
+  </div>
+
+  <div class="tuning-panel">
+    <strong>Tuning</strong>
+    <label class="tuning-row">
+      <span>Sensitivity</span>
+      <input id="gainSlider" type="range" min="0.5" max="8" step="0.1" value="3.5">
+      <span id="gainValue" class="tuning-value">3.5x</span>
+    </label>
+    <label class="tuning-row">
+      <span>Fade</span>
+      <input id="fadeSlider" type="range" min="0.78" max="0.97" step="0.01" value="0.89">
+      <span id="fadeValue" class="tuning-value">89%</span>
+    </label>
+    <label class="tuning-row">
+      <span>Contrast</span>
+      <input id="contrastSlider" type="range" min="4" max="18" step="1" value="10">
+      <span id="contrastValue" class="tuning-value">10 dB</span>
+    </label>
+    <label class="tuning-row">
+      <span>Cutoff</span>
+      <input id="cutoffSlider" type="range" min="12" max="60" step="2" value="34">
+      <span id="cutoffValue" class="tuning-value">-34 dB</span>
+    </label>
+    <label class="tuning-row">
+      <span>Adaptive</span>
+      <input id="adaptiveWindowSlider" type="range" min="1" max="20" step="1" value="8">
+      <span id="adaptiveWindowValue" class="tuning-value">8 s</span>
+    </label>
+    <label class="tuning-row">
+      <span>Perc filter</span>
+      <input id="percussionFilterSlider" type="range" min="0" max="100" step="5" value="35">
+      <span id="percussionFilterValue" class="tuning-value">35%</span>
+    </label>
+    <label class="tuning-row">
+      <span>Audio delay</span>
+      <input id="syncSlider" type="range" min="0" max="600" step="10" value="180">
+      <span id="syncValue" class="tuning-value">180 ms</span>
+    </label>
+    <label class="tuning-row">
+      <span>Mic latency</span>
+      <select id="micLatencySelect">
+        <option value="low">Low</option>
+        <option value="balanced" selected>Balanced</option>
+        <option value="detail">Detail</option>
+      </select>
+      <span id="micLatencyValue" class="tuning-value">~93 ms</span>
+    </label>
+    <label class="tuning-row">
+      <span>Radius</span>
+      <input id="radiusSlider" type="range" min="80" max="260" step="5" value="150">
+      <span id="radiusValue" class="tuning-value">150 px</span>
+    </label>
+    <label class="tuning-row">
+      <span>Height</span>
+      <input id="heightSlider" type="range" min="42" max="130" step="2" value="76">
+      <span id="heightValue" class="tuning-value">76 px</span>
+    </label>
+    <p class="tuning-note">Contrast is the dB drop that halves brightness. Lower values make weak harmonics and noise fade faster.</p>
+  </div>
+
+  <div id="helpPanel" class="help-panel" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="help-card">
+      <div class="help-header">
+        <strong id="helpTitle">How to Use</strong>
+        <button id="closeHelpButton">Close</button>
+      </div>
+      <div class="help-grid">
+        <div class="help-section">
+          <strong>Basic workflow</strong>
+          <ul>
+            <li>Pick a source, then press Play source. Load audio adds a file and starts it.</li>
+            <li>Drag to orbit, mouse wheel to zoom, Shift-drag to pan.</li>
+            <li>Use Top view to see pitch classes around the helix.</li>
+          </ul>
+        </div>
+        <div class="help-section">
+          <strong>Analysis</strong>
+          <ul>
+            <li>FFT peaks: good general-purpose mode for recorded music and rich sounds.</li>
+            <li>Constant Q: log-frequency bands; useful for musical pitch structure.</li>
+            <li>Note bins: exact equal-tempered note detectors; best for clean tests or stable pitched music.</li>
+          </ul>
+        </div>
+        <div class="help-section">
+          <strong>Normalization</strong>
+          <ul>
+            <li>Frame: always makes the current loudest component bright. Good for debugging, bad for decay.</li>
+            <li>Adaptive: recent loudness reference. Good for mic/live input.</li>
+            <li>Track: fixed reference for the whole file. Best for preserving song dynamics.</li>
+          </ul>
+        </div>
+        <div class="help-section">
+          <strong>Show</strong>
+          <ul>
+            <li>Spectrogram shows the analysis history at the right.</li>
+            <li>Notes labels pitch classes under the helix and on the spectrogram.</li>
+            <li>Octaves shows reference rings at octave heights.</li>
+          </ul>
+        </div>
+        <div class="help-section">
+          <strong>Tuning</strong>
+          <ul>
+            <li>Sensitivity raises or lowers how easily points appear.</li>
+            <li>Fade controls how long old points remain visible.</li>
+            <li>Contrast controls harmonic rolloff: lower values make weak partials disappear faster.</li>
+          </ul>
+        </div>
+        <div class="help-section">
+          <strong>Sync</strong>
+          <p>Analysis uses a time window, so visuals can feel late. Audio delay delays what you hear so sound and light line up. Try 80-150 ms for Note bins and 180-350 ms for FFT or Constant Q.</p>
+        </div>
+        <div class="help-section">
+          <strong>Note tests</strong>
+          <p>Test A note shows a single fundamental plus expected harmonics. Test A chord and the note grid use clean sine fundamentals, which is useful for checking that pitch placement is correct.</p>
+        </div>
+        <div class="help-section">
+          <strong>Advice</strong>
+          <p>There is no single perfect setting. Try FFT peaks or Constant Q for real music, Note bins for clean note-centered experiments, and Track normalization when playing loaded songs.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('view');
+    const ctx = canvas.getContext('2d');
+    const fileInput = document.getElementById('fileInput');
+    const sourceSelect = document.getElementById('sourceSelect');
+    const playSourceButton = document.getElementById('playSourceButton');
+    const helpButton = document.getElementById('helpButton');
+    const helpPanel = document.getElementById('helpPanel');
+    const closeHelpButton = document.getElementById('closeHelpButton');
+    const micButton = document.getElementById('micButton');
+    const testNoteButton = document.getElementById('testNoteButton');
+    const testChordButton = document.getElementById('testChordButton');
+    const stopButton = document.getElementById('stopButton');
+    const viewSelect = document.getElementById('viewSelect');
+    const octavesCheckbox = document.getElementById('octavesCheckbox');
+    const notesCheckbox = document.getElementById('notesCheckbox');
+    const spectrogramCheckbox = document.getElementById('spectrogramCheckbox');
+    const analysisSelect = document.getElementById('analysisSelect');
+    const normalizationSelect = document.getElementById('normalizationSelect');
+    const noteGrid = document.getElementById('noteGrid');
+    const selectedNotesText = document.getElementById('selectedNotesText');
+    const playSelectedButton = document.getElementById('playSelectedButton');
+    const clearNotesButton = document.getElementById('clearNotesButton');
+    const gainSlider = document.getElementById('gainSlider');
+    const fadeSlider = document.getElementById('fadeSlider');
+    const contrastSlider = document.getElementById('contrastSlider');
+    const cutoffSlider = document.getElementById('cutoffSlider');
+    const adaptiveWindowSlider = document.getElementById('adaptiveWindowSlider');
+    const percussionFilterSlider = document.getElementById('percussionFilterSlider');
+    const syncSlider = document.getElementById('syncSlider');
+    const micLatencySelect = document.getElementById('micLatencySelect');
+    const radiusSlider = document.getElementById('radiusSlider');
+    const heightSlider = document.getElementById('heightSlider');
+    const gainValue = document.getElementById('gainValue');
+    const fadeValue = document.getElementById('fadeValue');
+    const contrastValue = document.getElementById('contrastValue');
+    const cutoffValue = document.getElementById('cutoffValue');
+    const adaptiveWindowValue = document.getElementById('adaptiveWindowValue');
+    const percussionFilterValue = document.getElementById('percussionFilterValue');
+    const syncValue = document.getElementById('syncValue');
+    const micLatencyValue = document.getElementById('micLatencyValue');
+    const radiusValue = document.getElementById('radiusValue');
+    const heightValue = document.getElementById('heightValue');
+    const statusEl = document.getElementById('status');
+
+    const fMin = 55;
+    const fMax = 7040;
+    const highResolutionFftSize = 32768;
+    const minDb = -96;
+    const maxDb = -18;
+    const cqBinsPerOctave = 24;
+    const highResolutionNoteWindowSize = 8192;
+    const micLatencyPresets = {
+      low: { fftSize: 2048, noteWindowSize: 2048, smoothing: 0.12, label: '~46 ms' },
+      balanced: { fftSize: 4096, noteWindowSize: 4096, smoothing: 0.22, label: '~93 ms' },
+      detail: { fftSize: 8192, noteWindowSize: 8192, smoothing: 0.35, label: '~186 ms' }
+    };
+    const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+    const noteGridOctaves = [3, 4, 5, 6];
+    const notePresets = {
+      cmaj: [60, 64, 67],
+      amin: [57, 60, 64],
+      cmaj7: [60, 64, 67, 71],
+      chromatic: [60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71]
+    };
+    const testNoteFundamental = 220;
+    const testChordFreqs = [220, 277.18, 329.63];
+    const tracks = {
+      bach: 'J.S. Bach - Prelude in C Major.mp3',
+      cello: 'Yo-Yo Ma - Bach_ Cello Suite No. 1 in G Major, Prélude (Official Video).mp3',
+      debussy: 'Debussy - Clair de Lune.mp3',
+      dod: 'D.O.D feat. Carla Monroe - Still Sleepless (Official Lyric Video).mp3',
+      prydz: 'Eric Prydz - Opus (OUT NOW).mp3'
+    };
+    const trackReferences = {
+      bach: { label: 'Bach', rms95Db: -18.3, rmsMaxDb: -15.5, referenceDb: -15.3 },
+      cello: { label: 'Yo-Yo Ma Cello', rms95Db: -16.6, rmsMaxDb: -12.8, referenceDb: -13.6 },
+      debussy: { label: 'Debussy', rms95Db: -21.9, rmsMaxDb: -18.8, referenceDb: -18.9 },
+      dod: { label: 'D.O.D', rms95Db: -8.6, rmsMaxDb: -8.1, referenceDb: -5.6 },
+      prydz: { label: 'Prydz', rms95Db: -7.6, rmsMaxDb: -7.4, referenceDb: -4.6 }
+    };
+    const points = [];
+    const helix = [];
+    const viewOptions = {
+      rings: false,
+      notes: true,
+      spectrogram: true,
+      analysisMode: 'fft'
+    };
+    const spectrogram = {
+      width: 248,
+      height: 360,
+      columns: []
+    };
+    const spectrumHistory = [];
+    const normalization = {
+      mode: 'adaptive',
+      adaptiveDb: -Infinity,
+      lastAdaptiveTime: 0,
+      trackDb: null,
+      label: ''
+    };
+    const camera = {
+      yaw: 0.72,
+      pitch: 0.2,
+      distance: 860,
+      panX: 0,
+      panY: 0
+    };
+    const pointer = {
+      active: false,
+      lastX: 0,
+      lastY: 0,
+      mode: 'orbit'
+    };
+
+    let audioCtx;
+    let analyser;
+    let audioDelayNode;
+    let sourceNode;
+    let mediaElement;
+    let mediaUrl;
+    let mediaStream;
+    let loadedFile;
+    let testNodes = [];
+    let activeTestNotes = [];
+    let activeTestPartials = [];
+    let generatedTestMode = null;
+    let freqData;
+    let timeData;
+    let noteBins;
+    let activeInputKind = 'file';
+    let currentNoteWindowSize = highResolutionNoteWindowSize;
+    let selectedMidi = new Set();
+    let running = false;
+    let lastFrame = performance.now();
+
+    function resize() {
+      const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      canvas.width = Math.floor(innerWidth * dpr);
+      canvas.height = Math.floor(innerHeight * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function log2(v) {
+      return Math.log(v) / Math.LN2;
+    }
+
+    function helixRadius() {
+      return Number(radiusSlider.value);
+    }
+
+    function helixHeightScale() {
+      return Number(heightSlider.value);
+    }
+
+    function frac(v) {
+      return v - Math.floor(v);
+    }
+
+    function pitchPoint(freq) {
+      const radius = helixRadius();
+      const height = helixHeightScale();
+      const p = log2(freq);
+      const theta = Math.PI * 2 * frac(p);
+      return {
+        x: radius * Math.cos(theta),
+        y: radius * Math.sin(theta),
+        z: height * (p - log2(440)),
+        theta,
+        pitch: frac(p)
+      };
+    }
+
+    function buildHelix() {
+      helix.length = 0;
+      const radius = helixRadius();
+      const height = helixHeightScale();
+      const p0 = log2(fMin);
+      const p1 = log2(fMax);
+      const steps = 720;
+      for (let i = 0; i <= steps; i++) {
+        const p = p0 + (p1 - p0) * i / steps;
+        const theta = Math.PI * 2 * frac(p);
+        helix.push({
+          x: radius * Math.cos(theta),
+          y: radius * Math.sin(theta),
+          z: height * (p - log2(440)),
+          pitch: frac(p)
+        });
+      }
+    }
+
+    function cameraSpace(point) {
+      const sinYaw = Math.sin(camera.yaw);
+      const cosYaw = Math.cos(camera.yaw);
+      const sinPitch = Math.sin(camera.pitch);
+      const cosPitch = Math.cos(camera.pitch);
+      const right = { x: cosYaw, y: -sinYaw, z: 0 };
+      const forwardFlat = { x: sinYaw, y: cosYaw, z: 0 };
+      const up = {
+        x: -forwardFlat.x * sinPitch,
+        y: -forwardFlat.y * sinPitch,
+        z: cosPitch
+      };
+      const forward = {
+        x: forwardFlat.x * cosPitch,
+        y: forwardFlat.y * cosPitch,
+        z: sinPitch
+      };
+
+      return {
+        x: point.x * right.x + point.y * right.y + point.z * right.z,
+        y: point.x * up.x + point.y * up.y + point.z * up.z,
+        z: point.x * forward.x + point.y * forward.y + point.z * forward.z
+      };
+    }
+
+    function project(point) {
+      const r = cameraSpace(point);
+      const scale = camera.distance / (camera.distance - r.z);
+      return {
+        x: innerWidth / 2 + camera.panX + r.x * scale,
+        y: innerHeight / 2 + camera.panY - r.y * scale,
+        depth: r.z,
+        scale
+      };
+    }
+
+    function hueForPitch(pitch) {
+      return Math.round(pitch * 360);
+    }
+
+    function roundedRectPath(x, y, w, h, r) {
+      if (ctx.roundRect) {
+        ctx.roundRect(x, y, w, h, r);
+        return;
+      }
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+    }
+
+    function normalizedDb(db) {
+      if (!Number.isFinite(db)) return 0;
+      return Math.max(0, Math.min(1, (db - minDb) / (maxDb - minDb)));
+    }
+
+    function dbToMagnitude(db) {
+      if (!Number.isFinite(db)) return 0;
+      return Math.pow(10, db / 20);
+    }
+
+    function perceivedRelativeLoudness(db, referenceDb) {
+      if (!Number.isFinite(db) || !Number.isFinite(referenceDb)) return 0;
+      const dbPerHalfBrightness = Number(contrastSlider.value);
+      return Math.pow(2, (db - referenceDb) / dbPerHalfBrightness);
+    }
+
+    function setTrackReference(reference, label) {
+      normalization.trackDb = reference;
+      normalization.label = label || '';
+      normalization.adaptiveDb = -Infinity;
+    }
+
+    function noteReferenceDb(values) {
+      const frameTopDb = values.reduce((best, value) => Math.max(best, value.db), -Infinity);
+      if (normalization.mode === 'track' && Number.isFinite(normalization.trackDb)) {
+        return normalization.trackDb;
+      }
+      if (normalization.mode === 'adaptive') {
+        return adaptiveReferenceDb(frameTopDb);
+      }
+      if (normalization.mode === 'hybrid') {
+        const adaptiveDb = adaptiveReferenceDb(frameTopDb);
+        return Math.min(adaptiveDb, frameTopDb + Number(contrastSlider.value));
+      }
+      return frameTopDb;
+    }
+
+    function adaptiveReferenceDb(frameTopDb) {
+      const now = performance.now();
+      const elapsed = normalization.lastAdaptiveTime
+        ? Math.max(0, (now - normalization.lastAdaptiveTime) / 1000)
+        : 0;
+      normalization.lastAdaptiveTime = now;
+      if (!Number.isFinite(normalization.adaptiveDb)) normalization.adaptiveDb = frameTopDb;
+      const decayDbPerSecond = 10 / Number(adaptiveWindowSlider.value);
+      normalization.adaptiveDb = Math.max(frameTopDb, normalization.adaptiveDb - decayDbPerSecond * elapsed);
+      return normalization.adaptiveDb;
+    }
+
+    function generatedAllowedMidis() {
+      if (!generatedTestMode) return null;
+      const source = generatedTestMode === 'partials' ? activeTestPartials : activeTestNotes;
+      return new Set(source.map(item => item.midi));
+    }
+
+    function aboveDbCutoff(db, referenceDb) {
+      if (!Number.isFinite(db) || !Number.isFinite(referenceDb)) return false;
+      return db >= referenceDb - Number(cutoffSlider.value);
+    }
+
+    function midiFromFrequency(freq) {
+      return Math.round(69 + 12 * log2(freq / 440));
+    }
+
+    function noteNameFromMidi(midi) {
+      const pc = ((midi % 12) + 12) % 12;
+      const octave = Math.floor(midi / 12) - 1;
+      return `${noteNames[pc]}${octave}`;
+    }
+
+    function frequencyFromMidi(midi) {
+      return 440 * Math.pow(2, (midi - 69) / 12);
+    }
+
+    function buildNoteBins() {
+      const bins = [];
+      const first = Math.ceil(69 + 12 * log2(fMin / 440));
+      const last = Math.floor(69 + 12 * log2(fMax / 440));
+      for (let midi = first; midi <= last; midi++) {
+        bins.push({
+          midi,
+          freq: frequencyFromMidi(midi),
+          name: noteNameFromMidi(midi)
+        });
+      }
+      return bins;
+    }
+
+    function pitchClassPoint(pc, radius, z) {
+      const midi = 60 + pc;
+      const p = log2(440) + (midi - 69) / 12;
+      const theta = Math.PI * 2 * frac(p);
+      return {
+        x: radius * Math.cos(theta),
+        y: radius * Math.sin(theta),
+        z,
+        pitch: frac(p)
+      };
+    }
+
+    function testPitchClasses() {
+      return new Set(activeTestNotes.map(note => ((note.midi % 12) + 12) % 12));
+    }
+
+    function midiMeta(midi) {
+      return {
+        midi,
+        freq: frequencyFromMidi(midi),
+        name: noteNameFromMidi(midi)
+      };
+    }
+
+    function renderNoteGrid() {
+      noteGrid.innerHTML = '';
+      noteGrid.appendChild(document.createElement('div'));
+      for (const name of noteNames) {
+        const header = document.createElement('div');
+        header.className = 'note-grid-label';
+        header.textContent = name;
+        noteGrid.appendChild(header);
+      }
+
+      for (const octave of noteGridOctaves) {
+        const rowLabel = document.createElement('div');
+        rowLabel.className = 'note-grid-label';
+        rowLabel.textContent = `Oct ${octave}`;
+        noteGrid.appendChild(rowLabel);
+
+        for (let pc = 0; pc < 12; pc++) {
+          const midi = (octave + 1) * 12 + pc;
+          const button = document.createElement('button');
+          button.className = `note-cell${noteNames[pc].includes('#') ? ' sharp' : ''}`;
+          button.dataset.midi = String(midi);
+          button.textContent = noteNames[pc];
+          button.title = noteNameFromMidi(midi);
+          button.addEventListener('click', () => toggleSelectedMidi(midi));
+          noteGrid.appendChild(button);
+        }
+      }
+      updateSelectedNoteUi();
+    }
+
+    function updateSelectedNoteUi() {
+      const selected = [...selectedMidi].sort((a, b) => a - b);
+      selectedNotesText.textContent = selected.length
+        ? selected.map(noteNameFromMidi).join(', ')
+        : 'Pick notes from the grid';
+      noteGrid.querySelectorAll('.note-cell').forEach(button => {
+        button.classList.toggle('active', selectedMidi.has(Number(button.dataset.midi)));
+      });
+    }
+
+    function toggleSelectedMidi(midi) {
+      if (selectedMidi.has(midi)) selectedMidi.delete(midi);
+      else selectedMidi.add(midi);
+      updateSelectedNoteUi();
+      playSelectedNotes().catch(showError);
+    }
+
+    function setSelectedPreset(name) {
+      selectedMidi = new Set(notePresets[name] || []);
+      updateSelectedNoteUi();
+      playSelectedNotes().catch(showError);
+    }
+
+    function updateTuningReadouts() {
+      gainValue.textContent = `${Number(gainSlider.value).toFixed(1)}x`;
+      fadeValue.textContent = `${Math.round(Number(fadeSlider.value) * 100)}%`;
+      contrastValue.textContent = `${contrastSlider.value} dB`;
+      cutoffValue.textContent = `-${cutoffSlider.value} dB`;
+      adaptiveWindowValue.textContent = `${adaptiveWindowSlider.value} s`;
+      percussionFilterValue.textContent = `${percussionFilterSlider.value}%`;
+      syncValue.textContent = `${syncSlider.value} ms`;
+      micLatencyValue.textContent = micLatencyPresets[micLatencySelect.value].label;
+      radiusValue.textContent = `${radiusSlider.value} px`;
+      heightValue.textContent = `${heightSlider.value} px`;
+    }
+
+    function setHelpOpen(open) {
+      helpPanel.classList.toggle('open', open);
+    }
+
+    function ensureAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.minDecibels = minDb;
+        analyser.maxDecibels = maxDb;
+        configureAnalysisForInput(activeInputKind);
+        noteBins = buildNoteBins();
+        audioDelayNode = audioCtx.createDelay(1);
+        updateAudioDelay();
+        audioDelayNode.connect(audioCtx.destination);
+      }
+      return audioCtx.resume();
+    }
+
+    function configureAnalysisForInput(kind) {
+      if (!analyser) return;
+      activeInputKind = kind;
+      if (kind === 'mic') {
+        syncSlider.value = '0';
+        updateAudioDelay();
+      }
+      const config = kind === 'mic'
+        ? micLatencyPresets[micLatencySelect.value]
+        : { fftSize: highResolutionFftSize, noteWindowSize: highResolutionNoteWindowSize, smoothing: 0.5 };
+      if (analyser.fftSize !== config.fftSize) {
+        analyser.fftSize = config.fftSize;
+      }
+      analyser.smoothingTimeConstant = config.smoothing;
+      currentNoteWindowSize = config.noteWindowSize;
+      freqData = new Float32Array(analyser.frequencyBinCount);
+      timeData = new Float32Array(analyser.fftSize);
+      spectrumHistory.length = 0;
+      spectrogram.columns.length = 0;
+      points.length = 0;
+    }
+
+    function updateAudioDelay() {
+      if (!audioDelayNode || !audioCtx) return;
+      const seconds = Number(syncSlider.value) / 1000;
+      audioDelayNode.delayTime.setTargetAtTime(seconds, audioCtx.currentTime, 0.015);
+    }
+
+    function connectAudibleOutput(node) {
+      if (audioDelayNode) node.connect(audioDelayNode);
+      else node.connect(audioCtx.destination);
+    }
+
+    function clearSource() {
+      if (sourceNode) {
+        try { sourceNode.disconnect(); } catch (err) {}
+        sourceNode = null;
+      }
+      normalization.adaptiveDb = -Infinity;
+      normalization.lastAdaptiveTime = 0;
+      if (mediaElement) {
+        mediaElement.ontimeupdate = null;
+        mediaElement.pause();
+        mediaElement.removeAttribute('src');
+        mediaElement.load();
+        mediaElement = null;
+      }
+      if (mediaUrl) {
+        URL.revokeObjectURL(mediaUrl);
+        mediaUrl = null;
+      }
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+        mediaStream = null;
+      }
+      testNodes.forEach(node => {
+        try { node.stop && node.stop(); } catch (err) {}
+        try { node.disconnect(); } catch (err) {}
+      });
+      testNodes = [];
+      activeTestNotes = [];
+      activeTestPartials = [];
+      generatedTestMode = null;
+    }
+
+    async function useFile(file) {
+      if (!file) return;
+      loadedFile = file;
+      sourceSelect.value = 'loaded';
+      await ensureAudio();
+      clearSource();
+      configureAnalysisForInput('file');
+      setTrackReference(null, '');
+      mediaUrl = URL.createObjectURL(file);
+      mediaElement = new Audio(mediaUrl);
+      await startMediaElement(`Playing ${file.name}`);
+      estimateUploadedTrackReference(file).catch(err => console.warn(err));
+    }
+
+    async function playSelectedSource() {
+      const source = sourceSelect.value;
+      if (source === 'loaded') {
+        if (!loadedFile) {
+          statusEl.textContent = 'Load an audio file first';
+          return;
+        }
+        await useFile(loadedFile);
+      } else {
+        await useTrack(source);
+      }
+    }
+
+    async function useTrack(trackName) {
+      await ensureAudio();
+      clearSource();
+      configureAnalysisForInput('file');
+      const track = tracks[trackName];
+      const reference = trackReferences[trackName];
+      if (reference) setTrackReference(reference.referenceDb, reference.label);
+      mediaElement = new Audio(encodeURI(track));
+      await startMediaElement(`Playing ${track}`);
+    }
+
+    async function startMediaElement(statusText) {
+      mediaElement.loop = true;
+      mediaElement.crossOrigin = 'anonymous';
+      sourceNode = audioCtx.createMediaElementSource(mediaElement);
+      sourceNode.connect(analyser);
+      connectAudibleOutput(sourceNode);
+      await mediaElement.play();
+      running = true;
+      statusEl.textContent = statusText;
+    }
+
+    async function estimateUploadedTrackReference(file) {
+      const buffer = await file.arrayBuffer();
+      const decodeCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const audioBuffer = await decodeCtx.decodeAudioData(buffer.slice(0));
+      const channel = audioBuffer.getChannelData(0);
+      const sampleRate = audioBuffer.sampleRate;
+      const windowSize = Math.max(1, Math.floor(sampleRate));
+      const rmsValues = [];
+      for (let i = 0; i < channel.length; i += windowSize) {
+        const end = Math.min(channel.length, i + windowSize);
+        if (end - i < windowSize / 2) continue;
+        let sum = 0;
+        for (let j = i; j < end; j++) sum += channel[j] * channel[j];
+        const rms = Math.sqrt(sum / (end - i));
+        rmsValues.push(20 * Math.log10(Math.max(rms, 1e-8)));
+      }
+      if (decodeCtx.close) decodeCtx.close();
+      if (!rmsValues.length) return;
+      rmsValues.sort((a, b) => a - b);
+      const rms95 = rmsValues[Math.floor((rmsValues.length - 1) * 0.95)];
+      setTrackReference(rms95 + 3, file.name);
+      if (normalization.mode === 'track') {
+        statusEl.textContent = `Track normalization ready: ${file.name}`;
+      }
+    }
+
+    async function useMic() {
+      await ensureAudio();
+      clearSource();
+      configureAnalysisForInput('mic');
+      mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      sourceNode = audioCtx.createMediaStreamSource(mediaStream);
+      sourceNode.connect(analyser);
+      running = true;
+      statusEl.textContent = `Listening to microphone (${micLatencySelect.value} latency)`;
+    }
+
+    function noteMeta(freq) {
+      const midi = midiFromFrequency(freq);
+      return { freq, midi, name: noteNameFromMidi(midi) };
+    }
+
+    function startOscillator(freq, gainValue, destination, type = 'sine') {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.value = gainValue;
+      osc.connect(gain).connect(destination);
+      osc.start();
+      testNodes.push(osc, gain);
+    }
+
+    function testPartialAmplitude(harmonic) {
+      const pianoLike = [1, 0.45, 0.28, 0.18, 0.12, 0.085, 0.06, 0.045, 0.035, 0.028];
+      return pianoLike[harmonic - 1] || Math.pow(harmonic, -1.7);
+    }
+
+    async function useTestNote() {
+      await ensureAudio();
+      clearSource();
+      configureAnalysisForInput('file');
+      const out = audioCtx.createGain();
+      out.gain.value = 0.055;
+      activeTestNotes = [noteMeta(testNoteFundamental)];
+      activeTestPartials = [];
+      generatedTestMode = 'partials';
+
+      for (let harmonic = 1; harmonic <= 10; harmonic++) {
+        const freq = testNoteFundamental * harmonic;
+        if (freq > fMax) break;
+        const meta = noteMeta(freq);
+        const amplitude = testPartialAmplitude(harmonic);
+        const levelDb = Math.round(20 * Math.log10(amplitude));
+        activeTestPartials.push({ ...meta, harmonic, amplitude, levelDb, fundamental: activeTestNotes[0].name });
+        startOscillator(freq, 0.58 * amplitude, out);
+      }
+
+      out.connect(analyser);
+      connectAudibleOutput(out);
+      testNodes.push(out);
+      running = true;
+      statusEl.textContent = `Test A note: ${activeTestNotes[0].name}, showing expected 1x-10x harmonics`;
+    }
+
+    async function useTestChord() {
+      await ensureAudio();
+      clearSource();
+      configureAnalysisForInput('file');
+      const out = audioCtx.createGain();
+      out.gain.value = 0.055;
+      activeTestNotes = testChordFreqs.map(noteMeta);
+      generatedTestMode = 'notes';
+      activeTestPartials = activeTestNotes.map(note => ({
+        ...note,
+        harmonic: 1,
+        amplitude: 1,
+        levelDb: 0,
+        fundamental: note.name
+      }));
+      testChordFreqs.forEach((freq, i) => {
+        startOscillator(freq, i === 0 ? 0.52 : 0.42, out);
+      });
+      out.connect(analyser);
+      connectAudibleOutput(out);
+      testNodes.push(out);
+      running = true;
+      statusEl.textContent = `Test A chord: pure sine fundamentals ${activeTestNotes.map(note => note.name).join(', ')}`;
+    }
+
+    async function playSelectedNotes() {
+      await ensureAudio();
+      const selected = [...selectedMidi].sort((a, b) => a - b);
+      clearSource();
+      configureAnalysisForInput('file');
+      updateSelectedNoteUi();
+      if (!selected.length) {
+        points.length = 0;
+        running = false;
+        statusEl.textContent = 'Select notes from the grid';
+        return;
+      }
+
+      const out = audioCtx.createGain();
+      out.gain.value = Math.min(0.08, 0.16 / Math.sqrt(selected.length));
+      activeTestNotes = selected.map(midiMeta);
+      generatedTestMode = 'notes';
+      activeTestPartials = activeTestNotes.map(note => ({
+        ...note,
+        harmonic: 1,
+        amplitude: 1,
+        levelDb: 0,
+        fundamental: note.name
+      }));
+
+      activeTestNotes.forEach(note => startOscillator(note.freq, 0.52, out));
+      out.connect(analyser);
+      connectAudibleOutput(out);
+      testNodes.push(out);
+      running = true;
+      setAnalysisMode('note');
+      statusEl.textContent = `Custom note test: ${activeTestNotes.map(note => note.name).join(', ')}`;
+    }
+
+    function stopAudio() {
+      clearSource();
+      points.length = 0;
+      running = false;
+      if (audioCtx) {
+        try { analyser.disconnect(); } catch (err) {}
+      }
+      statusEl.textContent = 'Stopped';
+    }
+
+    function resetView() {
+      camera.yaw = 0.72;
+      camera.pitch = 0.2;
+      camera.distance = 860;
+      camera.panX = 0;
+      camera.panY = 0;
+    }
+
+    function topView() {
+      camera.pitch = 1.555;
+      camera.distance = 860;
+      camera.panX = 0;
+      camera.panY = 0;
+    }
+
+    function bottomView() {
+      camera.pitch = -1.555;
+      camera.distance = 860;
+      camera.panX = 0;
+      camera.panY = 0;
+    }
+
+    function setAnalysisMode(mode) {
+      viewOptions.analysisMode = mode;
+      analysisSelect.value = mode;
+      spectrogram.columns.length = 0;
+      points.length = 0;
+      if (mode === 'cq') {
+        statusEl.textContent = 'Constant-Q mode: log-spaced pitch bands drive the helix';
+      } else if (mode === 'note') {
+        statusEl.textContent = 'Note-bin mode: tuned detectors at equal-tempered notes drive the helix';
+      } else {
+        statusEl.textContent = 'FFT peak mode: prominent linear-FFT peaks drive the helix';
+      }
+    }
+
+    function sampleSpectrum(now) {
+      if (!running || !analyser) return;
+      const gain = Number(gainSlider.value);
+      let peaks;
+      if (viewOptions.analysisMode === 'note') {
+        analyser.getFloatTimeDomainData(timeData);
+        const values = noteAnalyzerValues();
+        updateSpectrogram(values);
+        peaks = findNoteBinPeaks(gain, values);
+      } else {
+        analyser.getFloatFrequencyData(freqData);
+        updateSpectrogram();
+        peaks = viewOptions.analysisMode === 'cq'
+          ? findConstantQPeaks(gain)
+          : findSpectralPeaks(gain);
+        recordSpectrumHistory();
+      }
+
+      for (const peak of peaks) {
+        const base = pitchPoint(peak.freq);
+        points.push({
+          x: base.x,
+          y: base.y,
+          z: base.z,
+          pitch: base.pitch,
+          energy: peak.energy,
+          life: peak.energy,
+          born: now
+        });
+      }
+
+      if (points.length > 1100) {
+        points.splice(0, points.length - 1100);
+      }
+    }
+
+    function recordSpectrumHistory() {
+      spectrumHistory.push(new Float32Array(freqData));
+      if (spectrumHistory.length > 14) spectrumHistory.shift();
+    }
+
+    function median(values) {
+      if (!values.length) return minDb;
+      values.sort((a, b) => a - b);
+      return values[Math.floor(values.length / 2)];
+    }
+
+    function sustainedFactor(bin0, bin1, currentDb) {
+      const amount = Number(percussionFilterSlider.value) / 100;
+      if (amount <= 0 || spectrumHistory.length < 3) return 1;
+      const values = [];
+      const start = Math.max(0, bin0);
+      const end = Math.min(freqData.length - 1, bin1);
+      for (const frame of spectrumHistory) {
+        let best = minDb;
+        for (let bin = start; bin <= end; bin++) {
+          best = Math.max(best, frame[bin]);
+        }
+        values.push(best);
+      }
+      const historyDb = median(values);
+      const persistence = Math.min(1, Math.max(0, perceivedRelativeLoudness(historyDb, currentDb)));
+      const shaped = Math.pow(persistence, 0.55);
+      return 1 - amount + amount * shaped;
+    }
+
+    function findSpectralPeaks(gain) {
+      const nyquist = audioCtx.sampleRate / 2;
+      const hzPerBin = nyquist / freqData.length;
+      const minBin = Math.max(1, Math.floor(fMin / nyquist * freqData.length));
+      const maxBin = Math.min(freqData.length - 1, Math.ceil(fMax / nyquist * freqData.length));
+      const candidates = [];
+
+      for (let bin = minBin + 2; bin <= maxBin - 2; bin++) {
+        const db = freqData[bin];
+        if (db < -76) continue;
+        const freq = bin * nyquist / freqData.length;
+        const neighborhoodHz = Math.max(6, freq * 0.018);
+        const radius = Math.max(2, Math.min(34, Math.round(neighborhoodHz / hzPerBin)));
+        let isPeak = true;
+        let localSum = 0;
+        let localCount = 0;
+        for (let j = bin - radius; j <= bin + radius; j++) {
+          if (j < minBin || j > maxBin || j === bin) continue;
+          const neighbor = freqData[j];
+          localSum += neighbor;
+          localCount++;
+          if (neighbor > db) {
+            isPeak = false;
+            break;
+          }
+        }
+        if (!isPeak) continue;
+
+        const localMean = localCount ? localSum / localCount : minDb;
+        const prominence = db - localMean;
+        if (prominence < 5.5) continue;
+
+        const normalized = normalizedDb(db);
+        const sustain = sustainedFactor(bin - radius, bin + radius, db);
+        const energy = Math.min(1, Math.pow(normalized, 2.7) * gain * 0.78 * sustain);
+        if (energy < 0.11) continue;
+        candidates.push({ freq, energy, db, prominence });
+      }
+
+      candidates.sort((a, b) => b.energy - a.energy);
+      const topDb = candidates.reduce((best, candidate) => Math.max(best, candidate.db), -Infinity);
+      const top = candidates[0] ? candidates[0].energy : 0;
+      return candidates
+        .filter(candidate => aboveDbCutoff(candidate.db, topDb))
+        .filter(candidate => candidate.energy >= top * 0.42)
+        .slice(0, 72);
+    }
+
+    function constantQBands() {
+      const nyquist = audioCtx.sampleRate / 2;
+      const halfStep = 1 / (cqBinsPerOctave * 2);
+      const start = Math.ceil(log2(fMin) * cqBinsPerOctave);
+      const end = Math.floor(log2(fMax) * cqBinsPerOctave);
+      const bands = [];
+
+      for (let i = start; i <= end; i++) {
+        const p = i / cqBinsPerOctave;
+        const freq = Math.pow(2, p);
+        if (freq <= 0 || freq >= nyquist) continue;
+        const low = freq * Math.pow(2, -halfStep);
+        const high = freq * Math.pow(2, halfStep);
+        bands.push({
+          p,
+          freq,
+          low,
+          high,
+          bin0: Math.max(1, Math.floor(low / nyquist * freqData.length)),
+          bin1: Math.min(freqData.length - 1, Math.ceil(high / nyquist * freqData.length))
+        });
+      }
+      return bands;
+    }
+
+    function constantQValues() {
+      const nyquist = audioCtx.sampleRate / 2;
+      const bands = constantQBands();
+      return bands.map(band => {
+        let weighted = 0;
+        let weightTotal = 0;
+        let maxDbValue = minDb;
+
+        for (let bin = band.bin0; bin <= band.bin1; bin++) {
+          const freq = bin * nyquist / freqData.length;
+          if (freq <= 0) continue;
+          const distance = Math.abs(log2(freq / band.freq)) * cqBinsPerOctave * 2;
+          const weight = Math.max(0, 1 - distance);
+          if (weight <= 0) continue;
+          const db = freqData[bin];
+          const mag = dbToMagnitude(db);
+          weighted += mag * weight;
+          weightTotal += weight;
+          if (db > maxDbValue) maxDbValue = db;
+        }
+
+        const averageMag = weightTotal ? weighted / weightTotal : 0;
+        const averageDb = averageMag > 0 ? 20 * Math.log10(averageMag) : minDb;
+        const db = Math.max(averageDb, maxDbValue - 7);
+        return {
+          freq: band.freq,
+          pitch: frac(band.p),
+          bin0: band.bin0,
+          bin1: band.bin1,
+          db,
+          energy: normalizedDb(db)
+        };
+      });
+    }
+
+    function findConstantQPeaks(gain) {
+      const values = constantQValues();
+      const candidates = [];
+
+      for (let i = 1; i < values.length - 1; i++) {
+        const value = values[i];
+        if (value.db < -80) continue;
+        if (value.energy <= values[i - 1].energy || value.energy < values[i + 1].energy) continue;
+
+        const local0 = Math.max(0, i - 4);
+        const local1 = Math.min(values.length - 1, i + 4);
+        let localSum = 0;
+        let localCount = 0;
+        for (let j = local0; j <= local1; j++) {
+          if (j === i) continue;
+          localSum += values[j].db;
+          localCount++;
+        }
+        const localMean = localCount ? localSum / localCount : minDb;
+        const prominence = value.db - localMean;
+        if (prominence < 3.6) continue;
+
+        const sustain = sustainedFactor(value.bin0, value.bin1, value.db);
+        const energy = Math.min(1, Math.pow(value.energy, 2.45) * gain * 0.88 * sustain);
+        if (energy < 0.105) continue;
+        candidates.push({ freq: value.freq, energy, db: value.db, prominence });
+      }
+
+      candidates.sort((a, b) => b.energy - a.energy);
+      const topDb = candidates.reduce((best, candidate) => Math.max(best, candidate.db), -Infinity);
+      const top = candidates[0] ? candidates[0].energy : 0;
+      return candidates
+        .filter(candidate => aboveDbCutoff(candidate.db, topDb))
+        .filter(candidate => candidate.energy >= top * 0.4)
+        .slice(0, 80);
+    }
+
+    function noteAnalyzerValues() {
+      const sampleRate = audioCtx.sampleRate;
+      const n = Math.min(currentNoteWindowSize, timeData.length);
+      const start = timeData.length - n;
+      const values = [];
+
+      for (const note of noteBins) {
+        const omega = 2 * Math.PI * note.freq / sampleRate;
+        const coeff = 2 * Math.cos(omega);
+        let q0 = 0;
+        let q1 = 0;
+        let q2 = 0;
+        let windowSum = 0;
+
+        for (let i = 0; i < n; i++) {
+          const window = 0.5 - 0.5 * Math.cos(2 * Math.PI * i / (n - 1));
+          const sample = timeData[start + i] * window;
+          q0 = sample + coeff * q1 - q2;
+          q2 = q1;
+          q1 = q0;
+          windowSum += window;
+        }
+
+        const power = Math.max(0, q1 * q1 + q2 * q2 - coeff * q1 * q2);
+        const amplitude = windowSum > 0 ? (2 * Math.sqrt(power) / windowSum) : 0;
+        const db = 20 * Math.log10(amplitude + 1e-8);
+        values.push({
+          freq: note.freq,
+          midi: note.midi,
+          name: note.name,
+          db,
+          energy: normalizedDb(db)
+        });
+      }
+
+      return values;
+    }
+
+    function findNoteBinPeaks(gain, values) {
+      const allowedMidis = generatedAllowedMidis();
+      if (allowedMidis) {
+        const selectedValues = values.filter(value => allowedMidis.has(value.midi));
+        const referenceDb = noteReferenceDb(selectedValues.length ? selectedValues : values);
+        return selectedValues
+          .filter(value => aboveDbCutoff(value.db, referenceDb))
+          .map(value => ({
+            freq: value.freq,
+            db: value.db,
+            prominence: Infinity,
+            name: value.name,
+            energy: Math.min(0.98, perceivedRelativeLoudness(value.db, referenceDb) * 0.98 * gain / 3.5)
+          }))
+          .filter(candidate => candidate.energy >= 0.05)
+          .sort((a, b) => b.db - a.db);
+      }
+
+      const candidates = [];
+
+      for (let i = 0; i < values.length; i++) {
+        const value = values[i];
+        if (value.db < -82) continue;
+        const local0 = Math.max(0, i - 3);
+        const local1 = Math.min(values.length - 1, i + 3);
+        let localSum = 0;
+        let localCount = 0;
+        let strongerNeighbor = false;
+
+        for (let j = local0; j <= local1; j++) {
+          if (j === i) continue;
+          localSum += values[j].db;
+          localCount++;
+          if (Math.abs(j - i) <= 1 && values[j].db > value.db + 1.2) {
+            strongerNeighbor = true;
+          }
+        }
+        if (strongerNeighbor) continue;
+
+        const localMean = localCount ? localSum / localCount : minDb;
+        const prominence = value.db - localMean;
+        if (prominence < 4.2) continue;
+
+        candidates.push({ freq: value.freq, db: value.db, prominence, name: value.name });
+      }
+
+      candidates.sort((a, b) => b.db - a.db);
+      const topDb = noteReferenceDb(values);
+      return candidates
+        .filter(candidate => aboveDbCutoff(candidate.db, topDb))
+        .map(candidate => ({
+          ...candidate,
+          energy: Math.min(0.98, perceivedRelativeLoudness(candidate.db, topDb) * 0.98 * gain / 3.5)
+        }))
+        .filter(candidate => candidate.energy >= 0.14)
+        .slice(0, 48);
+    }
+
+    function updateSpectrogram(modeValues) {
+      if (!viewOptions.spectrogram || !freqData || !audioCtx) return;
+      if (viewOptions.analysisMode === 'note') {
+        updateNoteBinSpectrogram(modeValues);
+        return;
+      }
+      if (viewOptions.analysisMode === 'cq') {
+        updateConstantQSpectrogram();
+        return;
+      }
+      const nyquist = audioCtx.sampleRate / 2;
+      const hzPerBin = nyquist / freqData.length;
+      const column = new Array(spectrogram.height);
+      for (let y = 0; y < spectrogram.height; y++) {
+        const t = 1 - y / (spectrogram.height - 1);
+        const freq = fMin * Math.pow(fMax / fMin, t);
+        const bin = Math.max(0, Math.min(freqData.length - 1, Math.round(freq / nyquist * freqData.length)));
+        const rowHz = freq * (Math.pow(fMax / fMin, 1 / spectrogram.height) - 1);
+        const radius = Math.max(1, Math.round(rowHz / hzPerBin));
+        let maxValue = minDb;
+        for (let j = bin - radius; j <= bin + radius; j++) {
+          if (j >= 0 && j < freqData.length) maxValue = Math.max(maxValue, freqData[j]);
+        }
+        column[y] = normalizedDb(maxValue);
+      }
+      spectrogram.columns.push(column);
+      if (spectrogram.columns.length > spectrogram.width) {
+        spectrogram.columns.shift();
+      }
+    }
+
+    function updateNoteBinSpectrogram(values) {
+      const column = new Array(spectrogram.height).fill(0);
+      const noteValues = values || noteAnalyzerValues();
+      const topDb = noteReferenceDb(noteValues);
+      for (let y = 0; y < spectrogram.height; y++) {
+        const t = 1 - y / (spectrogram.height - 1);
+        const freq = fMin * Math.pow(fMax / fMin, t);
+        let bestValue = null;
+        let bestDistance = Infinity;
+        for (const value of noteValues) {
+          const distance = Math.abs(log2(value.freq / freq));
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            bestValue = value;
+          }
+        }
+        column[y] = bestValue ? Math.min(1, perceivedRelativeLoudness(bestValue.db, topDb)) : 0;
+      }
+      spectrogram.columns.push(column);
+      if (spectrogram.columns.length > spectrogram.width) {
+        spectrogram.columns.shift();
+      }
+    }
+
+    function updateConstantQSpectrogram() {
+      const values = constantQValues();
+      const column = new Array(spectrogram.height).fill(0);
+      for (let y = 0; y < spectrogram.height; y++) {
+        const t = 1 - y / (spectrogram.height - 1);
+        const freq = fMin * Math.pow(fMax / fMin, t);
+        let best = 0;
+        let bestDistance = Infinity;
+        for (const value of values) {
+          const distance = Math.abs(log2(value.freq / freq));
+          if (distance < bestDistance) {
+            bestDistance = distance;
+            best = value.energy;
+          }
+        }
+        column[y] = best;
+      }
+      spectrogram.columns.push(column);
+      if (spectrogram.columns.length > spectrogram.width) {
+        spectrogram.columns.shift();
+      }
+    }
+
+    function drawHelix() {
+      ctx.save();
+      ctx.lineWidth = 1;
+      for (let i = 1; i < helix.length; i++) {
+        const a = project(helix[i - 1]);
+        const b = project(helix[i]);
+        const hue = hueForPitch(helix[i].pitch);
+        ctx.strokeStyle = `hsla(${hue}, 72%, 64%, 0.18)`;
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawOctaveRings() {
+      if (!viewOptions.rings) return;
+      const p0 = Math.ceil(log2(fMin));
+      const p1 = Math.floor(log2(fMax));
+      const radius = helixRadius();
+      const height = helixHeightScale();
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+      ctx.fillStyle = 'rgba(238,243,255,0.42)';
+      ctx.font = '12px system-ui, sans-serif';
+      for (let p = p0; p <= p1; p++) {
+        const freq = Math.pow(2, p);
+        const z = height * (p - log2(440));
+        const segments = 96;
+        ctx.beginPath();
+        for (let i = 0; i <= segments; i++) {
+          const theta = i / segments * Math.PI * 2;
+          const point = project({
+            x: radius * Math.cos(theta),
+            y: radius * Math.sin(theta),
+            z
+          });
+          if (i === 0) ctx.moveTo(point.x, point.y);
+          else ctx.lineTo(point.x, point.y);
+        }
+        ctx.stroke();
+        const label = project({ x: radius + 10, y: 0, z });
+        ctx.fillText(`${Math.round(freq)} Hz`, label.x + 6, label.y + 4);
+      }
+      ctx.restore();
+    }
+
+    function drawNoteLandmarks() {
+      if (!viewOptions.notes) return;
+      const radius = helixRadius();
+      const height = helixHeightScale();
+      const z = height * (log2(fMin) - log2(440)) - 70;
+      const active = testPitchClasses();
+      ctx.save();
+      ctx.lineWidth = 1;
+      ctx.font = '12px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      for (let pc = 0; pc < 12; pc++) {
+        const isActive = active.has(pc);
+        const inner = pitchClassPoint(pc, radius * 0.18, z);
+        const edge = pitchClassPoint(pc, radius, z);
+        const label = pitchClassPoint(pc, radius + 34, z);
+        const a = project(inner);
+        const b = project(edge);
+        const l = project(label);
+        const hue = hueForPitch(label.pitch);
+
+        ctx.strokeStyle = isActive
+          ? `hsla(${hue}, 100%, 70%, 0.72)`
+          : 'rgba(238,243,255,0.16)';
+        ctx.beginPath();
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
+
+        if (isActive) {
+          ctx.fillStyle = `hsla(${hue}, 100%, 58%, 0.22)`;
+          ctx.beginPath();
+          ctx.arc(l.x, l.y, 15 * l.scale, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.fillStyle = isActive
+          ? `hsla(${hue}, 100%, 82%, 0.96)`
+          : 'rgba(238,243,255,0.58)';
+        ctx.fillText(noteNames[pc], l.x, l.y);
+      }
+
+      ctx.strokeStyle = 'rgba(238,243,255,0.18)';
+      ctx.beginPath();
+      for (let i = 0; i <= 96; i++) {
+        const theta = i / 96 * Math.PI * 2;
+        const p = project({ x: radius * Math.cos(theta), y: radius * Math.sin(theta), z });
+        if (i === 0) ctx.moveTo(p.x, p.y);
+        else ctx.lineTo(p.x, p.y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawPoints(dt) {
+      const fade = Math.pow(Number(fadeSlider.value), dt / 16.67);
+      for (const point of points) {
+        point.life *= fade;
+      }
+      for (let i = points.length - 1; i >= 0; i--) {
+        if (points[i].life < 0.012) points.splice(i, 1);
+      }
+
+      const sorted = points.slice().sort((a, b) => project(a).depth - project(b).depth);
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (const point of sorted) {
+        const p = project(point);
+        const hue = hueForPitch(point.pitch);
+        const alpha = Math.min(0.92, point.life * 0.85);
+        const size = (1.7 + point.energy * 8.8) * p.scale;
+        const glow = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, size * 3.2);
+        glow.addColorStop(0, `hsla(${hue}, 96%, 68%, ${alpha})`);
+        glow.addColorStop(0.35, `hsla(${hue}, 90%, 55%, ${alpha * 0.38})`);
+        glow.addColorStop(1, `hsla(${hue}, 84%, 46%, 0)`);
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, size * 3.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = `hsla(${hue}, 100%, 82%, ${Math.min(1, alpha + 0.12)})`;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, Math.max(1.2, size * 0.42), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawExpectedTestPartials() {
+      if (!viewOptions.notes || !activeTestPartials.length) return;
+      ctx.save();
+      ctx.font = '11px system-ui, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      for (const partial of activeTestPartials) {
+        if (partial.freq < fMin || partial.freq > fMax) continue;
+        const base = pitchPoint(partial.freq);
+        const point = project(base);
+        const hue = hueForPitch(base.pitch);
+        const isFundamental = partial.harmonic === 1;
+        const strength = partial.amplitude == null ? 1 : partial.amplitude;
+        const radius = (isFundamental ? 11 : 4 + strength * 8) * point.scale;
+        const label = isFundamental ? partial.name : `${partial.harmonic}x`;
+
+        ctx.strokeStyle = isFundamental
+          ? `hsla(${hue}, 100%, 86%, 0.95)`
+          : `hsla(${hue}, 96%, 78%, ${0.2 + strength * 0.48})`;
+        ctx.lineWidth = isFundamental ? 2 : 1.2;
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, radius, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.fillStyle = isFundamental
+          ? `hsla(${hue}, 100%, 88%, 0.98)`
+          : `hsla(${hue}, 90%, 78%, ${0.25 + strength * 0.42})`;
+        ctx.fillText(label, point.x, point.y - radius - 9);
+      }
+
+      ctx.restore();
+    }
+
+    function drawSpectrogram() {
+      if (!viewOptions.spectrogram) return;
+      const pad = 16;
+      const w = Math.min(spectrogram.width, Math.max(160, innerWidth * 0.28));
+      const h = Math.min(spectrogram.height, Math.max(220, innerHeight - 180));
+      const x0 = innerWidth - w - pad;
+      const y0 = Math.max(86, (innerHeight - h) / 2);
+
+      ctx.save();
+      ctx.fillStyle = 'rgba(9, 12, 18, 0.72)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.14)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      roundedRectPath(x0, y0, w, h, 8);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(x0 + 10, y0 + 28, w - 20, h - 44);
+      ctx.clip();
+      const plotX = x0 + 10;
+      const plotY = y0 + 28;
+      const plotW = w - 20;
+      const plotH = h - 44;
+      const colW = plotW / spectrogram.width;
+      for (let x = 0; x < spectrogram.columns.length; x++) {
+        const column = spectrogram.columns[x];
+        const drawX = plotX + plotW - (spectrogram.columns.length - x) * colW;
+        for (let y = 0; y < plotH; y++) {
+          const sourceY = Math.floor(y / plotH * spectrogram.height);
+          const energy = column[sourceY] || 0;
+          if (energy < 0.025) continue;
+          const hue = 210 - energy * 170;
+          const light = 10 + energy * 68;
+          ctx.fillStyle = `hsla(${hue}, 90%, ${light}%, ${Math.min(1, energy * 1.35)})`;
+          ctx.fillRect(drawX, plotY + y, Math.max(1, colW + 0.5), 1.25);
+        }
+      }
+      ctx.restore();
+
+      if (viewOptions.notes) {
+        drawSpectrogramNoteGuides(plotX, plotY, plotW, plotH);
+      }
+
+      ctx.fillStyle = 'rgba(238,243,255,0.82)';
+      ctx.font = '12px system-ui, sans-serif';
+      const title = viewOptions.analysisMode === 'cq'
+        ? 'constant-Q spectrogram'
+        : viewOptions.analysisMode === 'note'
+          ? 'note-bin spectrogram'
+          : 'FFT peak spectrogram';
+      ctx.fillText(title, x0 + 12, y0 + 18);
+      ctx.fillStyle = 'rgba(238,243,255,0.44)';
+      ctx.fillText(`${fMax} Hz`, x0 + 12, y0 + 42);
+      ctx.fillText(`${fMin} Hz`, x0 + 12, y0 + h - 14);
+      ctx.restore();
+    }
+
+    function spectrogramYForFrequency(freq, plotY, plotH) {
+      const t = log2(freq / fMin) / log2(fMax / fMin);
+      return plotY + (1 - t) * plotH;
+    }
+
+    function drawSpectrogramNoteGuides(plotX, plotY, plotW, plotH) {
+      const active = activeTestNotes;
+      ctx.save();
+      ctx.font = '11px system-ui, sans-serif';
+      ctx.textBaseline = 'middle';
+
+      for (let midi = 24; midi <= 108; midi += 12) {
+        const freq = 440 * Math.pow(2, (midi - 69) / 12);
+        if (freq < fMin || freq > fMax) continue;
+        const y = spectrogramYForFrequency(freq, plotY, plotH);
+        ctx.strokeStyle = 'rgba(238,243,255,0.12)';
+        ctx.beginPath();
+        ctx.moveTo(plotX, y);
+        ctx.lineTo(plotX + plotW, y);
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(238,243,255,0.48)';
+        ctx.fillText(noteNameFromMidi(midi), plotX + 4, y - 7);
+      }
+
+      for (const partial of activeTestPartials) {
+        if (partial.freq < fMin || partial.freq > fMax) continue;
+        const y = spectrogramYForFrequency(partial.freq, plotY, plotH);
+        const pc = ((partial.midi % 12) + 12) % 12;
+        const hue = hueForPitch(pitchClassPoint(pc, helixRadius(), 0).pitch);
+        const isFundamental = partial.harmonic === 1;
+        ctx.strokeStyle = isFundamental
+          ? `hsla(${hue}, 100%, 70%, 0.8)`
+          : `hsla(${hue}, 92%, 70%, 0.42)`;
+        ctx.lineWidth = isFundamental ? 1.4 : 1;
+        ctx.beginPath();
+        ctx.moveTo(plotX, y);
+        ctx.lineTo(plotX + plotW, y);
+        ctx.stroke();
+        ctx.fillStyle = isFundamental
+          ? `hsla(${hue}, 100%, 82%, 0.95)`
+          : `hsla(${hue}, 86%, 78%, 0.64)`;
+        const label = isFundamental ? partial.name : `${partial.harmonic}x`;
+        ctx.fillText(label, plotX + plotW - 32, y - 7);
+      }
+
+      ctx.restore();
+    }
+
+    function draw() {
+      const now = performance.now();
+      const dt = Math.min(60, now - lastFrame);
+      lastFrame = now;
+
+      ctx.clearRect(0, 0, innerWidth, innerHeight);
+      sampleSpectrum(now);
+      drawOctaveRings();
+      drawNoteLandmarks();
+      drawHelix();
+      drawPoints(dt);
+      drawExpectedTestPartials();
+      drawSpectrogram();
+
+      requestAnimationFrame(draw);
+    }
+
+    fileInput.addEventListener('change', event => useFile(event.target.files[0]).catch(showError));
+    playSourceButton.addEventListener('click', () => playSelectedSource().catch(showError));
+    helpButton.addEventListener('click', () => setHelpOpen(true));
+    closeHelpButton.addEventListener('click', () => setHelpOpen(false));
+    helpPanel.addEventListener('click', event => {
+      if (event.target === helpPanel) setHelpOpen(false);
+    });
+    micButton.addEventListener('click', () => useMic().catch(showError));
+    testNoteButton.addEventListener('click', () => useTestNote().catch(showError));
+    testChordButton.addEventListener('click', () => useTestChord().catch(showError));
+    stopButton.addEventListener('click', stopAudio);
+    viewSelect.addEventListener('change', () => {
+      if (viewSelect.value === 'top') topView();
+      else if (viewSelect.value === 'bottom') bottomView();
+      else resetView();
+    });
+    octavesCheckbox.addEventListener('change', () => {
+      viewOptions.rings = octavesCheckbox.checked;
+    });
+    notesCheckbox.addEventListener('change', () => {
+      viewOptions.notes = notesCheckbox.checked;
+    });
+    spectrogramCheckbox.addEventListener('change', () => {
+      viewOptions.spectrogram = spectrogramCheckbox.checked;
+    });
+    analysisSelect.addEventListener('change', () => setAnalysisMode(analysisSelect.value));
+    normalizationSelect.addEventListener('change', () => {
+      normalization.mode = normalizationSelect.value;
+      normalization.adaptiveDb = -Infinity;
+      normalization.lastAdaptiveTime = 0;
+      spectrogram.columns.length = 0;
+      points.length = 0;
+      if (normalization.mode === 'track') {
+        statusEl.textContent = Number.isFinite(normalization.trackDb)
+          ? `Track normalization: ${normalization.label || 'current audio'}`
+          : 'Track normalization needs a built-in track or uploaded file';
+      } else {
+        statusEl.textContent = `Normalization: ${normalization.mode}`;
+      }
+    });
+    syncSlider.addEventListener('input', () => {
+      updateTuningReadouts();
+      updateAudioDelay();
+    });
+    radiusSlider.addEventListener('input', () => {
+      updateTuningReadouts();
+      buildHelix();
+    });
+    heightSlider.addEventListener('input', () => {
+      updateTuningReadouts();
+      buildHelix();
+    });
+    gainSlider.addEventListener('input', updateTuningReadouts);
+    fadeSlider.addEventListener('input', updateTuningReadouts);
+    contrastSlider.addEventListener('input', updateTuningReadouts);
+    cutoffSlider.addEventListener('input', updateTuningReadouts);
+    adaptiveWindowSlider.addEventListener('input', () => {
+      normalization.adaptiveDb = -Infinity;
+      normalization.lastAdaptiveTime = 0;
+      updateTuningReadouts();
+    });
+    percussionFilterSlider.addEventListener('input', updateTuningReadouts);
+    micLatencySelect.addEventListener('change', () => {
+      updateTuningReadouts();
+      if (activeInputKind === 'mic') {
+        configureAnalysisForInput('mic');
+        statusEl.textContent = `Mic latency: ${micLatencySelect.value}`;
+      }
+    });
+    playSelectedButton.addEventListener('click', () => playSelectedNotes().catch(showError));
+    clearNotesButton.addEventListener('click', () => {
+      selectedMidi.clear();
+      updateSelectedNoteUi();
+      stopAudio();
+      statusEl.textContent = 'Cleared selected notes';
+    });
+    document.querySelectorAll('[data-preset]').forEach(button => {
+      button.addEventListener('click', () => setSelectedPreset(button.dataset.preset));
+    });
+    window.addEventListener('keydown', event => {
+      if (event.key === 'Escape') setHelpOpen(false);
+    });
+    window.addEventListener('resize', resize);
+    canvas.addEventListener('pointerdown', event => {
+      pointer.active = true;
+      pointer.lastX = event.clientX;
+      pointer.lastY = event.clientY;
+      pointer.mode = event.shiftKey ? 'pan' : 'orbit';
+      canvas.setPointerCapture(event.pointerId);
+    });
+    canvas.addEventListener('pointermove', event => {
+      if (!pointer.active) return;
+      const dx = event.clientX - pointer.lastX;
+      const dy = event.clientY - pointer.lastY;
+      pointer.lastX = event.clientX;
+      pointer.lastY = event.clientY;
+
+      if (pointer.mode === 'pan' || event.shiftKey) {
+        camera.panX += dx;
+        camera.panY += dy;
+      } else {
+        camera.yaw += dx * 0.008;
+        camera.pitch = Math.max(-1.555, Math.min(1.555, camera.pitch + dy * 0.006));
+      }
+    });
+    canvas.addEventListener('pointerup', event => {
+      pointer.active = false;
+      try { canvas.releasePointerCapture(event.pointerId); } catch (err) {}
+    });
+    canvas.addEventListener('pointercancel', () => {
+      pointer.active = false;
+    });
+    canvas.addEventListener('wheel', event => {
+      event.preventDefault();
+      const zoom = Math.exp(event.deltaY * 0.001);
+      camera.distance = Math.max(360, Math.min(1800, camera.distance * zoom));
+    }, { passive: false });
+
+    function showError(err) {
+      console.error(err);
+      statusEl.textContent = err && err.message ? err.message : String(err);
+      statusEl.style.color = 'var(--warn)';
+      setTimeout(() => { statusEl.style.color = 'var(--muted)'; }, 2400);
+    }
+
+    resize();
+    updateTuningReadouts();
+    renderNoteGrid();
+    buildHelix();
+    requestAnimationFrame(draw);
+  </script>
+</body>
+</html>
