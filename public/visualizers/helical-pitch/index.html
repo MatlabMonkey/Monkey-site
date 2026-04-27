@@ -451,9 +451,31 @@
     }
 
     @media (max-width: 760px) {
+      body {
+        overflow-x: hidden;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      canvas {
+        width: 100%;
+        height: 58vh;
+        min-height: 340px;
+      }
+
       .topbar {
+        position: sticky;
+        top: 0;
+        left: auto;
+        right: auto;
+        margin: 0;
+        border-left: 0;
+        border-right: 0;
+        border-radius: 0;
+        padding: 10px 12px;
         align-items: stretch;
         flex-direction: column;
+        z-index: 6;
       }
 
       .brand {
@@ -463,19 +485,58 @@
       .controls {
         display: flex;
         flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .control-group {
+        width: 100%;
+      }
+
+      .control-group button,
+      .control-group select,
+      .control-group label.file-button,
+      .display-menu {
+        flex: 1 1 calc(50% - 6px);
+        min-width: 130px;
+      }
+
+      .control-group button,
+      .control-group select,
+      .control-group label.file-button,
+      .display-menu summary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
       }
 
       .status {
         width: 100%;
+        white-space: normal;
+        overflow: visible;
+      }
+
+      .topbar > .help-button {
+        margin-left: 0;
+        width: 100%;
+        justify-content: center;
+      }
+
+      .readout,
+      .note-panel,
+      .tuning-panel {
+        position: static;
+        width: auto;
+        max-height: none;
+        margin: 12px;
       }
 
       .tuning-panel {
-        display: none;
+        display: block;
       }
 
-      .note-panel {
-        bottom: 86px;
-        max-height: min(330px, calc(100vh - 260px));
+      .tuning-row {
+        grid-template-columns: 84px 1fr 58px;
+        gap: 8px;
       }
 
       .help-grid {
@@ -483,7 +544,7 @@
       }
 
       .note-grid {
-        grid-template-columns: 34px repeat(12, minmax(28px, 1fr));
+        grid-template-columns: 34px repeat(12, minmax(26px, 1fr));
       }
     }
   </style>
