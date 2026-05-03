@@ -1,10 +1,12 @@
 import Link from "next/link"
 import { ArrowLeft, Calculator, CalendarClock, ChefHat, Dumbbell, Gauge, Home, Music2, Pill } from "lucide-react"
+import { ToolsBackground } from "../components/ToolsBackground"
 
 export default function ToolsPage() {
   return (
-    <main className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--text))]">
-      <div className="max-w-5xl mx-auto px-6 py-10">
+    <main className="relative min-h-screen overflow-hidden bg-[rgb(var(--bg))] text-[rgb(var(--text))]">
+      <ToolsBackground />
+      <div className="relative z-10 max-w-5xl mx-auto px-6 py-10">
         <div className="flex items-center gap-2">
           <Link
             href="/"
@@ -21,7 +23,7 @@ export default function ToolsPage() {
           </Link>
         </div>
 
-        <header className="mt-6 mb-8 rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.55)] p-6">
+        <header className="mt-6 mb-8 rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.65)] p-6 backdrop-blur-[1px]">
           <h1 className="text-4xl font-bold">Tools</h1>
           <p className="text-[rgb(var(--text-muted))] mt-2">Utilities and calculators (quick daily workflows)</p>
         </header>
