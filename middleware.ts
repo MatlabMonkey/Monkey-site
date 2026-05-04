@@ -35,6 +35,8 @@ export const config = {
     "/workspace/:path*",
     "/ops/:path*",
     "/tools/adderall-xr/:path*",
+    "/tools/bac/:path*",
+    "/tools/medication-visualizer/:path*",
     "/api/journal/:path*",
     "/api/todos/:path*",
     "/api/ideas/:path*",
