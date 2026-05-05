@@ -26,7 +26,6 @@ export default function HelicalPitchVisualizerPage() {
           </div>
           <div className="min-w-0 text-center">
             <h1 className="truncate text-sm font-semibold sm:text-base">Helical Pitch Visualizer</h1>
-            <p className="text-xs text-[rgb(var(--text-muted))]">Static browser app; microphone access requires HTTPS outside localhost.</p>
           </div>
           <a
             href={visualizerPath}
