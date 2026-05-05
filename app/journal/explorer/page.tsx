@@ -134,7 +134,7 @@ export default function JournalExplorerPage() {
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 flex flex-col overflow-y-auto">
             {/* Header */}
             <div className="border-b border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.50)] p-4">
               <div className="flex items-center justify-between gap-3">
@@ -175,7 +175,7 @@ export default function JournalExplorerPage() {
             </div>
 
             {/* Filter Form */}
-            <div className="border-b border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.30)] p-6 overflow-y-auto">
+            <div className="border-b border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.30)] p-6">
               <FilterForm
                 queryType={selectedQueryType}
                 numericQuestions={numericQuestions}
@@ -186,7 +186,7 @@ export default function JournalExplorerPage() {
             </div>
 
             {/* Results */}
-            <div className="flex-1 overflow-y-auto p-6">
+            <div className="p-6">
               {loading && (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="w-8 h-8 animate-spin text-[rgb(var(--brand))]" />
