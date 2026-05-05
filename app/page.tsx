@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { BookOpen, CheckSquare, Wrench, Activity, BriefcaseBusiness, Lock, Unlock, SquarePen } from "lucide-react"
+import { BookOpen, CheckSquare, Wrench, Activity, BriefcaseBusiness, FileText, Lock, Unlock, SquarePen } from "lucide-react"
 import { useEffect, useState } from "react"
 
 // Daily nature photo system with dynamic Unsplash API
@@ -576,7 +576,7 @@ export default function Home() {
             </div>
           )}
 
-          <div className="grid gap-6 mt-12 md:grid-cols-3">
+          <div className={`grid gap-6 mt-12 ${isAuthenticated ? "md:grid-cols-3" : "md:grid-cols-2 max-w-2xl mx-auto"}`}>
             {isAuthenticated && (
               <Link
                 href="/dashboard"
@@ -614,6 +614,14 @@ export default function Home() {
               <Wrench className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
               <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Tools</h3>
               <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Utilities and calculators</p>
+            </Link>
+            <Link
+              href="/tools/work-samples"
+              className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center hover:scale-105"
+            >
+              <FileText className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
+              <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Examples of Work</h3>
+              <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Public links to PDFs and project docs</p>
             </Link>
             {isAuthenticated && (
               <Link
