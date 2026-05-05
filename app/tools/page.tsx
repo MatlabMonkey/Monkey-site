@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { type ComponentType, useEffect, useState } from "react"
-import { ArrowLeft, Calculator, ChefHat, Dumbbell, FileText, Gauge, Home, Music2, Pill } from "lucide-react"
+import { ArrowLeft, Calculator, ChefHat, Dumbbell, Gauge, Home, Music2, Pill } from "lucide-react"
 import { ToolsBackground } from "../components/ToolsBackground"
 
 type ToolCard = {
@@ -14,13 +14,6 @@ type ToolCard = {
 }
 
 const TOOL_CARDS: ToolCard[] = [
-  {
-    href: "/tools/work-samples",
-    title: "Examples of Work",
-    description: "Shared links to PDFs and project writeups",
-    icon: FileText,
-    requiresPin: false,
-  },
   {
     href: "/tools/medication-visualizer",
     title: "Medication Concentration Visualizer",
