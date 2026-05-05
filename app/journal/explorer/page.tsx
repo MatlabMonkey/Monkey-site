@@ -187,6 +187,12 @@ export default function JournalExplorerPage() {
 
             {/* Results */}
             <div className="p-6">
+              {searched && !loading && (
+                <div className="mb-4 text-sm text-[rgb(var(--text-muted))]">
+                  Query found <span className="font-medium text-[rgb(var(--text))]">{results.length}</span> {results.length === 1 ? "entry" : "entries"}.
+                </div>
+              )}
+
               {loading && (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="w-8 h-8 animate-spin text-[rgb(var(--brand))]" />
@@ -201,9 +207,6 @@ export default function JournalExplorerPage() {
                     </div>
                   ) : (
                     <>
-                      <div className="mb-4 text-sm text-[rgb(var(--text-muted))]">
-                        Found {results.length} {results.length === 1 ? "entry" : "entries"}
-                      </div>
                       {viewMode === "list" ? (
                         <ResultsList results={results} />
                       ) : (
