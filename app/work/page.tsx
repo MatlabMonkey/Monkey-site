@@ -8,8 +8,11 @@ type WorkSample = {
 }
 
 const WORK_SAMPLES: WorkSample[] = [
-  // Add your PDFs here. Example:
-  // { title: "Flight Controls Report", href: "/work/flight-controls-report.pdf", note: "PDF" },
+  {
+    title: "Actuator-State-Aware Koopman MPC",
+    href: "/work/brown-actuator-aware-koopman-mpc.pdf",
+    note: "PDF",
+  },
 ]
 
 export default function WorkSamplesPage() {
