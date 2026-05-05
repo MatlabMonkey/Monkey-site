@@ -49,7 +49,7 @@ export function ToolsBackground() {
         {showCanvas && <CanvasLayer style={style} />}
       </div>
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-2 flex flex-wrap gap-2">
         {STYLE_OPTIONS.map((option) => {
           const active = style === option.id
           return (
@@ -70,6 +70,10 @@ export function ToolsBackground() {
           )
         })}
       </div>
+
+      <p className="mb-4 text-xs text-[rgb(var(--text-muted))]">
+        Background color/animation testing.
+      </p>
     </>
   )
 }

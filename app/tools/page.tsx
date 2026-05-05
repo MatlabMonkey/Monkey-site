@@ -112,6 +112,10 @@ export default function ToolsPage() {
           <p className="text-[rgb(var(--text-muted))] mt-2">Utilities and calculators (quick daily workflows)</p>
         </header>
 
+        {checkedAuth && !isAuthenticated && (
+          <p className="mb-4 text-sm text-[rgb(var(--text-muted))]">Private tools are hidden until PIN sign-in.</p>
+        )}
+
         {checkedAuth && (
           <div className="grid gap-4 md:grid-cols-2">
             {visibleCards.map((tool) => {
