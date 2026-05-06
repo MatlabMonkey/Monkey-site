@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { ArrowLeft, CalendarClock, CheckCircle2, Clock3, GitBranch, ListTodo, RotateCcw, Trash2 } from "lucide-react"
+import { ArrowLeft, CalendarClock, CheckCircle2, Clock3, GitBranch, Home, ListTodo, RotateCcw, Trash2 } from "lucide-react"
 import PinGate from "../../components/PinGate"
 import { normalizeTodoContext, type TodoContext, type TodoOutcome } from "../../../lib/todos"
 
@@ -58,6 +58,19 @@ const OUTCOME_LABELS: Record<TodoOutcome, string> = {
 }
 
 const DECISION_STEPS = ["Actionable?", "<2 min?", "Delegated?", "Time-specific?", "Multi-step?"]
+
+function getCurrentStepIndex(answers: ClarifyAnswers): number {
+  if (answers.actionable === null) return 0
+  if (answers.actionable === false) return answers.nonActionableOutcome === null ? 1 : 5
+  if (answers.twoMinute === null) return 1
+  if (answers.twoMinute) return 5
+  if (answers.delegated === null) return 2
+  if (answers.delegated) return 5
+  if (answers.timeSpecific === null) return 3
+  if (answers.timeSpecific) return 5
+  if (answers.multiStep === null) return 4
+  return 5
+}
 
 function resolveOutcomeFromAnswers(answers: ClarifyAnswers): TodoOutcome | null {
   if (answers.actionable === null) return null
@@ -128,6 +141,7 @@ export default function ProcessTodosPage() {
   const processedCount = Math.max(0, initialQueueSize - queue.length)
   const dashboardHref = `/todos?context=${activeContext}&bucket=inbox`
   const resolvedOutcome = useMemo(() => resolveOutcomeFromAnswers(answers), [answers])
+  const activeStepIndex = useMemo(() => getCurrentStepIndex(answers), [answers])
 
   const resetAnswers = useCallback(() => {
     setAnswers(DEFAULT_ANSWERS)
@@ -379,6 +393,19 @@ export default function ProcessTodosPage() {
       if (event.metaKey || event.ctrlKey || event.altKey) return
 
       const key = event.key.toLowerCase()
+
+      if (key === "h") {
+        event.preventDefault()
+        router.push("/")
+        return
+      }
+
+      if (key === "b") {
+        event.preventDefault()
+        router.push(dashboardHref)
+        return
+      }
+
       if (key === "escape") {
         event.preventDefault()
         router.push(dashboardHref)
@@ -394,12 +421,100 @@ export default function ProcessTodosPage() {
       if (key === "enter" && resolvedOutcome) {
         event.preventDefault()
         void processCurrentTodo(resolvedOutcome)
+        return
+      }
+
+      if (answers.actionable === null) {
+        if (key === "y") {
+          event.preventDefault()
+          setActionable(true)
+        } else if (key === "n") {
+          event.preventDefault()
+          setActionable(false)
+        }
+        return
+      }
+
+      if (answers.actionable === false && answers.nonActionableOutcome === null) {
+        if (key === "t") {
+          event.preventDefault()
+          setNonActionableOutcome("trash")
+        } else if (key === "r") {
+          event.preventDefault()
+          setNonActionableOutcome("reference")
+        } else if (key === "s") {
+          event.preventDefault()
+          setNonActionableOutcome("someday_maybe")
+        }
+        return
+      }
+
+      if (answers.actionable === true && answers.twoMinute === null) {
+        if (key === "y") {
+          event.preventDefault()
+          setTwoMinute(true)
+        } else if (key === "n") {
+          event.preventDefault()
+          setTwoMinute(false)
+        }
+        return
+      }
+
+      if (answers.actionable === true && answers.twoMinute === false && answers.delegated === null) {
+        if (key === "y") {
+          event.preventDefault()
+          setDelegated(true)
+        } else if (key === "n") {
+          event.preventDefault()
+          setDelegated(false)
+        }
+        return
+      }
+
+      if (answers.actionable === true && answers.twoMinute === false && answers.delegated === false && answers.timeSpecific === null) {
+        if (key === "y") {
+          event.preventDefault()
+          setTimeSpecific(true)
+        } else if (key === "n") {
+          event.preventDefault()
+          setTimeSpecific(false)
+        }
+        return
+      }
+
+      if (
+        answers.actionable === true &&
+        answers.twoMinute === false &&
+        answers.delegated === false &&
+        answers.timeSpecific === false &&
+        answers.multiStep === null
+      ) {
+        if (key === "y") {
+          event.preventDefault()
+          setMultiStep(true)
+        } else if (key === "n") {
+          event.preventDefault()
+          setMultiStep(false)
+        }
       }
     }
 
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
-  }, [dashboardHref, processCurrentTodo, resolvedOutcome, router, undoLast])
+  }, [
+    answers,
+    dashboardHref,
+    processCurrentTodo,
+    resolvedOutcome,
+    router,
+    setActionable,
+    setDelegated,
+    setMultiStep,
+    setNonActionableOutcome,
+    setTimeSpecific,
+    setTwoMinute,
+    undoLast,
+  ])
 
   if (loading) {
     return (
@@ -421,10 +536,17 @@ export default function ProcessTodosPage() {
           <header className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.75)] p-6">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="space-y-2">
-                <Link href={dashboardHref} className="inline-flex items-center gap-2 text-sm text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))]">
-                  <ArrowLeft className="w-4 h-4" />
-                  Back to Todos
-                </Link>
+                <div className="inline-flex items-center gap-2 text-sm text-[rgb(var(--text-muted))]">
+                  <Link href="/" className="inline-flex items-center gap-1.5 hover:text-[rgb(var(--text))]">
+                    <Home className="w-4 h-4" />
+                    Home
+                  </Link>
+                  <span>•</span>
+                  <Link href={dashboardHref} className="inline-flex items-center gap-1.5 hover:text-[rgb(var(--text))]">
+                    <ArrowLeft className="w-4 h-4" />
+                    Todos
+                  </Link>
+                </div>
                 <h1 className="text-3xl md:text-4xl font-bold">GTD Process Mode</h1>
                 <p className="text-[rgb(var(--text-muted))]">Process inbox items one-by-one with keyboard-first decisions.</p>
               </div>
@@ -434,7 +556,7 @@ export default function ProcessTodosPage() {
                 <p className="text-[rgb(var(--text-muted))]">Remaining: {queue.length}</p>
               </div>
             </div>
-            <p className="mt-4 text-xs text-[rgb(var(--text-muted))]">Hotkeys: Enter apply decision • U undo • Esc exit</p>
+            <p className="mt-4 text-xs text-[rgb(var(--text-muted))]">Hotkeys: Y/N answer • Enter apply • U undo • B todos • H home • Esc exit</p>
           </header>
 
           {error && (
@@ -469,6 +591,26 @@ export default function ProcessTodosPage() {
               <section className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.75)] p-6">
                 <h3 className="text-lg font-semibold mb-2">GTD clarify flow</h3>
                 <p className="text-sm text-[rgb(var(--text-muted))] mb-4">Answer the decision tree and apply the resolved outcome.</p>
+
+                <div className="mb-4 flex flex-wrap gap-2">
+                  {DECISION_STEPS.map((step, index) => {
+                    const state = index < activeStepIndex ? "done" : index === activeStepIndex ? "active" : "pending"
+                    return (
+                      <span
+                        key={step}
+                        className={`px-3 py-1 rounded-full border text-xs ${
+                          state === "done"
+                            ? "border-[rgb(var(--brand))] bg-[rgb(var(--brand-weak)_/_0.75)]"
+                            : state === "active"
+                              ? "border-[rgb(var(--text-muted))] bg-[rgb(var(--surface-2)_/_0.75)]"
+                              : "border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.55)] text-[rgb(var(--text-muted))]"
+                        }`}
+                      >
+                        {index + 1}. {step}
+                      </span>
+                    )
+                  })}
+                </div>
 
                 <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2)_/_0.5)] p-4 space-y-4">
                   {answers.actionable === null && (
@@ -654,12 +796,12 @@ export default function ProcessTodosPage() {
               <GitBranch className="w-5 h-5" />
               Decision Map
             </h3>
-            <div className="grid gap-2 grid-cols-2 md:grid-cols-5">
+            <div className="flex flex-wrap gap-2 text-xs text-[rgb(var(--text-muted))]">
               {DECISION_STEPS.map((step, index) => (
-                <div key={step} className="rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2)_/_0.7)] px-3 py-2">
-                  <p className="font-semibold text-sm">{index + 1}</p>
-                  <p className="text-xs text-[rgb(var(--text-muted))]">{step}</p>
-                </div>
+                <span key={step} className="inline-flex items-center gap-2 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface-2)_/_0.7)] px-3 py-1.5">
+                  <span className="font-semibold text-[rgb(var(--text))]">{index + 1}</span>
+                  {step}
+                </span>
               ))}
             </div>
             <div className="mt-3 text-xs text-[rgb(var(--text-muted))] inline-flex items-center gap-2">
