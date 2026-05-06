@@ -623,7 +623,7 @@ export default function ProcessTodosPage() {
                           disabled={busy}
                           className="px-4 py-2 rounded-xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60"
                         >
-                          Yes
+                          Yes (Y)
                         </button>
                         <button
                           type="button"
@@ -631,7 +631,7 @@ export default function ProcessTodosPage() {
                           disabled={busy}
                           className="px-4 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60"
                         >
-                          No
+                          No (N)
                         </button>
                       </div>
                     </div>
@@ -641,9 +641,9 @@ export default function ProcessTodosPage() {
                     <div className="space-y-2">
                       <p className="font-medium">2) What should happen with this non-actionable item?</p>
                       <div className="grid sm:grid-cols-3 gap-2">
-                        <button type="button" onClick={() => setNonActionableOutcome("trash")} disabled={busy} className="px-3 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60">Trash</button>
-                        <button type="button" onClick={() => setNonActionableOutcome("reference")} disabled={busy} className="px-3 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60">Reference</button>
-                        <button type="button" onClick={() => setNonActionableOutcome("someday_maybe")} disabled={busy} className="px-3 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60">Someday/Maybe</button>
+                        <button type="button" onClick={() => setNonActionableOutcome("trash")} disabled={busy} className="px-3 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60">Trash (T)</button>
+                        <button type="button" onClick={() => setNonActionableOutcome("reference")} disabled={busy} className="px-3 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60">Reference (R)</button>
+                        <button type="button" onClick={() => setNonActionableOutcome("someday_maybe")} disabled={busy} className="px-3 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60">Someday/Maybe (S)</button>
                       </div>
                     </div>
                   )}
@@ -652,8 +652,8 @@ export default function ProcessTodosPage() {
                     <div className="space-y-2">
                       <p className="font-medium">2) Will this take less than 2 minutes?</p>
                       <div className="flex flex-wrap gap-2">
-                        <button type="button" onClick={() => setTwoMinute(true)} disabled={busy} className="px-4 py-2 rounded-xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60">Yes, do now</button>
-                        <button type="button" onClick={() => setTwoMinute(false)} disabled={busy} className="px-4 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60">No</button>
+                        <button type="button" onClick={() => setTwoMinute(true)} disabled={busy} className="px-4 py-2 rounded-xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60">Yes, do now (Y)</button>
+                        <button type="button" onClick={() => setTwoMinute(false)} disabled={busy} className="px-4 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60">No (N)</button>
                       </div>
                     </div>
                   )}
@@ -662,8 +662,8 @@ export default function ProcessTodosPage() {
                     <div className="space-y-2">
                       <p className="font-medium">3) Is this delegated or blocked by someone else?</p>
                       <div className="flex flex-wrap gap-2">
-                        <button type="button" onClick={() => setDelegated(true)} disabled={busy} className="px-4 py-2 rounded-xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60">Yes</button>
-                        <button type="button" onClick={() => setDelegated(false)} disabled={busy} className="px-4 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60">No</button>
+                        <button type="button" onClick={() => setDelegated(true)} disabled={busy} className="px-4 py-2 rounded-xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60">Yes (Y)</button>
+                        <button type="button" onClick={() => setDelegated(false)} disabled={busy} className="px-4 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60">No (N)</button>
                       </div>
                     </div>
                   )}
@@ -672,8 +672,8 @@ export default function ProcessTodosPage() {
                     <div className="space-y-2">
                       <p className="font-medium">4) Must it happen on a specific date/time?</p>
                       <div className="flex flex-wrap gap-2">
-                        <button type="button" onClick={() => setTimeSpecific(true)} disabled={busy} className="px-4 py-2 rounded-xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60">Yes</button>
-                        <button type="button" onClick={() => setTimeSpecific(false)} disabled={busy} className="px-4 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60">No</button>
+                        <button type="button" onClick={() => setTimeSpecific(true)} disabled={busy} className="px-4 py-2 rounded-xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60">Yes (Y)</button>
+                        <button type="button" onClick={() => setTimeSpecific(false)} disabled={busy} className="px-4 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60">No (N)</button>
                       </div>
                     </div>
                   )}
@@ -682,8 +682,8 @@ export default function ProcessTodosPage() {
                     <div className="space-y-2">
                       <p className="font-medium">5) Is it a multi-step outcome?</p>
                       <div className="flex flex-wrap gap-2">
-                        <button type="button" onClick={() => setMultiStep(true)} disabled={busy} className="px-4 py-2 rounded-xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60">Yes, project</button>
-                        <button type="button" onClick={() => setMultiStep(false)} disabled={busy} className="px-4 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60">No, next action</button>
+                        <button type="button" onClick={() => setMultiStep(true)} disabled={busy} className="px-4 py-2 rounded-xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] disabled:opacity-60">Yes, project (Y)</button>
+                        <button type="button" onClick={() => setMultiStep(false)} disabled={busy} className="px-4 py-2 rounded-xl border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface)_/_0.8)] disabled:opacity-60">No, next action (N)</button>
                       </div>
                     </div>
                   )}
