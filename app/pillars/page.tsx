@@ -53,7 +53,7 @@ function PillarCard({
               rows={3}
             />
           ) : (
-            <p className="mt-2 text-sm text-[rgb(var(--text)_/_0.92)]">{pillar.active_focus}</p>
+            <p className="mt-2 text-lg font-semibold" style={{ color: pillar.color }}>{pillar.active_focus}</p>
           )}
         </section>
 
