@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { BookOpen, CheckSquare, Wrench, Activity, BriefcaseBusiness, FileText, Lock, Unlock, SquarePen, Target } from "lucide-react"
+import { BookOpen, CheckSquare, Wrench, Activity, BriefcaseBusiness, FileText, Lock, Unlock, SquarePen, Columns3 } from "lucide-react"
 import { useEffect, useState } from "react"
 
 // Daily nature photo system with dynamic Unsplash API
@@ -615,14 +615,16 @@ export default function Home() {
               <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Tools</h3>
               <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Utilities and calculators</p>
             </Link>
-            <Link
-              href="/pillars"
-              className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center hover:scale-105"
-            >
-              <Target className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
-              <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Pillars</h3>
-              <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Keep one active focus per pillar</p>
-            </Link>
+            {isAuthenticated && (
+              <Link
+                href="/pillars"
+                className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center hover:scale-105"
+              >
+                <Columns3 className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
+                <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Pillars</h3>
+                <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Keep one active focus per pillar</p>
+              </Link>
+            )}
             <Link
               href="/work"
               className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center hover:scale-105"
