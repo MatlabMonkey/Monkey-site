@@ -35,39 +35,34 @@ function PillarCard({
   editMode: boolean
   onChange: (pillar: Pillar) => void
 }) {
+  const titleGradient = {
+    backgroundImage: `linear-gradient(135deg, ${pillar.color} 0%, rgba(255,255,255,0.95) 100%)`,
+  }
+
   return (
     <article
-      className="rounded-2xl border border-white/10 bg-white/5 p-4 md:p-5 transition-transform duration-200 hover:-translate-y-0.5"
-      style={{ borderTop: `3px solid ${pillar.color}` }}
+      className="rounded-3xl border border-white/15 bg-white/[0.07] p-5 md:p-6 transition-transform duration-200 hover:-translate-y-0.5"
+      style={{ boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08), 0 10px 30px ${pillar.color}22` }}
     >
-      <h2 className="text-2xl font-semibold text-[rgb(var(--text))]">{pillar.title}</h2>
+      <h2
+        className="bg-clip-text text-center text-3xl font-extrabold tracking-wide text-transparent md:text-4xl"
+        style={titleGradient}
+      >
+        {pillar.title}
+      </h2>
 
-      <div className="mt-4 space-y-4">
+      <div className="mt-5 space-y-4">
         <section>
-          <h3 className="text-xs uppercase tracking-wide text-[rgb(var(--text)_/_0.68)]">Active focus</h3>
-          {editMode ? (
-            <textarea
-              value={pillar.active_focus}
-              onChange={(e) => onChange({ ...pillar, active_focus: e.target.value })}
-              className="mt-2 w-full rounded-xl border border-white/15 bg-black/25 p-2.5 text-sm text-[rgb(var(--text))] outline-none focus:border-white/30"
-              rows={3}
-            />
-          ) : (
-            <p className="mt-2 text-lg font-semibold" style={{ color: pillar.color }}>{pillar.active_focus}</p>
-          )}
-        </section>
-
-        <section>
-          <h3 className="text-xs uppercase tracking-wide text-[rgb(var(--text)_/_0.68)]">Do</h3>
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-[rgb(var(--text)_/_0.9)]">Do</h3>
           {editMode ? (
             <textarea
               value={toMultiline(pillar.dos)}
               onChange={(e) => onChange({ ...pillar, dos: splitLines(e.target.value) })}
-              className="mt-2 w-full rounded-xl border border-white/15 bg-black/25 p-2.5 text-sm text-[rgb(var(--text))] outline-none focus:border-white/30"
+              className="mt-2 w-full rounded-xl border border-white/20 bg-black/30 p-3 text-base text-[rgb(var(--text))] outline-none focus:border-white/35"
               rows={4}
             />
           ) : (
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[rgb(var(--text)_/_0.9)]">
+            <ul className="mt-2 list-disc space-y-2 rounded-xl border border-white/10 bg-white/5 p-3 pl-8 text-base leading-relaxed text-[rgb(var(--text)_/_0.98)]">
               {pillar.dos.map((item) => (
                 <li key={`${pillar.id}-do-${item}`}>{item}</li>
               ))}
@@ -76,16 +71,16 @@ function PillarCard({
         </section>
 
         <section>
-          <h3 className="text-xs uppercase tracking-wide text-[rgb(var(--text)_/_0.68)]">Don’t</h3>
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-[rgb(var(--text)_/_0.9)]">Don’t</h3>
           {editMode ? (
             <textarea
               value={toMultiline(pillar.donts)}
               onChange={(e) => onChange({ ...pillar, donts: splitLines(e.target.value) })}
-              className="mt-2 w-full rounded-xl border border-white/15 bg-black/25 p-2.5 text-sm text-[rgb(var(--text))] outline-none focus:border-white/30"
+              className="mt-2 w-full rounded-xl border border-white/20 bg-black/30 p-3 text-base text-[rgb(var(--text))] outline-none focus:border-white/35"
               rows={4}
             />
           ) : (
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[rgb(var(--text)_/_0.9)]">
+            <ul className="mt-2 list-disc space-y-2 rounded-xl border border-white/10 bg-white/5 p-3 pl-8 text-base leading-relaxed text-[rgb(var(--text)_/_0.98)]">
               {pillar.donts.map((item) => (
                 <li key={`${pillar.id}-dont-${item}`}>{item}</li>
               ))}
@@ -94,31 +89,31 @@ function PillarCard({
         </section>
 
         <section>
-          <h3 className="text-xs uppercase tracking-wide text-[rgb(var(--text)_/_0.68)]">Quality Standard</h3>
+          <h3 className="text-sm font-semibold uppercase tracking-wide text-[rgb(var(--text)_/_0.9)]">Quality Standard</h3>
           {editMode ? (
             <textarea
               value={pillar.quality_standard}
               onChange={(e) => onChange({ ...pillar, quality_standard: e.target.value })}
-              className="mt-2 w-full rounded-xl border border-white/15 bg-black/25 p-2.5 text-sm text-[rgb(var(--text))] outline-none focus:border-white/30"
+              className="mt-2 w-full rounded-xl border border-white/20 bg-black/30 p-3 text-base text-[rgb(var(--text))] outline-none focus:border-white/35"
               rows={3}
             />
           ) : (
-            <p className="mt-2 text-sm text-[rgb(var(--text)_/_0.92)]">{pillar.quality_standard}</p>
+            <p className="mt-2 rounded-xl border border-white/10 bg-white/5 p-3 text-base leading-relaxed text-[rgb(var(--text)_/_0.98)]">{pillar.quality_standard}</p>
           )}
         </section>
 
         <section className="rounded-xl border border-white/10 bg-white/5 px-3 py-2">
           <details>
-            <summary className="cursor-pointer select-none text-xs uppercase tracking-wide text-[rgb(var(--text)_/_0.65)]">Later</summary>
+            <summary className="cursor-pointer select-none text-sm font-semibold uppercase tracking-wide text-[rgb(var(--text)_/_0.88)]">Later</summary>
             {editMode ? (
               <textarea
                 value={toMultiline(pillar.later)}
                 onChange={(e) => onChange({ ...pillar, later: splitLines(e.target.value) })}
-                className="mt-2 w-full rounded-xl border border-white/15 bg-black/25 p-2.5 text-sm text-[rgb(var(--text))] outline-none focus:border-white/30"
+                className="mt-2 w-full rounded-xl border border-white/20 bg-black/30 p-3 text-base text-[rgb(var(--text))] outline-none focus:border-white/35"
                 rows={4}
               />
             ) : (
-              <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[rgb(var(--text)_/_0.8)]">
+              <ul className="mt-2 list-disc space-y-2 rounded-xl border border-white/10 bg-black/20 p-3 pl-8 text-base leading-relaxed text-[rgb(var(--text)_/_0.9)]">
                 {pillar.later.map((item) => (
                   <li key={`${pillar.id}-later-${item}`}>{item}</li>
                 ))}
@@ -179,12 +174,8 @@ export default function PillarsPage() {
 
   return (
     <main className="min-h-screen bg-[#1f2329] text-[rgb(var(--text))]">
-      <div className="mx-auto w-full max-w-[1200px] px-4 py-8 md:px-6 md:py-10">
-        <div className="mb-6 flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-4xl font-bold">Pillars</h1>
-          </div>
-
+      <div className="mx-auto w-full px-4 py-6 md:px-6 md:py-8">
+        <div className="mb-5 flex items-start justify-end gap-4">
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -211,7 +202,7 @@ export default function PillarsPage() {
 
         {error && <p className="mb-4 rounded-lg border border-red-500/50 bg-red-500/10 px-3 py-2 text-sm text-red-200">{error}</p>}
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid min-h-[calc(100vh-7.5rem)] grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           {pillars.map((pillar) => (
             <PillarCard
               key={pillar.id}
