@@ -178,12 +178,11 @@ export default function PillarsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#05070B] text-[rgb(var(--text))]">
+    <main className="min-h-screen bg-[#1f2329] text-[rgb(var(--text))]">
       <div className="mx-auto w-full max-w-[1200px] px-4 py-8 md:px-6 md:py-10">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
             <h1 className="text-4xl font-bold">Pillars</h1>
-            <p className="mt-2 text-sm text-[rgb(var(--text)_/_0.72)]">One active focus per pillar. Everything else goes to Later.</p>
           </div>
 
           <div className="flex items-center gap-2">

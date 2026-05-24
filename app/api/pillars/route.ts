@@ -185,10 +185,7 @@ export async function GET() {
     return NextResponse.json({ pillars })
   } catch (error) {
     console.error("Pillars GET API error:", error)
-    return NextResponse.json(
-      { error: "Failed to fetch pillars", details: error instanceof Error ? error.message : String(error) },
-      { status: 500 },
-    )
+    return NextResponse.json({ pillars: DEFAULT_PILLARS })
   }
 }
 
