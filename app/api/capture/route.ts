@@ -32,9 +32,13 @@ function getSupabaseAdmin() {
 
 export async function POST(request: NextRequest) {
   try {
-    const configuredKey = process.env.CAPTURE_API_KEY
+    const configuredKey =
+      process.env.CAPTURE_API_KEY || process.env.TODO_WEBHOOK_SECRET || process.env.WEBHOOK_SECRET
     if (!configuredKey) {
-      return NextResponse.json({ error: "CAPTURE_API_KEY is not configured" }, { status: 500 })
+      return NextResponse.json(
+        { error: "Capture webhook key is not configured (CAPTURE_API_KEY / TODO_WEBHOOK_SECRET / WEBHOOK_SECRET)" },
+        { status: 500 },
+      )
     }
 
     const token = getCaptureToken(request)
