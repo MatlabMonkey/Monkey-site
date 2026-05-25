@@ -20,11 +20,11 @@ function getCaptureToken(request: NextRequest): string {
 }
 
 function getSupabaseAdmin() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!supabaseUrl || !serviceRoleKey) {
-    throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
+    throw new Error("Missing Supabase env (NEXT_PUBLIC_SUPABASE_URL/SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY)")
   }
 
   return createClient(supabaseUrl, serviceRoleKey, { auth: { persistSession: false } })
@@ -79,7 +79,11 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error("Supabase capture insert error:", error)
-      return NextResponse.json({ error: "Failed to capture idea", details: error.message }, { status: 500 })
+      const details = error.message || "Unknown Supabase error"
+      const hint = details.toLowerCase().includes("fetch failed")
+        ? "Supabase network/env issue on server (check NEXT_PUBLIC_SUPABASE_URL/SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in Vercel)."
+        : undefined
+      return NextResponse.json({ error: "Failed to capture idea", details, hint }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, idea }, { status: 201 })
