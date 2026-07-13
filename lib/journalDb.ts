@@ -93,6 +93,35 @@ async function getQuestionIds(keys: string[]): Promise<Map<string, string>> {
   return m;
 }
 
+function persistableAnswers(answers: AnswerInput[]): AnswerInput[] {
+  return answers.filter((answer) => answer.question_key !== "day_date");
+}
+
+async function replaceAnswers(entryId: string, answers: AnswerInput[]): Promise<void> {
+  await supabase.from("journal_answer").delete().eq("entry_id", entryId);
+
+  const keys = answers.map((a) => a.question_key);
+  const keyToId = await getQuestionIds(keys);
+  const toInsert: Array<{ entry_id: string; question_id: string; value_text?: string; value_number?: number; value_boolean?: boolean; value_json?: unknown }> = [];
+
+  for (const a of answers) {
+    const qid = keyToId.get(a.question_key);
+    if (!qid) continue;
+    const { value_text, value_number, value_boolean, value_json } = toValueCols(a.answer_value, a.answer_type);
+    const row: any = { entry_id: entryId, question_id: qid };
+    if (value_text != null) row.value_text = value_text;
+    if (value_number != null) row.value_number = value_number;
+    if (value_boolean != null) row.value_boolean = value_boolean;
+    if (value_json != null) row.value_json = value_json;
+    toInsert.push(row);
+  }
+
+  if (toInsert.length > 0) {
+    const { error: insErr } = await supabase.from("journal_answer").insert(toInsert);
+    if (insErr) throw insErr;
+  }
+}
+
 /**
  * Get entry and answers for a date (draft or submitted). Returns { entry: null, answers: [] } if none.
  */
@@ -143,45 +172,35 @@ export async function getEntry(date: string): Promise<EntryWithAnswers> {
 }
 
 /**
- * Save or update a draft (is_draft=true, no completed_at).
+ * Save a draft/new entry or update an existing submitted entry without changing
+ * its submitted state. The canonical date is journal_entry.date; day_date is
+ * ignored only for backward compatibility with older clients/catalog rows.
  */
 export async function saveDraft(date: string, answers: AnswerInput[]): Promise<EntryWithAnswers> {
   const dateStr = requireJournalDate(date);
-  const keys = answers.map((a) => a.question_key);
-  const keyToId = await getQuestionIds(keys);
+  const answersToPersist = persistableAnswers(answers);
 
-  const { data: entryRow, error: uErr } = await supabase
+  const { data: existingRow, error: existingErr } = await supabase
     .from("journal_entry")
-    .upsert(
-      { date: dateStr, is_draft: true, completed_at: null, updated_at: new Date().toISOString() },
-      { onConflict: "date", ignoreDuplicates: false }
-    )
+    .select("id, is_draft, completed_at")
+    .eq("date", dateStr)
+    .maybeSingle();
+
+  if (existingErr) throw existingErr;
+
+  const now = new Date().toISOString();
+  const query = existingRow
+    ? supabase.from("journal_entry").update({ updated_at: now }).eq("id", existingRow.id)
+    : supabase.from("journal_entry").insert({ date: dateStr, is_draft: true, updated_at: now });
+
+  const { data: entryRow, error: uErr } = await query
     .select("id, date, is_draft, completed_at, created_at, updated_at")
     .single();
 
   if (uErr) throw uErr;
-  if (!entryRow) throw new Error("Upsert journal_entry did not return a row");
+  if (!entryRow) throw new Error("Save journal_entry did not return a row");
 
-  // Replace answers: delete existing, insert current
-  await supabase.from("journal_answer").delete().eq("entry_id", entryRow.id);
-
-  const toInsert: Array<{ entry_id: string; question_id: string; value_text?: string; value_number?: number; value_boolean?: boolean; value_json?: unknown }> = [];
-  for (const a of answers) {
-    const qid = keyToId.get(a.question_key);
-    if (!qid) continue;
-    const { value_text, value_number, value_boolean, value_json } = toValueCols(a.answer_value, a.answer_type);
-    const row: any = { entry_id: entryRow.id, question_id: qid };
-    if (value_text != null) row.value_text = value_text;
-    if (value_number != null) row.value_number = value_number;
-    if (value_boolean != null) row.value_boolean = value_boolean;
-    if (value_json != null) row.value_json = value_json;
-    toInsert.push(row);
-  }
-
-  if (toInsert.length > 0) {
-    const { error: insErr } = await supabase.from("journal_answer").insert(toInsert);
-    if (insErr) throw insErr;
-  }
+  await replaceAnswers(entryRow.id, answersToPersist);
 
   return getEntry(dateStr);
 }
@@ -191,8 +210,7 @@ export async function saveDraft(date: string, answers: AnswerInput[]): Promise<E
  */
 export async function submitEntry(date: string, answers: AnswerInput[]): Promise<EntryWithAnswers> {
   const dateStr = requireJournalDate(date);
-  const keys = answers.map((a) => a.question_key);
-  const keyToId = await getQuestionIds(keys);
+  const answersToPersist = persistableAnswers(answers);
 
   const { data: entryRow, error: uErr } = await supabase
     .from("journal_entry")
@@ -211,27 +229,40 @@ export async function submitEntry(date: string, answers: AnswerInput[]): Promise
   if (uErr) throw uErr;
   if (!entryRow) throw new Error("Upsert journal_entry did not return a row");
 
-  await supabase.from("journal_answer").delete().eq("entry_id", entryRow.id);
-
-  const toInsert: Array<{ entry_id: string; question_id: string; value_text?: string; value_number?: number; value_boolean?: boolean; value_json?: unknown }> = [];
-  for (const a of answers) {
-    const qid = keyToId.get(a.question_key);
-    if (!qid) continue;
-    const { value_text, value_number, value_boolean, value_json } = toValueCols(a.answer_value, a.answer_type);
-    const row: any = { entry_id: entryRow.id, question_id: qid };
-    if (value_text != null) row.value_text = value_text;
-    if (value_number != null) row.value_number = value_number;
-    if (value_boolean != null) row.value_boolean = value_boolean;
-    if (value_json != null) row.value_json = value_json;
-    toInsert.push(row);
-  }
-
-  if (toInsert.length > 0) {
-    const { error: insErr } = await supabase.from("journal_answer").insert(toInsert);
-    if (insErr) throw insErr;
-  }
+  await replaceAnswers(entryRow.id, answersToPersist);
 
   return getEntry(dateStr);
+}
+
+export async function moveEntryDate(fromDate: string, toDate: string): Promise<EntryWithAnswers> {
+  const from = requireJournalDate(fromDate);
+  const to = requireJournalDate(toDate);
+  if (from === to) return getEntry(from);
+
+  const { data: targetRow, error: targetErr } = await supabase
+    .from("journal_entry")
+    .select("id, is_draft")
+    .eq("date", to)
+    .maybeSingle();
+
+  if (targetErr) throw targetErr;
+  if (targetRow) {
+    const err = new Error(`Journal entry already exists for ${to}`);
+    err.name = "JournalDateConflictError";
+    throw err;
+  }
+
+  const { data: entryRow, error: updateErr } = await supabase
+    .from("journal_entry")
+    .update({ date: to, updated_at: new Date().toISOString() })
+    .eq("date", from)
+    .select("id")
+    .maybeSingle();
+
+  if (updateErr) throw updateErr;
+  if (!entryRow) return getEntry(to);
+
+  return getEntry(to);
 }
 
 /**

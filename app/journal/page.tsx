@@ -9,7 +9,7 @@ import PinGate from "../components/PinGate"
 import PrivateSectionNav from "../components/PrivateSectionNav"
 import { JOURNAL_QUESTION_SET } from "../../lib/journalSchema"
 import { formatIsoDateForDisplay, getLocalDateString, normalizeIsoDate } from "../../lib/date"
-import { ArrowLeft, CalendarDays, ChevronLeft, ChevronRight, CheckCircle2, Home, Save, Loader2, Search, Compass } from "lucide-react"
+import { ArrowLeft, CalendarDays, ChevronLeft, ChevronRight, CheckCircle2, Home, Save, Loader2, Search, Compass, FileText, X } from "lucide-react"
 
 type Question = {
   id: string
@@ -27,12 +27,27 @@ type Answer = {
   answer_type: string
 }
 
-function toIsoUTC(date: Date) {
-  return date.toISOString().slice(0, 10)
+function answerHasValue(value: any) {
+  if (value === null || value === undefined || value === "") return false
+  if (Array.isArray(value) && value.length === 0) return false
+  return true
 }
 
-function monthLabel(date: Date) {
-  return date.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" })
+function hasPersistableAnswerValues(sourceAnswers: Record<string, any>) {
+  return Object.values(sourceAnswers).some((value) => answerHasValue(value))
+}
+
+function serializeAnswers(sourceAnswers: Record<string, any>, questions: Question[]): Answer[] {
+  return Object.entries(sourceAnswers)
+    .filter(([, value]) => answerHasValue(value))
+    .map(([question_key, answer_value]) => {
+      const question = questions.find((q) => q.key === question_key)
+      return {
+        question_key,
+        answer_value,
+        answer_type: question?.question_type || "text",
+      }
+    })
 }
 
 function JournalPageContent() {
@@ -51,68 +66,25 @@ function JournalPageContent() {
   const [draftLoaded, setDraftLoaded] = useState(false)
   const [loadedEntryExists, setLoadedEntryExists] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [dateInput, setDateInput] = useState("")
-  const [calendarOpen, setCalendarOpen] = useState(false)
-  const [calendarMonth, setCalendarMonth] = useState<Date>(new Date(`${(normalizeIsoDate(rawDateParam) ?? getLocalDateString())}T00:00:00Z`))
-  const [monthEntryDates, setMonthEntryDates] = useState<Set<string>>(new Set())
-  const [calendarLoading, setCalendarLoading] = useState(false)
+  const [dateConflict, setDateConflict] = useState<{ date: string; isDraft: boolean } | null>(null)
+  const [isChangingEntryDate, setIsChangingEntryDate] = useState(false)
+  const [showReview, setShowReview] = useState(false)
+  const [isEditingSubmitted, setIsEditingSubmitted] = useState(false)
 
   // Get date for entry (default to today's local date)
   const today = getLocalDateString()
   const entryDate = normalizeIsoDate(rawDateParam) ?? today
-  const currentQuestion = questions[currentQuestionIndex]
-  const totalQuestions = questions.length
-  const progress = totalQuestions > 0 ? ((currentQuestionIndex + 1) / totalQuestions) * 100 : 0
+  const totalSteps = questions.length + 1
+  const isDateStep = currentQuestionIndex === 0
+  const currentQuestion = isDateStep ? null : questions[currentQuestionIndex - 1]
+  const progress = totalSteps > 0 ? ((currentQuestionIndex + 1) / totalSteps) * 100 : 0
+  const isSubmittedReadOnly = loadedEntryExists && !isDraft && !isEditingSubmitted
 
   useEffect(() => {
     if (rawDateParam == null) return
     if (normalizeIsoDate(rawDateParam)) return
     router.replace(`/journal?date=${today}`)
   }, [rawDateParam, router, today])
-
-  useEffect(() => {
-    setDateInput(entryDate)
-    setCalendarMonth(new Date(`${entryDate}T00:00:00Z`))
-  }, [entryDate])
-
-  useEffect(() => {
-    if (!calendarOpen) return
-
-    const y = calendarMonth.getUTCFullYear()
-    const m = calendarMonth.getUTCMonth()
-    const monthStart = new Date(Date.UTC(y, m, 1))
-    const monthEnd = new Date(Date.UTC(y, m + 1, 0))
-
-    const loadMonthEntries = async () => {
-      setCalendarLoading(true)
-      try {
-        const res = await fetch(`/api/journal/search?from=${toIsoUTC(monthStart)}&to=${toIsoUTC(monthEnd)}`, { cache: "no-store" })
-        const data = await res.json()
-        if (!res.ok) {
-          setMonthEntryDates(new Set())
-          return
-        }
-        const dates = new Set<string>((data.entries || []).map((entry: { date?: string }) => entry.date).filter((d: unknown): d is string => typeof d === "string"))
-        setMonthEntryDates(dates)
-      } catch {
-        setMonthEntryDates(new Set())
-      } finally {
-        setCalendarLoading(false)
-      }
-    }
-
-    void loadMonthEntries()
-  }, [calendarMonth, calendarOpen])
-
-  const commitDateInput = (value: string) => {
-    const normalized = normalizeIsoDate(value)
-    if (!normalized) {
-      setDateInput(entryDate)
-      return
-    }
-    if (normalized === entryDate) return
-    router.replace(`/journal?date=${normalized}`)
-  }
 
   // Load questions on mount
   useEffect(() => {
@@ -144,6 +116,9 @@ function JournalPageContent() {
     setCurrentQuestionIndex(0)
     setIsDraft(false)
     setError(null)
+    setDateConflict(null)
+    setShowReview(false)
+    setIsEditingSubmitted(false)
   }, [entryDate])
 
   // Load entry (draft or submitted) on mount
@@ -157,11 +132,15 @@ function JournalPageContent() {
         setLoadedEntryExists(!!data.entry)
         if (data.entry) {
           setIsDraft(data.entry.is_draft)
+          setIsEditingSubmitted(false)
           const answersObj: Record<string, any> = {}
           ;(data.answers || []).forEach((a: { question_key: string; answer_value: any }) => {
+            if (a.question_key === "day_date") return
             answersObj[a.question_key] = a.answer_value
           })
           setAnswers(answersObj)
+        } else {
+          setAnswers({})
         }
         setDraftLoaded(true)
       } catch (err) {
@@ -173,50 +152,34 @@ function JournalPageContent() {
     if (!isLoading) loadEntry()
   }, [entryDate, isLoading])
 
-  // Pre-fill day_date from entry date when starting a new entry
-  useEffect(() => {
-    if (!draftLoaded || loadedEntryExists) return
-    setAnswers((prev) => {
-      if (prev.day_date != null && prev.day_date !== "") return prev
-      return { ...prev, day_date: entryDate }
-    })
-  }, [draftLoaded, loadedEntryExists, entryDate])
-
   // Auto-save draft when answers change (debounced)
   useEffect(() => {
     if (!draftLoaded) return // Don't auto-save while loading draft
-    if (Object.keys(answers).length === 0) return // Don't save empty answers
+    if (isSubmittedReadOnly) return
+    if (isChangingEntryDate || dateConflict) return
+
+    const hasPersistableAnswers = hasPersistableAnswerValues(answers)
+    if (!hasPersistableAnswers) return // Don't create rows for date-only state
 
     const timer = setTimeout(async () => {
       setIsSaving(true)
       setSaveStatus("saving")
 
       try {
-        // Convert answers object to array format
-        const answersArray: Answer[] = Object.entries(answers)
-          .filter(([_, value]) => value !== null && value !== undefined && value !== "")
-          .map(([question_key, answer_value]) => {
-            // Find question to get answer_type
-            const question = questions.find((q) => q.key === question_key)
-            return {
-              question_key,
-              answer_value,
-              answer_type: question?.question_type || "text",
-            }
-          })
-
         const response = await fetch("/api/journal/draft", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             date: entryDate,
-            answers: answersArray,
+            answers: serializeAnswers(answers, questions),
           }),
         })
 
         if (response.ok) {
+          const data = await response.json()
           setSaveStatus("saved")
-          setIsDraft(true)
+          setIsDraft(!!data.draft?.is_draft)
+          setLoadedEntryExists(!!data.draft)
           setTimeout(() => setSaveStatus("idle"), 2000) // Hide "saved" after 2 seconds
         } else {
           setSaveStatus("error")
@@ -232,17 +195,80 @@ function JournalPageContent() {
     }, 500) // 500ms debounce
 
     return () => clearTimeout(timer)
-  }, [answers, entryDate, questions, draftLoaded])
+  }, [answers, entryDate, questions, draftLoaded, isChangingEntryDate, dateConflict, isSubmittedReadOnly])
 
   const handleAnswerChange = (questionKey: string, value: any) => {
+    if (isSubmittedReadOnly) return
     setAnswers((prev) => ({
       ...prev,
       [questionKey]: value,
     }))
   }
 
+  const handleEntryDateChange = async (value: string) => {
+    if (isSubmittedReadOnly) return
+    setDateConflict(null)
+
+    const nextDate = normalizeIsoDate(value)
+    if (!nextDate || nextDate === entryDate) return
+
+    setIsChangingEntryDate(true)
+    setError(null)
+
+    try {
+      const existsResponse = await fetch(`/api/journal/exists?date=${nextDate}`, { cache: "no-store" })
+      const existsData = await existsResponse.json()
+      if (existsResponse.ok && existsData.exists) {
+        setDateConflict({ date: nextDate, isDraft: !!existsData.is_draft })
+        return
+      }
+
+      if (loadedEntryExists) {
+        const moveResponse = await fetch("/api/journal/entry", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fromDate: entryDate, toDate: nextDate }),
+        })
+
+        if (!moveResponse.ok) {
+          const data = await moveResponse.json()
+          if (moveResponse.status === 409) {
+            setDateConflict({ date: nextDate, isDraft: false })
+            return
+          }
+          setError(data.error || "Failed to change entry date")
+          return
+        }
+      }
+
+      if (hasPersistableAnswerValues(answers)) {
+        const saveResponse = await fetch("/api/journal/draft", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            date: nextDate,
+            answers: serializeAnswers(answers, questions),
+          }),
+        })
+
+        if (!saveResponse.ok) {
+          const data = await saveResponse.json()
+          setError(data.error || "Failed to save answers under the new date")
+          return
+        }
+      }
+
+      router.replace(`/journal?date=${nextDate}`)
+    } catch (err) {
+      console.error("Failed to change entry date:", err)
+      setError("Failed to change entry date. Please try again.")
+    } finally {
+      setIsChangingEntryDate(false)
+    }
+  }
+
   const handleNext = () => {
-    if (currentQuestionIndex < totalQuestions - 1) {
+    if (currentQuestionIndex < totalSteps - 1) {
       setCurrentQuestionIndex((prev) => prev + 1)
     }
   }
@@ -260,24 +286,12 @@ function JournalPageContent() {
     setError(null)
 
     try {
-      // Convert answers object to array format
-      const answersArray: Answer[] = Object.entries(answers)
-        .filter(([_, value]) => value !== null && value !== undefined && value !== "")
-        .map(([question_key, answer_value]) => {
-          const question = questions.find((q) => q.key === question_key)
-          return {
-            question_key,
-            answer_value,
-            answer_type: question?.question_type || "text",
-          }
-        })
-
       const response = await fetch("/api/journal/submit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           date: entryDate,
-          answers: answersArray,
+          answers: serializeAnswers(answers, questions),
         }),
       })
 
@@ -295,6 +309,54 @@ function JournalPageContent() {
       setIsSubmitting(false)
     }
   }
+
+  const renderEntryDateStep = () => (
+    <div className="space-y-4">
+      <input
+        type="date"
+        value={entryDate}
+        onChange={(e) => void handleEntryDateChange(e.target.value)}
+        disabled={isChangingEntryDate || isSubmittedReadOnly}
+        className="w-full px-4 py-3 border-2 border-slate-700 bg-slate-900 text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all disabled:opacity-60"
+      />
+      <div className="rounded-xl border border-slate-700 bg-slate-950/60 p-4 text-sm text-slate-300">
+        <p>
+          Saved as <span className="font-medium text-slate-100">{formatIsoDateForDisplay(entryDate)}</span>.
+          Created and edited timestamps are tracked separately.
+        </p>
+      </div>
+      {isChangingEntryDate && (
+        <div className="flex items-center gap-2 text-sm text-slate-400">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Checking date...</span>
+        </div>
+      )}
+      {dateConflict && (
+        <div className="rounded-xl border border-amber-700/60 bg-amber-950/40 p-4 text-sm text-amber-100">
+          <p className="font-medium">An entry already exists for {formatIsoDateForDisplay(dateConflict.date)}.</p>
+          <p className="mt-1 text-amber-200/80">
+            Open that {dateConflict.isDraft ? "draft" : "entry"} or choose a different date.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => router.replace(`/journal?date=${dateConflict.date}`)}
+              className="rounded-lg bg-amber-500 px-3 py-2 text-sm font-medium text-slate-950 hover:bg-amber-400"
+            >
+              Open existing
+            </button>
+            <button
+              type="button"
+              onClick={() => setDateConflict(null)}
+              className="rounded-lg border border-slate-700 px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800"
+            >
+              Keep current date
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
 
   const renderQuestionInput = (question: Question) => {
     const value = answers[question.key] || ""
@@ -498,7 +560,7 @@ function JournalPageContent() {
     )
   }
 
-  const answeredCount = Object.keys(answers).filter((key) => {
+  const answeredCount = 1 + Object.keys(answers).filter((key) => {
     const value = answers[key]
     return value !== null && value !== undefined && value !== "" && !(Array.isArray(value) && value.length === 0)
   }).length
@@ -513,13 +575,7 @@ function JournalPageContent() {
     loadedEntryExists &&
     answerKeysWithValues.length > 0 &&
     answerKeysWithValues.some(([key]) => !currentAppKeys.has(key))
-
-  const calYear = calendarMonth.getUTCFullYear()
-  const calMonth = calendarMonth.getUTCMonth()
-  const daysInMonth = new Date(Date.UTC(calYear, calMonth + 1, 0)).getUTCDate()
-  const firstWeekday = new Date(Date.UTC(calYear, calMonth, 1)).getUTCDay()
-  const blanks = Array.from({ length: firstWeekday })
-  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
+  const reviewAnswers = serializeAnswers(answers, questions)
 
   return (
     <PinGate>
@@ -543,89 +599,8 @@ function JournalPageContent() {
                 >
                   <Home className="w-3.5 h-3.5" /> Home
                 </Link>
-                <label className="flex items-center gap-2 text-slate-300">
-                  <span className="text-sm font-medium">Entry date:</span>
-                  <input
-                    type="date"
-                    value={dateInput}
-                    onChange={(e) => {
-                      setDateInput(e.target.value)
-                      if (e.target.value.length === 10) {
-                        commitDateInput(e.target.value)
-                      }
-                    }}
-                    onBlur={(e) => commitDateInput(e.target.value)}
-                    className="px-3 py-1.5 border border-slate-700 rounded-lg bg-slate-900 text-slate-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => router.replace(`/journal?date=${today}`)}
-                    className="px-2 py-1 text-xs rounded-md border border-slate-700 text-slate-300 hover:text-slate-100 hover:bg-slate-800"
-                  >
-                    Today
-                  </button>
-                </label>
-                <div className="relative">
-                  <button
-                    type="button"
-                    onClick={() => setCalendarOpen((prev) => !prev)}
-                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-700 text-slate-300 hover:bg-slate-800"
-                  >
-                    <CalendarDays className="w-4 h-4" />
-                    Calendar
-                  </button>
-                  {calendarOpen && (
-                    <div className="absolute left-0 mt-2 w-[320px] rounded-2xl border border-slate-700 bg-slate-950/95 shadow-2xl p-3 z-50">
-                      <div className="flex items-center justify-between mb-3">
-                        <button
-                          type="button"
-                          onClick={() => setCalendarMonth((prev) => new Date(Date.UTC(prev.getUTCFullYear(), prev.getUTCMonth() - 1, 1)))}
-                          className="p-1 rounded-md hover:bg-slate-800"
-                        >
-                          <ChevronLeft className="w-4 h-4" />
-                        </button>
-                        <p className="text-sm font-medium">{monthLabel(calendarMonth)}</p>
-                        <button
-                          type="button"
-                          onClick={() => setCalendarMonth((prev) => new Date(Date.UTC(prev.getUTCFullYear(), prev.getUTCMonth() + 1, 1)))}
-                          className="p-1 rounded-md hover:bg-slate-800"
-                        >
-                          <ChevronRight className="w-4 h-4" />
-                        </button>
-                      </div>
-
-                      <div className="grid grid-cols-7 gap-1 text-[10px] text-slate-500 mb-2">
-                        {['S','M','T','W','T','F','S'].map((d, i) => (<div key={`${d}-${i}`} className="text-center">{d}</div>))}
-                      </div>
-
-                      <div className="grid grid-cols-7 gap-1">
-                        {blanks.map((_, i) => <div key={`blank-${i}`} />)}
-                        {days.map((day) => {
-                          const iso = `${calYear}-${String(calMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`
-                          const selected = iso === entryDate
-                          const hasEntry = monthEntryDates.has(iso)
-                          return (
-                            <button
-                              key={iso}
-                              type="button"
-                              onClick={() => {
-                                setDateInput(iso)
-                                commitDateInput(iso)
-                                setCalendarOpen(false)
-                              }}
-                              className={`h-9 rounded-lg text-xs border transition-colors ${selected ? "border-purple-400 bg-purple-500/20 text-purple-200" : hasEntry ? "border-sky-700 bg-sky-900/30 text-slate-100" : "border-slate-800 text-slate-400 hover:bg-slate-800"}`}
-                            >
-                              <span>{day}</span>
-                            </button>
-                          )
-                        })}
-                      </div>
-
-                      <p className="mt-2 text-[11px] text-slate-500">
-                        {calendarLoading ? "Loading month..." : "Blue dates already have entries."}
-                      </p>
-                    </div>
-                  )}
+                <div className="rounded-xl border border-slate-700 px-3 py-1.5 text-xs text-slate-300">
+                  Entry for <span className="font-medium text-slate-100">{formatIsoDateForDisplay(entryDate)}</span>
                 </div>
                 <Link
                   href="/journal/search"
@@ -641,6 +616,13 @@ function JournalPageContent() {
                   <Compass className="w-4 h-4" />
                   Explorer
                 </Link>
+                <Link
+                  href="/journal/calendar"
+                  className="flex items-center gap-2 text-sm text-slate-300 hover:text-purple-400 transition-colors"
+                >
+                  <CalendarDays className="w-4 h-4" />
+                  Calendar
+                </Link>
               </div>
               <div className="flex items-center gap-3">
                 {saveStatus === "saving" && (
@@ -652,7 +634,7 @@ function JournalPageContent() {
                 {saveStatus === "saved" && (
                   <div className="flex items-center gap-2 text-emerald-400 text-sm">
                     <Save className="w-4 h-4" />
-                    <span>Draft saved</span>
+                    <span>{isDraft ? "Draft saved" : "Changes saved"}</span>
                   </div>
                 )}
                 {saveStatus === "error" && (
@@ -677,7 +659,7 @@ function JournalPageContent() {
                   />
                 </div>
                 <div className="flex justify-between items-center mt-2 text-sm text-gray-600">
-                  <span>Question {currentQuestionIndex + 1} of {totalQuestions}</span>
+                  <span>Step {currentQuestionIndex + 1} of {totalSteps}</span>
                   <span>{answeredCount} answered</span>
                 </div>
               </>
@@ -694,10 +676,23 @@ function JournalPageContent() {
           )}
 
           {draftLoaded && loadedEntryExists && (
-            <div className={`mb-6 p-4 rounded-xl border border-sky-700/60 bg-sky-950/40 text-sky-200 transition-opacity duration-200 ${isSaving ? "opacity-0" : "opacity-100"}`}>
-              {isDraft
-                ? `Resuming your draft from ${formatIsoDateForDisplay(entryDate)}`
-                : `Editing submitted entry from ${formatIsoDateForDisplay(entryDate)}`}
+            <div className={`mb-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-sky-700/60 bg-sky-950/40 p-4 text-sky-200 transition-opacity duration-200 ${isSaving ? "opacity-0" : "opacity-100"}`}>
+              <div>
+                {isDraft
+                  ? `Resuming your draft from ${formatIsoDateForDisplay(entryDate)}`
+                  : isEditingSubmitted
+                    ? `Editing submitted entry from ${formatIsoDateForDisplay(entryDate)}`
+                    : `Viewing submitted entry from ${formatIsoDateForDisplay(entryDate)}`}
+              </div>
+              {!isDraft && !isEditingSubmitted && (
+                <button
+                  type="button"
+                  onClick={() => setIsEditingSubmitted(true)}
+                  className="rounded-lg border border-sky-600 px-3 py-2 text-sm font-medium text-sky-100 hover:bg-sky-900/60"
+                >
+                  Edit submitted entry
+                </button>
+              )}
             </div>
           )}
 
@@ -727,15 +722,23 @@ function JournalPageContent() {
             </div>
           )}
 
-          {/* Question Card (current form) — hide when showing legacy read-only */}
-          {!isLegacyEntry && currentQuestion && (
+          {/* Date step + question card (current form) — hide when showing legacy read-only */}
+          {!isLegacyEntry && (
             <div className="bg-slate-900 rounded-2xl shadow-xl shadow-black/40 border border-slate-800 p-8 mb-6">
-              <h2 className="text-2xl font-bold text-slate-50 mb-2">{currentQuestion.wording}</h2>
-              {currentQuestion.description && (
+              <h2 className="text-2xl font-bold text-slate-50 mb-2">
+                {isDateStep ? "What day is this entry for?" : currentQuestion?.wording}
+              </h2>
+              {isDateStep ? (
+                <p className="text-slate-300 mb-8">
+                  This controls which journal entry is loaded and where this entry is saved.
+                </p>
+              ) : currentQuestion?.description ? (
                 <p className="text-slate-300 mb-8">{currentQuestion.description}</p>
-              )}
+              ) : null}
 
-              <div className="mt-6">{renderQuestionInput(currentQuestion)}</div>
+              <div className="mt-6">
+                {isDateStep ? renderEntryDateStep() : currentQuestion ? renderQuestionInput(currentQuestion) : null}
+              </div>
             </div>
           )}
 
@@ -751,10 +754,10 @@ function JournalPageContent() {
               Previous
             </button>
 
-            {currentQuestionIndex === totalQuestions - 1 ? (
+            {currentQuestionIndex === totalSteps - 1 ? (
               <button
-                onClick={handleSubmit}
-                disabled={isSubmitting}
+                onClick={() => setShowReview(true)}
+                disabled={isSubmitting || !!dateConflict || isChangingEntryDate || isSubmittedReadOnly}
                 className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl font-semibold hover:from-emerald-400 hover:to-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
               >
                 {isSubmitting ? (
@@ -764,8 +767,8 @@ function JournalPageContent() {
                   </>
                 ) : (
                   <>
-                    <CheckCircle2 className="w-5 h-5" />
-                    Submit Entry
+                    <FileText className="w-5 h-5" />
+                    {isSubmittedReadOnly ? "View Only" : "Review Entry"}
                   </>
                 )}
               </button>
@@ -781,6 +784,72 @@ function JournalPageContent() {
           </div>
           )}
         </div>
+
+        {showReview && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4 py-6">
+            <div className="w-full max-w-2xl rounded-2xl border border-slate-700 bg-slate-900 shadow-2xl">
+              <div className="flex items-start justify-between gap-4 border-b border-slate-700 px-6 py-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-slate-50">Review entry</h2>
+                  <p className="mt-1 text-sm text-slate-400">
+                    {formatIsoDateForDisplay(entryDate)} · {reviewAnswers.length} answered
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowReview(false)}
+                  className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-slate-100"
+                  aria-label="Close review"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="max-h-[60vh] overflow-y-auto px-6 py-4">
+                {reviewAnswers.length === 0 ? (
+                  <p className="text-sm text-slate-400">No journal answers yet.</p>
+                ) : (
+                  <ul className="space-y-4">
+                    {reviewAnswers.map((answer) => {
+                      const question = questions.find((q) => q.key === answer.question_key)
+                      const displayValue = Array.isArray(answer.answer_value)
+                        ? answer.answer_value.join(", ")
+                        : String(answer.answer_value)
+
+                      return (
+                        <li key={answer.question_key} className="rounded-xl border border-slate-800 bg-slate-950/50 p-4">
+                          <div className="mb-1 text-sm font-medium text-slate-400">
+                            {question?.wording || answer.question_key}
+                          </div>
+                          <div className="whitespace-pre-wrap break-words text-slate-100">{displayValue}</div>
+                        </li>
+                      )
+                    })}
+                  </ul>
+              )}
+              </div>
+
+              <div className="flex flex-wrap items-center justify-end gap-3 border-t border-slate-700 px-6 py-4">
+                <button
+                  type="button"
+                  onClick={() => setShowReview(false)}
+                  className="rounded-xl border border-slate-700 px-4 py-2 font-medium text-slate-200 hover:bg-slate-800"
+                >
+                  Keep editing
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSubmit}
+                  disabled={isSubmitting}
+                  className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2 font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
+                  Submit Entry
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </PinGate>
   )

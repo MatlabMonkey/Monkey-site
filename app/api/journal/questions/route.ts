@@ -44,15 +44,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ questions: fallback, date, source: "schema_fallback" });
     }
 
-    const questions = rows.map((r) => ({
-      id: r.id,
-      key: r.key,
-      question_type: r.question_type,
-      wording: r.wording,
-      description: r.description ?? undefined,
-      display_order: r.display_order,
-      metadata: r.metadata ?? {},
-    }));
+    const questions = rows
+      .filter((r) => r.key !== "day_date")
+      .map((r) => ({
+        id: r.id,
+        key: r.key,
+        question_type: r.question_type,
+        wording: r.wording,
+        description: r.description ?? undefined,
+        display_order: r.display_order,
+        metadata: r.metadata ?? {},
+      }));
 
     return NextResponse.json({ questions, date, source: "database" });
   } catch (err) {

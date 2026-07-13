@@ -267,7 +267,7 @@ export default function Dashboard() {
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[rgb(var(--brand))] text-sm font-medium hover:bg-[rgb(var(--brand-strong))] transition-all"
               >
                 <ArrowRight className="w-4 h-4" />
-                New Entry
+                Journal Entry
               </Link>
               <Link
                 href="/journal/explorer"
@@ -275,6 +275,13 @@ export default function Dashboard() {
               >
                 <Compass className="w-4 h-4" />
                 Explorer
+              </Link>
+              <Link
+                href="/journal/calendar"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface))] text-sm font-medium hover:bg-[rgb(var(--surface-2))] transition-all"
+              >
+                <Calendar className="w-4 h-4" />
+                Calendar
               </Link>
             </div>
           </div>
@@ -316,7 +323,7 @@ export default function Dashboard() {
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[rgb(var(--brand))] text-sm font-medium  hover:bg-[rgb(var(--brand-strong))] transition-all"
               >
                 <ArrowRight className="w-4 h-4" />
-                New Entry
+                Journal Entry
               </Link>
               <Link
                 href="/journal/explorer"
@@ -324,6 +331,13 @@ export default function Dashboard() {
               >
                 <Compass className="w-4 h-4" />
                 Explorer
+              </Link>
+              <Link
+                href="/journal/calendar"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.70)] text-sm font-medium hover:bg-[rgb(var(--surface-2))] transition-all"
+              >
+                <Calendar className="w-4 h-4" />
+                Calendar
               </Link>
               <div className="px-4 py-2 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.70)] text-xs font-medium">
                 {stats.daysBehind === 0

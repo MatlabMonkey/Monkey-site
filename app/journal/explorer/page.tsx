@@ -155,6 +155,13 @@ export default function JournalExplorerPage() {
                     <span className="font-medium">Journal</span>
                   </Link>
                   <h1 className="text-xl font-bold text-[rgb(var(--text))]">Explorer</h1>
+                  <Link
+                    href="/journal/calendar"
+                    className="flex items-center gap-2 text-sm text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))]"
+                  >
+                    <CalendarDays className="w-4 h-4" />
+                    Calendar
+                  </Link>
                 </div>
                 <div className="flex items-center gap-2">
                   <button

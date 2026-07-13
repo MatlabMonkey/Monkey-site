@@ -593,8 +593,8 @@ export default function Home() {
                 className="group bg-[rgb(var(--surface)_/_0.55)] backdrop-blur-sm rounded-2xl p-6 border border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-2)_/_0.75)] transition-all duration-300 flex flex-col items-center justify-center   hover:scale-105"
               >
                 <SquarePen className="w-8 h-8 text-[rgb(var(--brand))] mb-4" />
-                <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">New Entry</h3>
-                <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Start a fresh journal entry</p>
+                <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Journal Entry</h3>
+                <p className="text-[rgb(var(--text)_/_0.7)] text-sm">Open today’s entry or choose another date</p>
               </Link>
             )}
             {isAuthenticated && (

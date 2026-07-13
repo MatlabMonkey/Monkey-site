@@ -16,7 +16,6 @@ export type QuestionDef = {
 };
 
 export const JOURNAL_QUESTION_SET: QuestionDef[] = [
-  { key: "day_date", question_type: "date", wording: "Date", description: "Use the actual date the day occurred (not when you're filling this out).", display_order: 1, metadata: {} },
   { key: "daily_timeline_summary", question_type: "text", wording: "What did you do today?", description: "What were the main events and activities? Where were you, and who were you with? What was the rough order of the day (morning / afternoon / night)? Include concrete cues (names, places, first/then/after).", display_order: 2, metadata: {} },
   { key: "anchor_memory", question_type: "text", wording: "The anchor memory of the day", description: "What is the one thing you most want to remember about today? If future-you could only read one line, what should it be?", display_order: 3, metadata: {} },
   { key: "reflection", question_type: "text", wording: "Reflection", description: "How did you feel today? What emotions showed up and what triggered them? Any thoughts on the day, positive or negative emotional spikes, or things that don't fit elsewhere.", display_order: 4, metadata: {} },

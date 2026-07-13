@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import Link from "next/link";
 import PinGate from "../../components/PinGate";
 import PrivateSectionNav from "../../components/PrivateSectionNav";
-import { ArrowLeft, Search, Loader2, Calendar } from "lucide-react";
+import { ArrowLeft, CalendarDays, Search, Loader2, Calendar } from "lucide-react";
 
 type SearchResult = {
   id: string;
@@ -66,6 +66,13 @@ export default function JournalSearchPage() {
               <span className="font-medium">Journal</span>
             </Link>
             <h1 className="text-xl font-bold text-[rgb(var(--text))]">Search entries</h1>
+            <Link
+              href="/journal/calendar"
+              className="ml-auto flex items-center gap-2 text-sm text-[rgb(var(--text-muted))] hover:text-[rgb(var(--text))]"
+            >
+              <CalendarDays className="w-4 h-4" />
+              Calendar
+            </Link>
           </div>
           <PrivateSectionNav className="mb-6" />
 
