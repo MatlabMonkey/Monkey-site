@@ -44,8 +44,8 @@ const TOOL_CARDS: ToolCard[] = [
   },
   {
     href: "/tools/pid-controller",
-    title: "Inverted Pendulum PID",
-    description: "Tune PID gains and explore an unstable plant",
+    title: "Cart–Pole PID",
+    description: "Balance a passive pendulum using cart force",
     icon: Gauge,
     requiresPin: false,
   },
