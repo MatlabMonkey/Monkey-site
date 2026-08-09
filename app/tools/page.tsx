@@ -43,9 +43,9 @@ const TOOL_CARDS: ToolCard[] = [
     requiresPin: false,
   },
   {
-    href: "/tools/pd-controller",
-    title: "PD Controller Visualizer",
-    description: "Tune Kp/Kd and inspect dynamics in real time",
+    href: "/tools/pid-controller",
+    title: "Inverted Pendulum PID",
+    description: "Tune PID gains and explore an unstable plant",
     icon: Gauge,
     requiresPin: false,
   },
