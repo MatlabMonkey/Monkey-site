@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { Suspense, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { useRouter, useSearchParams } from "next/navigation"
 import PinGate from "../../components/PinGate"
 import PrivateSectionNav from "../../components/PrivateSectionNav"
-import { getLocalDateString } from "../../../lib/date"
+import { formatIsoDateForDisplay, getLocalDateString, normalizeIsoDate } from "../../../lib/date"
 import { ArrowLeft, CalendarDays, CheckCircle2, ChevronLeft, ChevronRight, FileText, Home, Loader2, PencilLine, SquarePen } from "lucide-react"
 
 type CalendarEntry = {
@@ -55,9 +56,12 @@ function monthLabel(date: Date) {
   return date.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" })
 }
 
-export default function JournalCalendarPage() {
+function JournalCalendarPageContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const today = getLocalDateString()
-  const [monthDate, setMonthDate] = useState(() => new Date(`${today.slice(0, 7)}-01T00:00:00Z`))
+  const [submittedDate] = useState(() => normalizeIsoDate(searchParams.get("submitted")))
+  const [monthDate, setMonthDate] = useState(() => new Date(`${(submittedDate ?? today).slice(0, 7)}-01T00:00:00Z`))
   const [entries, setEntries] = useState<CalendarEntry[]>([])
   const [counts, setCounts] = useState<CalendarResponse["counts"]>({ total: 0, submitted: 0, drafts: 0 })
   const [loading, setLoading] = useState(true)
@@ -70,6 +74,12 @@ export default function JournalCalendarPage() {
     entries.forEach((entry) => map.set(entry.date, entry))
     return map
   }, [entries])
+
+  useEffect(() => {
+    if (searchParams.has("submitted")) {
+      router.replace("/journal/calendar", { scroll: false })
+    }
+  }, [router, searchParams])
 
   useEffect(() => {
     let cancelled = false
@@ -138,6 +148,13 @@ export default function JournalCalendarPage() {
         </div>
 
         <main className="mx-auto max-w-6xl px-6 py-8">
+          {submittedDate && (
+            <div className="mb-6 flex items-center gap-3 rounded-xl border border-emerald-700/60 bg-emerald-950/40 p-4 text-sm text-emerald-200" role="status">
+              <CheckCircle2 className="h-5 w-5 shrink-0" />
+              <span>Journal entry for {formatIsoDateForDisplay(submittedDate)} submitted.</span>
+            </div>
+          )}
+
           <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
             <div>
               <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-3 py-1 text-xs text-[rgb(var(--text-muted))]">
@@ -219,7 +236,7 @@ export default function JournalCalendarPage() {
                 return (
                   <Link
                     key={iso}
-                    href={`/journal?date=${iso}`}
+                    href={`/journal?date=${iso}&from=calendar`}
                     className={`group min-h-20 rounded-xl border p-2 text-left transition-all md:min-h-24 ${dayClassName(status, isCurrentMonth, isToday)}`}
                   >
                     <div className="flex items-start justify-between gap-1">
@@ -289,5 +306,19 @@ function LegendDot({ className, label }: { className: string; label: string }) {
       <span className={`h-2.5 w-2.5 rounded-full ${className}`} />
       {label}
     </span>
+  )
+}
+
+export default function JournalCalendarPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[rgb(var(--bg))] text-[rgb(var(--text))] flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-[rgb(var(--brand))]" />
+        </div>
+      }
+    >
+      <JournalCalendarPageContent />
+    </Suspense>
   )
 }

@@ -54,6 +54,7 @@ function JournalPageContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const rawDateParam = searchParams.get("date")
+  const entrySource = searchParams.get("from")
 
   const [questions, setQuestions] = useState<Question[]>([])
   const [answers, setAnswers] = useState<Record<string, any>>({})
@@ -296,8 +297,11 @@ function JournalPageContent() {
       })
 
       if (response.ok) {
-        // Redirect to dashboard on success
-        router.push("/dashboard")
+        if (entrySource === "calendar") {
+          router.push(`/journal/calendar?submitted=${entryDate}`)
+        } else {
+          router.push("/dashboard")
+        }
       } else {
         const data = await response.json()
         setError(data.error || "Failed to submit entry")
