@@ -56,6 +56,7 @@ function JournalPageContent() {
   const rawDateParam = searchParams.get("date")
   const entrySource = searchParams.get("from")
   const questionCardRef = useRef<HTMLDivElement>(null)
+  const reviewSubmitRef = useRef<HTMLButtonElement>(null)
 
   const [questions, setQuestions] = useState<Question[]>([])
   const [answers, setAnswers] = useState<Record<string, any>>({})
@@ -276,8 +277,28 @@ function JournalPageContent() {
   }
 
   const handleQuestionKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return
     if (isSubmittedReadOnly || isChangingEntryDate || dateConflict) return
+    if (event.nativeEvent.isComposing) return
+
+    const shortcutKey = event.key.toLowerCase()
+    if (
+      currentQuestion?.question_type === "boolean" &&
+      !event.metaKey &&
+      !event.ctrlKey &&
+      !event.altKey &&
+      (shortcutKey === "y" || shortcutKey === "n")
+    ) {
+      event.preventDefault()
+      handleAnswerChange(currentQuestion.key, shortcutKey === "y")
+      if (currentQuestionIndex === totalSteps - 1) {
+        setShowReview(true)
+      } else {
+        handleNext()
+      }
+      return
+    }
+
+    if (event.key !== "Enter" || event.shiftKey) return
 
     const target = event.target as HTMLElement
     const isUnansweredBooleanOption =
@@ -444,6 +465,7 @@ function JournalPageContent() {
             <button
               type="button"
               data-journal-answer-option
+              aria-keyshortcuts="Y"
               onClick={() => handleAnswerChange(question.key, true)}
               className={`px-8 py-4 rounded-xl font-semibold transition-all ${
                 value === true
@@ -456,6 +478,7 @@ function JournalPageContent() {
             <button
               type="button"
               data-journal-answer-option
+              aria-keyshortcuts="N"
               onClick={() => handleAnswerChange(question.key, false)}
               className={`px-8 py-4 rounded-xl font-semibold transition-all ${
                 value === false
@@ -538,7 +561,11 @@ function JournalPageContent() {
   }
 
   useEffect(() => {
-    if (isLoading || showReview || isSubmittedReadOnly) return
+    if (showReview) {
+      reviewSubmitRef.current?.focus()
+      return
+    }
+    if (isLoading || isSubmittedReadOnly) return
     const firstControl = questionCardRef.current?.querySelector<HTMLElement>(
       'textarea, input:not([type="range"]), button[data-journal-answer-option]',
     )
@@ -781,7 +808,9 @@ function JournalPageContent() {
               </div>
               {!isSubmittedReadOnly && (
                 <p className="mt-4 text-xs text-slate-400">
-                  Enter to continue{currentQuestion?.question_type === "text" ? " · Shift+Enter for a new line" : ""}
+                  {currentQuestion?.question_type === "boolean"
+                    ? "Y for Yes · N for No"
+                    : `Enter to continue${currentQuestion?.question_type === "text" ? " · Shift+Enter for a new line" : ""}`}
                 </p>
               )}
             </div>
@@ -883,6 +912,7 @@ function JournalPageContent() {
                   Keep editing
                 </button>
                 <button
+                  ref={reviewSubmitRef}
                   type="button"
                   onClick={handleSubmit}
                   disabled={isSubmitting}
