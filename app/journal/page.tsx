@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { Suspense, useEffect, useState } from "react"
+import { Suspense, useEffect, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import PinGate from "../components/PinGate"
@@ -55,6 +55,7 @@ function JournalPageContent() {
   const searchParams = useSearchParams()
   const rawDateParam = searchParams.get("date")
   const entrySource = searchParams.get("from")
+  const questionCardRef = useRef<HTMLDivElement>(null)
 
   const [questions, setQuestions] = useState<Question[]>([])
   const [answers, setAnswers] = useState<Record<string, any>>({})
@@ -274,6 +275,27 @@ function JournalPageContent() {
     }
   }
 
+  const handleQuestionKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return
+    if (isSubmittedReadOnly || isChangingEntryDate || dateConflict) return
+
+    const target = event.target as HTMLElement
+    const isUnansweredBooleanOption =
+      target.closest("[data-journal-answer-option]") &&
+      currentQuestion?.question_type === "boolean" &&
+      !answerHasValue(answers[currentQuestion.key])
+
+    // Let the first Enter choose a focused Yes/No option. A subsequent Enter advances.
+    if (isUnansweredBooleanOption) return
+
+    event.preventDefault()
+    if (currentQuestionIndex === totalSteps - 1) {
+      setShowReview(true)
+    } else {
+      handleNext()
+    }
+  }
+
   const handlePrevious = () => {
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex((prev) => prev - 1)
@@ -363,7 +385,7 @@ function JournalPageContent() {
   )
 
   const renderQuestionInput = (question: Question) => {
-    const value = answers[question.key] || ""
+    const value = answers[question.key] ?? ""
 
     switch (question.question_type) {
       case "rating":
@@ -421,6 +443,7 @@ function JournalPageContent() {
           <div className="flex gap-4 justify-center">
             <button
               type="button"
+              data-journal-answer-option
               onClick={() => handleAnswerChange(question.key, true)}
               className={`px-8 py-4 rounded-xl font-semibold transition-all ${
                 value === true
@@ -432,6 +455,7 @@ function JournalPageContent() {
             </button>
             <button
               type="button"
+              data-journal-answer-option
               onClick={() => handleAnswerChange(question.key, false)}
               className={`px-8 py-4 rounded-xl font-semibold transition-all ${
                 value === false
@@ -512,6 +536,14 @@ function JournalPageContent() {
         )
     }
   }
+
+  useEffect(() => {
+    if (isLoading || showReview || isSubmittedReadOnly) return
+    const firstControl = questionCardRef.current?.querySelector<HTMLElement>(
+      'textarea, input:not([type="range"]), button[data-journal-answer-option]',
+    )
+    firstControl?.focus()
+  }, [currentQuestionIndex, isLoading, isSubmittedReadOnly, showReview])
 
   if (isLoading) {
     return (
@@ -728,7 +760,11 @@ function JournalPageContent() {
 
           {/* Date step + question card (current form) — hide when showing legacy read-only */}
           {!isLegacyEntry && (
-            <div className="bg-slate-900 rounded-2xl shadow-xl shadow-black/40 border border-slate-800 p-8 mb-6">
+            <div
+              ref={questionCardRef}
+              onKeyDown={handleQuestionKeyDown}
+              className="bg-slate-900 rounded-2xl shadow-xl shadow-black/40 border border-slate-800 p-8 mb-6"
+            >
               <h2 className="text-2xl font-bold text-slate-50 mb-2">
                 {isDateStep ? "What day is this entry for?" : currentQuestion?.wording}
               </h2>
@@ -743,6 +779,11 @@ function JournalPageContent() {
               <div className="mt-6">
                 {isDateStep ? renderEntryDateStep() : currentQuestion ? renderQuestionInput(currentQuestion) : null}
               </div>
+              {!isSubmittedReadOnly && (
+                <p className="mt-4 text-xs text-slate-400">
+                  Enter to continue{currentQuestion?.question_type === "text" ? " · Shift+Enter for a new line" : ""}
+                </p>
+              )}
             </div>
           )}
 
