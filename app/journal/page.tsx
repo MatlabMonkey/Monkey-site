@@ -8,7 +8,7 @@ import Link from "next/link"
 import PinGate from "../components/PinGate"
 import PrivateSectionNav from "../components/PrivateSectionNav"
 import { formatIsoDateForDisplay, getLocalDateString, normalizeIsoDate } from "../../lib/date"
-import { ArrowLeft, CalendarDays, ChevronLeft, ChevronRight, CheckCircle2, Home, Save, Loader2, Search, Compass, FileText, X } from "lucide-react"
+import { ArrowLeft, CalendarDays, ChevronLeft, ChevronRight, CheckCircle2, Home, Save, Loader2, Search, Compass, FileText, PencilLine, X } from "lucide-react"
 
 type Question = {
   id: string
@@ -93,6 +93,7 @@ function JournalPageContent() {
   const [isChangingEntryDate, setIsChangingEntryDate] = useState(false)
   const [showReview, setShowReview] = useState(false)
   const [isEditingSubmitted, setIsEditingSubmitted] = useState(false)
+  const [returnToReviewAfterEdit, setReturnToReviewAfterEdit] = useState(false)
 
   // Get date for entry (default to today's local date)
   const today = getLocalDateString()
@@ -142,6 +143,7 @@ function JournalPageContent() {
     setDateConflict(null)
     setShowReview(false)
     setIsEditingSubmitted(false)
+    setReturnToReviewAfterEdit(false)
   }, [entryDate])
 
   // Load entry (draft or submitted) on mount
@@ -296,6 +298,17 @@ function JournalPageContent() {
     }
   }
 
+  const handleOpenReview = () => {
+    setReturnToReviewAfterEdit(false)
+    setShowReview(true)
+  }
+
+  const handleEditFromReview = (questionIndex: number) => {
+    setCurrentQuestionIndex(questionIndex)
+    setReturnToReviewAfterEdit(true)
+    setShowReview(false)
+  }
+
   const handleQuestionKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (showReview || isSubmittedReadOnly || isChangingEntryDate || dateConflict) return
     if (event.nativeEvent.isComposing) return
@@ -332,8 +345,8 @@ function JournalPageContent() {
       event.preventDefault()
       activeShortcutKeyRef.current = shortcutKey
       handleAnswerChange(currentQuestion.key, shortcutKey === "y")
-      if (currentQuestionIndex === totalSteps - 1) {
-        setShowReview(true)
+      if (returnToReviewAfterEdit || currentQuestionIndex === totalSteps - 1) {
+        handleOpenReview()
       } else {
         handleNext()
       }
@@ -353,8 +366,8 @@ function JournalPageContent() {
 
     event.preventDefault()
     activeShortcutKeyRef.current = shortcutKey
-    if (currentQuestionIndex === totalSteps - 1) {
-      setShowReview(true)
+    if (returnToReviewAfterEdit || currentQuestionIndex === totalSteps - 1) {
+      handleOpenReview()
     } else {
       handleNext()
     }
@@ -363,6 +376,13 @@ function JournalPageContent() {
   const handleJournalKeyUp = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (activeShortcutKeyRef.current === event.key.toLowerCase()) {
       activeShortcutKeyRef.current = null
+    }
+  }
+
+  const handleJournalKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (showReview && event.key === "Escape") {
+      event.preventDefault()
+      setShowReview(false)
     }
   }
 
@@ -682,6 +702,7 @@ function JournalPageContent() {
   return (
     <PinGate>
       <div
+        onKeyDown={handleJournalKeyDown}
         onKeyUp={handleJournalKeyUp}
         className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100"
       >
@@ -789,6 +810,16 @@ function JournalPageContent() {
                     ? `Editing submitted entry from ${formatIsoDateForDisplay(entryDate)}`
                     : `Viewing submitted entry from ${formatIsoDateForDisplay(entryDate)}`}
               </div>
+              {isDraft && reviewAnswers.length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleOpenReview}
+                  className="inline-flex items-center gap-2 rounded-lg border border-sky-600 px-3 py-2 text-sm font-medium text-sky-100 hover:bg-sky-900/60"
+                >
+                  <FileText className="h-4 w-4" />
+                  Review & submit
+                </button>
+              )}
               {!isDraft && !isEditingSubmitted && (
                 <button
                   type="button"
@@ -874,9 +905,17 @@ function JournalPageContent() {
               Previous
             </button>
 
-            {currentQuestionIndex === totalSteps - 1 ? (
+            {returnToReviewAfterEdit ? (
               <button
-                onClick={() => setShowReview(true)}
+                onClick={handleOpenReview}
+                className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl font-semibold hover:from-emerald-400 hover:to-emerald-500 transition-all shadow-lg hover:shadow-xl"
+              >
+                <FileText className="w-5 h-5" />
+                Back to Review
+              </button>
+            ) : currentQuestionIndex === totalSteps - 1 ? (
+              <button
+                onClick={handleOpenReview}
                 disabled={isSubmitting || !!dateConflict || isChangingEntryDate || isSubmittedReadOnly}
                 className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl font-semibold hover:from-emerald-400 hover:to-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
               >
@@ -914,6 +953,14 @@ function JournalPageContent() {
                   <p className="mt-1 text-sm text-slate-400">
                     {formatIsoDateForDisplay(entryDate)} · {reviewAnswers.length} answered
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => handleEditFromReview(0)}
+                    className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-sky-300 hover:text-sky-200"
+                  >
+                    <PencilLine className="h-3.5 w-3.5" />
+                    Edit entry date
+                  </button>
                 </div>
                 <button
                   type="button"
@@ -926,30 +973,40 @@ function JournalPageContent() {
               </div>
 
               <div className="max-h-[60vh] overflow-y-auto px-6 py-4">
-                {reviewAnswers.length === 0 ? (
-                  <p className="text-sm text-slate-400">No journal answers yet.</p>
-                ) : (
-                  <ul className="space-y-4">
-                    {reviewAnswers.map((answer) => {
-                      const question = questions.find((q) => q.key === answer.question_key)
-                      const displayValue = Array.isArray(answer.answer_value)
-                        ? answer.answer_value.join(", ")
-                        : String(answer.answer_value)
+                <ul className="space-y-4">
+                    {questions.map((question, index) => {
+                      const answerValue = answers[question.key]
+                      const hasAnswer = answerHasValue(answerValue)
+                      const displayValue = Array.isArray(answerValue)
+                        ? answerValue.join(", ")
+                        : hasAnswer
+                          ? String(answerValue)
+                          : "Not answered"
 
                       return (
-                        <li key={answer.question_key} className="rounded-xl border border-slate-800 bg-slate-950/50 p-4">
-                          <div className="mb-1 text-sm font-medium text-slate-400">
-                            {question?.wording || answer.question_key}
+                        <li key={question.key} className="rounded-xl border border-slate-800 bg-slate-950/50 p-4">
+                          <div className="mb-2 flex items-start justify-between gap-4">
+                            <div className="text-sm font-medium text-slate-400">{question.wording}</div>
+                            <button
+                              type="button"
+                              onClick={() => handleEditFromReview(index + 1)}
+                              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-700 px-2.5 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-slate-100"
+                            >
+                              <PencilLine className="h-3.5 w-3.5" />
+                              Edit
+                            </button>
                           </div>
-                          <div className="whitespace-pre-wrap break-words text-slate-100">{displayValue}</div>
+                          <div className={`whitespace-pre-wrap break-words ${hasAnswer ? "text-slate-100" : "text-slate-500"}`}>
+                            {displayValue}
+                          </div>
                         </li>
                       )
                     })}
                   </ul>
-              )}
               </div>
 
-              <div className="flex flex-wrap items-center justify-end gap-3 border-t border-slate-700 px-6 py-4">
+              <div className="flex flex-wrap items-center gap-3 border-t border-slate-700 px-6 py-4">
+                <span className="mr-auto text-xs text-slate-400">Enter to submit · Esc to keep editing</span>
                 <button
                   type="button"
                   onClick={() => setShowReview(false)}
@@ -960,6 +1017,7 @@ function JournalPageContent() {
                 <button
                   ref={reviewSubmitRef}
                   type="button"
+                  aria-keyshortcuts="Enter"
                   onKeyDown={(event) => {
                     if (event.key === "Enter" && activeShortcutKeyRef.current === "enter") {
                       event.preventDefault()
