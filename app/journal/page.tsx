@@ -7,7 +7,6 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import PinGate from "../components/PinGate"
 import PrivateSectionNav from "../components/PrivateSectionNav"
-import { JOURNAL_QUESTION_SET } from "../../lib/journalSchema"
 import { formatIsoDateForDisplay, getLocalDateString, normalizeIsoDate } from "../../lib/date"
 import { ArrowLeft, CalendarDays, ChevronLeft, ChevronRight, CheckCircle2, Home, Save, Loader2, Search, Compass, FileText, X } from "lucide-react"
 
@@ -77,6 +76,7 @@ function JournalPageContent() {
   const entrySource = searchParams.get("from")
   const questionCardRef = useRef<HTMLDivElement>(null)
   const reviewSubmitRef = useRef<HTMLButtonElement>(null)
+  const activeShortcutKeyRef = useRef<string | null>(null)
 
   const [questions, setQuestions] = useState<Question[]>([])
   const [answers, setAnswers] = useState<Record<string, any>>({})
@@ -297,10 +297,15 @@ function JournalPageContent() {
   }
 
   const handleQuestionKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (isSubmittedReadOnly || isChangingEntryDate || dateConflict) return
+    if (showReview || isSubmittedReadOnly || isChangingEntryDate || dateConflict) return
     if (event.nativeEvent.isComposing) return
 
     const shortcutKey = event.key.toLowerCase()
+    if (activeShortcutKeyRef.current === shortcutKey) {
+      event.preventDefault()
+      return
+    }
+
     const hasShortcutModifier = event.metaKey || event.ctrlKey || event.altKey
 
     if (currentQuestion?.question_type === "multiselect" && !hasShortcutModifier) {
@@ -309,6 +314,7 @@ function JournalPageContent() {
 
       if (option) {
         event.preventDefault()
+        activeShortcutKeyRef.current = shortcutKey
         const selectedValues = Array.isArray(answers[currentQuestion.key]) ? answers[currentQuestion.key] : []
         const nextValues = selectedValues.includes(option)
           ? selectedValues.filter((value: string) => value !== option)
@@ -324,6 +330,7 @@ function JournalPageContent() {
       (shortcutKey === "y" || shortcutKey === "n")
     ) {
       event.preventDefault()
+      activeShortcutKeyRef.current = shortcutKey
       handleAnswerChange(currentQuestion.key, shortcutKey === "y")
       if (currentQuestionIndex === totalSteps - 1) {
         setShowReview(true)
@@ -345,10 +352,17 @@ function JournalPageContent() {
     if (isUnansweredBooleanOption) return
 
     event.preventDefault()
+    activeShortcutKeyRef.current = shortcutKey
     if (currentQuestionIndex === totalSteps - 1) {
       setShowReview(true)
     } else {
       handleNext()
+    }
+  }
+
+  const handleJournalKeyUp = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (activeShortcutKeyRef.current === event.key.toLowerCase()) {
+      activeShortcutKeyRef.current = null
     }
   }
 
@@ -653,7 +667,7 @@ function JournalPageContent() {
     return value !== null && value !== undefined && value !== "" && !(Array.isArray(value) && value.length === 0)
   }).length
 
-  const currentAppKeys = new Set(JOURNAL_QUESTION_SET.map((q) => q.key))
+  const currentAppKeys = new Set(questions.map((question) => question.key))
   const answerKeysWithValues = Object.entries(answers).filter(([, value]) => {
     if (value === null || value === undefined || value === "") return false
     if (Array.isArray(value) && value.length === 0) return false
@@ -667,7 +681,10 @@ function JournalPageContent() {
 
   return (
     <PinGate>
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100">
+      <div
+        onKeyUp={handleJournalKeyUp}
+        className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100"
+      >
         {/* Header */}
         <div className="bg-slate-950/80 backdrop-blur-sm border-b border-slate-800/60 sticky top-0 z-40">
           <div className="max-w-3xl mx-auto px-6 py-4">
@@ -943,6 +960,11 @@ function JournalPageContent() {
                 <button
                   ref={reviewSubmitRef}
                   type="button"
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && activeShortcutKeyRef.current === "enter") {
+                      event.preventDefault()
+                    }
+                  }}
                   onClick={handleSubmit}
                   disabled={isSubmitting}
                   className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2 font-semibold text-white hover:bg-emerald-500 disabled:cursor-not-allowed disabled:opacity-50"
