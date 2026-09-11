@@ -27,6 +27,26 @@ type Answer = {
   answer_type: string
 }
 
+const MULTISELECT_SHORTCUTS = "1234567890QWERTYUIOPASDFGHJKLZXCVBNM".split("")
+
+function getMultiselectOptions(metadata: unknown): string[] {
+  if (metadata && typeof metadata === "object" && !Array.isArray(metadata)) {
+    const rawOptions = (metadata as { options?: unknown }).options
+    return Array.isArray(rawOptions) ? rawOptions.filter((option): option is string => typeof option === "string") : []
+  }
+
+  if (typeof metadata === "string") {
+    try {
+      const parsed = JSON.parse(metadata) as { options?: unknown }
+      return Array.isArray(parsed.options) ? parsed.options.filter((option): option is string => typeof option === "string") : []
+    } catch {
+      return []
+    }
+  }
+
+  return []
+}
+
 function answerHasValue(value: any) {
   if (value === null || value === undefined || value === "") return false
   if (Array.isArray(value) && value.length === 0) return false
@@ -281,11 +301,26 @@ function JournalPageContent() {
     if (event.nativeEvent.isComposing) return
 
     const shortcutKey = event.key.toLowerCase()
+    const hasShortcutModifier = event.metaKey || event.ctrlKey || event.altKey
+
+    if (currentQuestion?.question_type === "multiselect" && !hasShortcutModifier) {
+      const shortcutIndex = MULTISELECT_SHORTCUTS.findIndex((key) => key.toLowerCase() === shortcutKey)
+      const option = getMultiselectOptions(currentQuestion.metadata)[shortcutIndex]
+
+      if (option) {
+        event.preventDefault()
+        const selectedValues = Array.isArray(answers[currentQuestion.key]) ? answers[currentQuestion.key] : []
+        const nextValues = selectedValues.includes(option)
+          ? selectedValues.filter((value: string) => value !== option)
+          : [...selectedValues, option]
+        handleAnswerChange(currentQuestion.key, nextValues)
+        return
+      }
+    }
+
     if (
       currentQuestion?.question_type === "boolean" &&
-      !event.metaKey &&
-      !event.ctrlKey &&
-      !event.altKey &&
+      !hasShortcutModifier &&
       (shortcutKey === "y" || shortcutKey === "n")
     ) {
       event.preventDefault()
@@ -502,35 +537,20 @@ function JournalPageContent() {
         )
 
       case "multiselect": {
-        let options: string[] = []
-        const metadata = question.metadata as unknown
-        if (metadata && typeof metadata === "object" && !Array.isArray(metadata)) {
-          const rawOptions = (metadata as { options?: unknown }).options
-          if (Array.isArray(rawOptions)) {
-            options = rawOptions.filter((opt): opt is string => typeof opt === "string")
-          }
-        } else if (typeof metadata === "string") {
-          try {
-            const parsed = JSON.parse(metadata) as { options?: unknown }
-            if (Array.isArray(parsed?.options)) {
-              options = parsed.options.filter((opt): opt is string => typeof opt === "string")
-            }
-          } catch {
-            options = []
-          }
-        }
+        const options = getMultiselectOptions(question.metadata)
 
         const selectedValues = Array.isArray(value) ? value : []
 
         return (
           <div className="space-y-2">
-            {options.map((option: string) => (
+            {options.map((option: string, index) => (
               <label
                 key={option}
                 className="flex items-center gap-3 p-3 border-2 border-slate-700 rounded-xl hover:bg-slate-800 cursor-pointer transition-all bg-slate-900"
               >
                 <input
                   type="checkbox"
+                  aria-keyshortcuts={MULTISELECT_SHORTCUTS[index]}
                   checked={selectedValues.includes(option)}
                   onChange={(e) => {
                     const newValues = e.target.checked
@@ -540,6 +560,11 @@ function JournalPageContent() {
                   }}
                   className="w-5 h-5 text-purple-400 rounded focus:ring-purple-500 bg-slate-900 border-slate-600"
                 />
+                {MULTISELECT_SHORTCUTS[index] && (
+                  <kbd className="inline-flex h-7 min-w-7 items-center justify-center rounded-lg border border-slate-600 bg-slate-950 px-2 font-mono text-xs font-semibold text-slate-300">
+                    {MULTISELECT_SHORTCUTS[index]}
+                  </kbd>
+                )}
                 <span className="text-lg text-slate-100">{option}</span>
               </label>
             ))}
@@ -810,6 +835,10 @@ function JournalPageContent() {
                 <p className="mt-4 text-xs text-slate-400">
                   {currentQuestion?.question_type === "boolean"
                     ? "Y for Yes · N for No"
+                    : currentQuestion?.question_type === "multiselect"
+                      ? "Press a shown key to toggle · Enter to continue"
+                      : currentQuestion?.question_type === "number" || currentQuestion?.question_type === "rating"
+                        ? "Type a number · Enter to continue"
                     : `Enter to continue${currentQuestion?.question_type === "text" ? " · Shift+Enter for a new line" : ""}`}
                 </p>
               )}
