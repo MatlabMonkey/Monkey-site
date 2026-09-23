@@ -435,12 +435,6 @@ function JournalPageContent() {
         disabled={isChangingEntryDate || isSubmittedReadOnly}
         className="w-full px-4 py-3 border-2 border-slate-700 bg-slate-900 text-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all disabled:opacity-60"
       />
-      <div className="rounded-xl border border-slate-700 bg-slate-950/60 p-4 text-sm text-slate-300">
-        <p>
-          Saved as <span className="font-medium text-slate-100">{formatIsoDateForDisplay(entryDate)}</span>.
-          Created and edited timestamps are tracked separately.
-        </p>
-      </div>
       {isChangingEntryDate && (
         <div className="flex items-center gap-2 text-sm text-slate-400">
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -868,11 +862,7 @@ function JournalPageContent() {
               <h2 className="text-2xl font-bold text-slate-50 mb-2">
                 {isDateStep ? "What day is this entry for?" : currentQuestion?.wording}
               </h2>
-              {isDateStep ? (
-                <p className="text-slate-300 mb-8">
-                  This controls which journal entry is loaded and where this entry is saved.
-                </p>
-              ) : currentQuestion?.description ? (
+              {!isDateStep && currentQuestion?.description ? (
                 <p className="text-slate-300 mb-8">{currentQuestion.description}</p>
               ) : null}
 
