@@ -862,9 +862,6 @@ function JournalPageContent() {
               <h2 className="text-2xl font-bold text-slate-50 mb-2">
                 {isDateStep ? "What day is this entry for?" : currentQuestion?.wording}
               </h2>
-              {!isDateStep && currentQuestion?.description ? (
-                <p className="text-slate-300 mb-8">{currentQuestion.description}</p>
-              ) : null}
 
               <div className="mt-6">
                 {isDateStep ? renderEntryDateStep() : currentQuestion ? renderQuestionInput(currentQuestion) : null}
