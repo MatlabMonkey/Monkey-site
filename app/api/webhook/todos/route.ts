@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { isTodoBucket, normalizeTodoContext } from "../../../../lib/todos"
-import { createTodo, TodoValidationError } from "../../../../lib/server/todos"
+import { createTodoWithResult, TodoValidationError } from "../../../../lib/server/todos"
 
 type TodoWebhookPayload = {
   content?: unknown
@@ -9,6 +9,12 @@ type TodoWebhookPayload = {
   task?: unknown
   folder?: unknown
   context?: unknown
+  source?: unknown
+  source_id?: unknown
+  sourceId?: unknown
+  source_message_id?: unknown
+  idempotency_key?: unknown
+  idempotencyKey?: unknown
 }
 
 function readAuthToken(request: NextRequest): string {
@@ -17,6 +23,11 @@ function readAuthToken(request: NextRequest): string {
     return authHeader.slice(7).trim()
   }
   return request.headers.get("x-api-key")?.trim() || ""
+}
+
+function firstNonEmptyString(...values: unknown[]): string | undefined {
+  const value = values.find((candidate) => typeof candidate === "string" && candidate.trim())
+  return typeof value === "string" ? value.trim() : undefined
 }
 
 export async function POST(request: NextRequest) {
@@ -43,8 +54,7 @@ export async function POST(request: NextRequest) {
       body = { content: raw }
     }
 
-    const rawContent = [body.content, body.text, body.todo, body.task].find((value) => typeof value === "string")
-    const content = typeof rawContent === "string" ? rawContent.trim() : ""
+    const content = firstNonEmptyString(body.content, body.text, body.todo, body.task) || ""
 
     if (!content) {
       return NextResponse.json({ error: "Content is required" }, { status: 400 })
@@ -61,9 +71,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid context value" }, { status: 400 })
     }
 
-    const todo = await createTodo({ content, folder, context: normalizedContext || "personal" })
+    const result = await createTodoWithResult({
+      content,
+      folder,
+      context: normalizedContext || "personal",
+      source: firstNonEmptyString(body.source) || "webhook",
+      source_id: firstNonEmptyString(body.source_id, body.sourceId, body.source_message_id),
+      idempotency_key: firstNonEmptyString(
+        body.idempotency_key,
+        body.idempotencyKey,
+        request.headers.get("idempotency-key"),
+      ),
+    })
 
-    return NextResponse.json({ success: true, todo }, { status: 201 })
+    return NextResponse.json(
+      { success: true, duplicate: result.duplicate, todo: result.todo },
+      { status: result.duplicate ? 200 : 201 },
+    )
   } catch (error) {
     if (error instanceof TodoValidationError) {
       return NextResponse.json({ error: error.message }, { status: 400 })
