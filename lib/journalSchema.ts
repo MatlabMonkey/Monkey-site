@@ -25,11 +25,11 @@ export const JOURNAL_QUESTION_SET: QuestionDef[] = [
   { key: "productivity", question_type: "rating", wording: "Productivity", description: "How productive were you relative to what was realistically possible today? 0 = nothing meaningful, 10 = excellent execution.", display_order: 8, metadata: { min: 0, max: 10, step: 1 } },
   { key: "day_impact", question_type: "rating", wording: "Plot (how impactful the day was)", description: "How impactful was this day? 0 = uneventful, 5 = very significant.", display_order: 9, metadata: { min: 0, max: 5, step: 1 } },
   { key: "energy", question_type: "rating", wording: "Energy", description: "0 = depleted, 10 = energized. Consider your average energy across the day.", display_order: 10, metadata: { min: 0, max: 10, step: 1 } },
-  { key: "stress_calm", question_type: "rating", wording: "Stress / Calm", description: "0 = very calm, 10 = very stressed.", display_order: 11, metadata: { min: 0, max: 10, step: 1 } },
+  { key: "stress_calm", question_type: "rating", wording: "Stress", description: "0 = very calm, 10 = very stressed.", display_order: 11, metadata: { min: 0, max: 10, step: 1 } },
   { key: "focus_presence", question_type: "rating", wording: "Focus / Presence", description: "0 = scattered/distracted, 10 = deeply focused/present.", display_order: 12, metadata: { min: 0, max: 10, step: 1 } },
   { key: "social_connection", question_type: "rating", wording: "Social Connection", description: "0 = isolated, 10 = socially fulfilled/connected today.", display_order: 13, metadata: { min: 0, max: 10, step: 1 } },
   { key: "sleep", question_type: "text", wording: "Sleep (last night)", description: "Hours slept (estimate). Optional: quality note (e.g., 7.5h, restless).", display_order: 14, metadata: {} },
-  { key: "alcohol", question_type: "number", wording: "Alcohol", description: "Number of drinks today. (0 if none.)", display_order: 15, metadata: { min: 0, max: 50, step: 1 } },
+  { key: "alcohol", question_type: "number", wording: "Alcohol", description: "Number of drinks today. (0 if none.)", display_order: 15, metadata: { min: 0, max: 20, step: 1 } },
   { key: "tomorrow_priority", question_type: "text", wording: "Tomorrow's #1 priority", description: "If tomorrow only goes well in one way, what should it be? Phrase as an action, not a vibe.", display_order: 16, metadata: {} },
   {
     key: "workouts",
