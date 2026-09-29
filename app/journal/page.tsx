@@ -8,6 +8,7 @@ import Link from "next/link"
 import PinGate from "../components/PinGate"
 import PrivateSectionNav from "../components/PrivateSectionNav"
 import { formatIsoDateForDisplay, getLocalDateString, normalizeIsoDate } from "../../lib/date"
+import { normalizeJournalNumericInput } from "../../lib/journalNumericInput"
 import { ArrowLeft, CalendarDays, ChevronLeft, ChevronRight, CheckCircle2, Home, Save, Loader2, Search, Compass, FileText, PencilLine, X } from "lucide-react"
 
 type Question = {
@@ -486,7 +487,7 @@ function JournalPageContent() {
               max={max}
               step={step}
               value={value}
-              onChange={(e) => handleAnswerChange(question.key, parseFloat(e.target.value) || min)}
+              onChange={(e) => handleAnswerChange(question.key, normalizeJournalNumericInput(e.target.value, max))}
               className="w-full px-4 py-3 text-2xl font-semibold text-center border-2 border-slate-700 bg-slate-900 text-slate-50 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
               placeholder={`${min}-${max}`}
             />
@@ -862,9 +863,6 @@ function JournalPageContent() {
               <h2 className="text-2xl font-bold text-slate-50 mb-2">
                 {isDateStep ? "What day is this entry for?" : currentQuestion?.wording}
               </h2>
-              {!isDateStep && currentQuestion?.description ? (
-                <p className="text-slate-300 mb-8">{currentQuestion.description}</p>
-              ) : null}
 
               <div className="mt-6">
                 {isDateStep ? renderEntryDateStep() : currentQuestion ? renderQuestionInput(currentQuestion) : null}
