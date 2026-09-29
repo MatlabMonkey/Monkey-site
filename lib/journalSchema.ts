@@ -29,7 +29,7 @@ export const JOURNAL_QUESTION_SET: QuestionDef[] = [
   { key: "focus_presence", question_type: "rating", wording: "Focus / Presence", description: "0 = scattered/distracted, 10 = deeply focused/present.", display_order: 12, metadata: { min: 0, max: 10, step: 1 } },
   { key: "social_connection", question_type: "rating", wording: "Social Connection", description: "0 = isolated, 10 = socially fulfilled/connected today.", display_order: 13, metadata: { min: 0, max: 10, step: 1 } },
   { key: "sleep", question_type: "text", wording: "Sleep (last night)", description: "Hours slept (estimate). Optional: quality note (e.g., 7.5h, restless).", display_order: 14, metadata: {} },
-  { key: "alcohol", question_type: "number", wording: "Alcohol", description: "Number of drinks today. (0 if none.)", display_order: 15, metadata: { min: 0, max: 50, step: 1 } },
+  { key: "alcohol", question_type: "number", wording: "Alcohol", description: "Number of drinks today. (0 if none.)", display_order: 15, metadata: { min: 0, max: 20, step: 1 } },
   { key: "tomorrow_priority", question_type: "text", wording: "Tomorrow's #1 priority", description: "If tomorrow only goes well in one way, what should it be? Phrase as an action, not a vibe.", display_order: 16, metadata: {} },
   {
     key: "workouts",
