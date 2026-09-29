@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "test:todo-capture": "node --test tests/todo-capture.test.mjs",
     "db:push-todos": "node scripts/push-todos-migration.js",
     "import-legacy": "node scripts/import-legacy-journal.js",
     "test:webhook:todo": "bash scripts/test-todo-webhook.sh"

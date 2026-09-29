@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { advanceRecurringRunDate } from "../../../../../lib/recurring"
-import { createTodo, getSupabaseAdmin } from "../../../../../lib/server/todos"
+import { createTodoWithResult, getSupabaseAdmin } from "../../../../../lib/server/todos"
 import { type TodoContext } from "../../../../../lib/todos"
 
 type RecurringTodoRecord = {
@@ -43,14 +43,17 @@ async function runRecurringTodos() {
 
     const dueTodos = (data || []) as RecurringTodoRecord[]
     let createdCount = 0
+    let duplicateCount = 0
     let failedCount = 0
 
     for (const recurringTodo of dueTodos) {
       try {
-        await createTodo({
+        const result = await createTodoWithResult({
           content: recurringTodo.content,
           folder: "inbox",
           context: recurringTodo.context,
+          source: "recurring",
+          source_id: `${recurringTodo.id}:${recurringTodo.next_run_at}`,
         })
 
         let nextRunAt = advanceRecurringRunDate(recurringTodo.rrule, recurringTodo.next_run_at)
@@ -70,7 +73,11 @@ async function runRecurringTodos() {
           throw new Error(updateError.message)
         }
 
-        createdCount += 1
+        if (result.duplicate) {
+          duplicateCount += 1
+        } else {
+          createdCount += 1
+        }
       } catch (errorForTodo) {
         failedCount += 1
         console.error(`Recurring run failed for ${recurringTodo.id}:`, errorForTodo)
@@ -79,6 +86,7 @@ async function runRecurringTodos() {
 
     return NextResponse.json({
       createdCount,
+      duplicateCount,
       dueCount: dueTodos.length,
       failedCount,
     })
