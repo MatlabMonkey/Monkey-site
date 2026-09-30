@@ -87,7 +87,12 @@ for (const rpc of privateRpcs) {
   passed = denied && passed
 }
 
-const buckets = await fetchWithTimeout(new URL("/storage/v1/bucket", base), { headers })
+// Limit the response to one metadata record. If anonymous bucket listing regresses,
+// the gate proves exposure without downloading the complete bucket inventory.
+const bucketUrl = new URL("/storage/v1/bucket", base)
+bucketUrl.searchParams.set("limit", "1")
+bucketUrl.searchParams.set("offset", "0")
+const buckets = await fetchWithTimeout(bucketUrl, { headers })
 let storageSafe = deniedStatuses.has(buckets.status)
 if (buckets.ok) {
   const metadata = await buckets.json()

@@ -121,3 +121,35 @@ test("Supabase boundary rejects an anonymously callable private RPC without read
     assert.equal(parsedBody.query_embedding.every((value) => value === 0), true)
   })
 })
+
+test("Supabase boundary caps anonymous storage metadata and never logs it", async () => {
+  let storageQuery
+  const privateBucketName = "synthetic-private-bucket-name-must-not-be-logged"
+
+  await withServer((request, response) => {
+    const url = new URL(request.url ?? "/", "http://127.0.0.1")
+    if (url.pathname === "/storage/v1/bucket") {
+      storageQuery = url.searchParams
+      response.setHeader("Content-Type", "application/json")
+      response.end(JSON.stringify([{ id: privateBucketName, name: privateBucketName }]))
+      return
+    }
+
+    response.statusCode = 403
+    response.end()
+  }, async (baseUrl) => {
+    await assert.rejects(
+      runBoundaryCheck(baseUrl),
+      (error) => {
+        assert.equal(error.code, 1)
+        assert.match(error.stdout, /FAIL anonymous storage bucket metadata is denied or empty \(200\)/)
+        assert.doesNotMatch(error.stdout, new RegExp(privateBucketName))
+        assert.match(error.stdout, /Supabase boundary result: FAIL/)
+        return true
+      },
+    )
+  })
+
+  assert.equal(storageQuery?.get("limit"), "1")
+  assert.equal(storageQuery?.get("offset"), "0")
+})
