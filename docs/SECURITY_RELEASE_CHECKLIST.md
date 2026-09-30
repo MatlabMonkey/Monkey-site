@@ -14,7 +14,7 @@ SECURITY_PIN="<preview-pin>" \
 npm run security:release
 ```
 
-The command continues after failures and ends with one PASS/FAIL summary for static authorization and privacy invariants, malicious report fixtures, dependency audits, lint, production build, missing/malformed/valid-session HTTP smoke tests, and anonymous Supabase read/write probes. Supabase reads use bodyless one-row `HEAD` requests and pass only when access is denied or RLS exposes no rows; they do not request exact counts. A clean build uses non-secret loopback placeholders when required public Supabase build variables are absent. Output contains status codes, table/route names, range-presence metadata, and credential match file names only; it never prints keys, PINs, response bodies, row counts, or private rows.
+The command continues after failures and ends with one PASS/FAIL summary for static authorization and privacy invariants, malicious report fixtures, dependency audits, lint, production build, missing/malformed/valid-session HTTP smoke tests, and anonymous Supabase table/RPC probes. Supabase reads use bodyless one-row `HEAD` requests and pass only when access is denied or RLS exposes no rows; they do not request exact counts. The private RPC probe uses an impossible synthetic owner and a deterministic zero vector, requires explicit denial, and discards the response body. A clean build uses non-secret loopback placeholders when required public Supabase build variables are absent. Output contains status codes, table/route names, range-presence metadata, and credential match file names only; it never prints keys, PINs, response bodies, row counts, or private rows.
 
 Every network request fails closed after 10 seconds so an unavailable preview or Supabase endpoint cannot hang the gate. Set `SECURITY_HTTP_TIMEOUT_MS` to an integer from 1 through 60000 only when a slower approved test environment needs a different per-request deadline.
 
@@ -32,7 +32,7 @@ Use `npm run security:check` for the same local gate without network probes. Net
 ## Required evidence
 
 - `security:release` summary is fully green, or every failure has an explicit owner and approved exception.
-- Anonymous Supabase table probes return denial without retrieving rows; synthetic insert bodies contain an explicit null primary key so they cannot commit if authorization regresses.
+- Anonymous Supabase table and private-RPC probes return denial without retrieving rows; synthetic insert bodies contain an explicit null primary key so they cannot commit if authorization regresses.
 - Missing-session private APIs fail before service-role/provider use. Raw/page/embed report routes share the intended visibility boundary.
 - Dependency audit has no safely actionable critical/high production finding; any exception includes reachability and expiry.
 - Preview headers include CSP, permissions, referrer, MIME, HSTS, and private/no-store caching where appropriate.

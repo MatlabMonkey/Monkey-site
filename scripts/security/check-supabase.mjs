@@ -34,6 +34,19 @@ const privateTables = [
   "meal_prep_weekly",
   "usage_daily",
 ]
+const privateRpcs = [
+  {
+    name: "match_contact_embeddings",
+    // A deterministic zero vector and impossible synthetic owner exercise the
+    // function privilege without selecting a real owner or returning rows.
+    body: {
+      query_user_id: "security-regression-no-owner",
+      query_embedding: Array(1536).fill(0),
+      match_threshold: 1,
+      match_count: 1,
+    },
+  },
+]
 
 let passed = true
 for (const table of privateTables) {
@@ -60,6 +73,18 @@ for (const table of privateTables) {
   const writeDenied = deniedStatuses.has(writeResponse.status)
   console.log(`${writeDenied ? "PASS" : "FAIL"} anonymous INSERT denied for ${table} (${writeResponse.status})`)
   passed = writeDenied && passed
+}
+
+for (const rpc of privateRpcs) {
+  const response = await fetchWithTimeout(new URL(`/rest/v1/rpc/${rpc.name}`, base), {
+    method: "POST",
+    headers: { ...headers, Prefer: "return=minimal" },
+    body: JSON.stringify(rpc.body),
+  })
+  await response.body?.cancel()
+  const denied = deniedStatuses.has(response.status)
+  console.log(`${denied ? "PASS" : "FAIL"} anonymous RPC denied for ${rpc.name} (${response.status})`)
+  passed = denied && passed
 }
 
 const buckets = await fetchWithTimeout(new URL("/storage/v1/bucket", base), { headers })

@@ -41,6 +41,7 @@ test("Supabase boundary accepts explicit denials without reading response bodies
   }, async (baseUrl) => {
     const result = await runBoundaryCheck(baseUrl)
     assert.match(result.stdout, /PASS anonymous SELECT exposes no journal_entry rows \(403; range missing\)/)
+    assert.match(result.stdout, /PASS anonymous RPC denied for match_contact_embeddings \(403\)/)
     assert.match(result.stdout, /Supabase boundary result: PASS/)
   })
 })
@@ -84,5 +85,39 @@ test("Supabase boundary rejects bodyless metadata showing an exposed row", async
       },
     )
     assert.equal(readBodyBytes, 0)
+  })
+})
+
+test("Supabase boundary rejects an anonymously callable private RPC without reading its response", async () => {
+  let rpcRequestBody = ""
+  await withServer((request, response) => {
+    if (request.url === "/rest/v1/rpc/match_contact_embeddings") {
+      request.setEncoding("utf8")
+      request.on("data", (chunk) => { rpcRequestBody += chunk })
+      request.on("end", () => {
+        response.statusCode = 200
+        response.end("synthetic private RPC response must not be read")
+      })
+      return
+    }
+
+    response.statusCode = 403
+    response.end()
+  }, async (baseUrl) => {
+    await assert.rejects(
+      runBoundaryCheck(baseUrl),
+      (error) => {
+        assert.equal(error.code, 1)
+        assert.match(error.stdout, /FAIL anonymous RPC denied for match_contact_embeddings \(200\)/)
+        assert.doesNotMatch(error.stdout, /synthetic private RPC response must not be read/)
+        assert.match(error.stdout, /Supabase boundary result: FAIL/)
+        return true
+      },
+    )
+
+    const parsedBody = JSON.parse(rpcRequestBody)
+    assert.equal(parsedBody.query_user_id, "security-regression-no-owner")
+    assert.equal(parsedBody.query_embedding.length, 1536)
+    assert.equal(parsedBody.query_embedding.every((value) => value === 0), true)
   })
 })
