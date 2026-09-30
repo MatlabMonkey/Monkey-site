@@ -29,7 +29,8 @@ let passed = true
 passed = (await probe("/api/journal/dashboard", [401])) && passed
 passed = (await probe("/api/todos", [401])) && passed
 passed = (await probe("/api/workout?user_id=security-regression-no-record", [401])) && passed
-passed = (await probe("/api/usage?days=1", [401])) && passed
+// A negative window moves the query start into the future, avoiding production-row access if auth regresses.
+passed = (await probe("/api/usage?days=-3650", [401])) && passed
 passed = (await probe("/api/test-env", [401, 404])) && passed
 passed = (await probe("/reports/raw/security-regression-no-record", [307, 308, 401])) && passed
 passed = (await probe("/api/journal/dashboard", [401], {
