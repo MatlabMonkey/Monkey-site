@@ -26,11 +26,12 @@ async function withServer(handler, run) {
   }
 }
 
-function runTargetCheck(targetUrl) {
+function runTargetCheck(targetUrl, extraEnv = {}) {
   return execFileAsync(process.execPath, [script], {
     env: {
       SECURITY_PIN: syntheticPin,
       SECURITY_TARGET_URL: targetUrl,
+      ...extraEnv,
     },
   })
 }
@@ -101,6 +102,22 @@ test("target smoke reports Vercel deployment protection as blocked", async () =>
       (error) => {
         assert.equal(error.code, 2)
         assert.match(error.stderr, /BLOCKED target is behind Vercel deployment protection/)
+        return true
+      },
+    )
+  })
+})
+
+test("target smoke fails closed when a network request stalls", async () => {
+  await withServer(() => {
+    // Deliberately leave the response open so the probe deadline must stop the check.
+  }, async (targetUrl) => {
+    await assert.rejects(
+      runTargetCheck(targetUrl, { SECURITY_HTTP_TIMEOUT_MS: "50" }),
+      (error) => {
+        assert.equal(error.code, 1)
+        assert.match(error.stderr, /security probe timed out after 50ms/)
+        assert.doesNotMatch(error.stderr, /synthetic-preview-pin/)
         return true
       },
     )

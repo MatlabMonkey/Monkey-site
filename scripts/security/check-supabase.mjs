@@ -1,3 +1,5 @@
+import { fetchWithTimeout } from "./fetch-with-timeout.mjs"
+
 const baseUrl = process.env.SECURITY_SUPABASE_URL
 const publishableKey = process.env.SECURITY_SUPABASE_PUBLISHABLE_KEY
 if (!baseUrl || !publishableKey) {
@@ -37,7 +39,7 @@ let passed = true
 for (const table of privateTables) {
   // HEAD plus a one-row range proves whether any row is visible without downloading
   // row contents or disclosing an exact production row count.
-  const readResponse = await fetch(new URL(`/rest/v1/${table}?select=*&limit=1`, base), {
+  const readResponse = await fetchWithTimeout(new URL(`/rest/v1/${table}?select=*&limit=1`, base), {
     method: "HEAD",
     headers: { ...headers, Range: "0-0" },
   })
@@ -49,7 +51,7 @@ for (const table of privateTables) {
   passed = readSafe && passed
 
   // Explicit null primary keys make this transaction-safe even if authorization regresses.
-  const writeResponse = await fetch(new URL(`/rest/v1/${table}`, base), {
+  const writeResponse = await fetchWithTimeout(new URL(`/rest/v1/${table}`, base), {
     method: "POST",
     headers: { ...headers, Prefer: "return=minimal" },
     body: JSON.stringify({ id: null }),
@@ -60,7 +62,7 @@ for (const table of privateTables) {
   passed = writeDenied && passed
 }
 
-const buckets = await fetch(new URL("/storage/v1/bucket", base), { headers })
+const buckets = await fetchWithTimeout(new URL("/storage/v1/bucket", base), { headers })
 let storageSafe = deniedStatuses.has(buckets.status)
 if (buckets.ok) {
   const metadata = await buckets.json()

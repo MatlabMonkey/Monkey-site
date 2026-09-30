@@ -1,3 +1,5 @@
+import { fetchWithTimeout } from "./fetch-with-timeout.mjs"
+
 const targetValue = process.env.SECURITY_TARGET_URL
 if (!targetValue) {
   console.error("SECURITY_TARGET_URL is required")
@@ -23,7 +25,7 @@ function stopIfDeploymentProtected(response) {
 }
 
 async function probe(path, expectedStatuses, extraHeaders = {}) {
-  const response = await fetch(endpoint(path), {
+  const response = await fetchWithTimeout(endpoint(path), {
     redirect: "manual",
     headers: { "User-Agent": "Monkey-site-security-regression/1.0", ...extraHeaders },
   })
@@ -54,7 +56,7 @@ passed = (await probe("/journal/calendar.segment.rsc", [307, 308, 401], {
   "Next-Router-Prefetch": "1",
 })) && passed
 
-const malformedSession = await fetch(endpoint("/api/journal/dashboard"), {
+const malformedSession = await fetchWithTimeout(endpoint("/api/journal/dashboard"), {
   redirect: "manual",
   headers: {
     Cookie: "pin_session=malformed-security-regression-token",
@@ -66,7 +68,7 @@ const malformedDenied = malformedSession.status === 401
 console.log(`${malformedDenied ? "PASS" : "FAIL"} malformed session denied (${malformedSession.status})`)
 passed = malformedDenied && passed
 
-const crossOrigin = await fetch(endpoint("/api/journal/dashboard"), {
+const crossOrigin = await fetchWithTimeout(endpoint("/api/journal/dashboard"), {
   redirect: "manual",
   headers: {
     Origin: "https://security-regression.invalid",
@@ -78,7 +80,7 @@ const crossOriginDenied = crossOrigin.status === 401 && !crossOrigin.headers.get
 console.log(`${crossOriginDenied ? "PASS" : "FAIL"} credentialed cross-origin API access is not granted`)
 passed = crossOriginDenied && passed
 
-const root = await fetch(endpoint("/"), {
+const root = await fetchWithTimeout(endpoint("/"), {
   redirect: "manual",
   headers: { "User-Agent": "Monkey-site-security-regression/1.0" },
 })
@@ -96,7 +98,7 @@ for (const name of requiredHeaders) {
   passed = present && passed
 }
 
-const authStatus = await fetch(endpoint("/api/auth/status"), {
+const authStatus = await fetchWithTimeout(endpoint("/api/auth/status"), {
   redirect: "manual",
   headers: { "User-Agent": "Monkey-site-security-regression/1.0" },
 })
@@ -107,7 +109,7 @@ console.log(`${privateCache ? "PASS" : "FAIL"} auth status cache policy is priva
 passed = privateCache && passed
 
 if (process.env.SECURITY_PIN) {
-  const login = await fetch(endpoint("/api/auth/pin"), {
+  const login = await fetchWithTimeout(endpoint("/api/auth/pin"), {
     method: "POST",
     redirect: "manual",
     headers: {
@@ -130,7 +132,7 @@ if (process.env.SECURITY_PIN) {
   passed = cookieSafe && passed
 
   if (cookieSafe) {
-    const authorizedStatus = await fetch(endpoint("/api/auth/status"), {
+    const authorizedStatus = await fetchWithTimeout(endpoint("/api/auth/status"), {
       redirect: "manual",
       headers: { Cookie: cookie, "User-Agent": "Monkey-site-security-regression/1.0" },
     })
@@ -139,7 +141,7 @@ if (process.env.SECURITY_PIN) {
     console.log(`${validAccepted ? "PASS" : "FAIL"} valid session is accepted by auth status`)
     passed = validAccepted && passed
 
-    const missingReport = await fetch(endpoint("/reports/raw/security-regression-no-record"), {
+    const missingReport = await fetchWithTimeout(endpoint("/reports/raw/security-regression-no-record"), {
       redirect: "manual",
       headers: { Cookie: cookie, "User-Agent": "Monkey-site-security-regression/1.0" },
     })

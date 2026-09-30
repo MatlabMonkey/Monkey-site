@@ -16,6 +16,8 @@ npm run security:release
 
 The command continues after failures and ends with one PASS/FAIL summary for static authorization and privacy invariants, malicious report fixtures, dependency audits, lint, production build, missing/malformed/valid-session HTTP smoke tests, and anonymous Supabase read/write probes. Supabase reads use bodyless one-row `HEAD` requests and pass only when access is denied or RLS exposes no rows; they do not request exact counts. A clean build uses non-secret loopback placeholders when required public Supabase build variables are absent. Output contains status codes, table/route names, range-presence metadata, and credential match file names only; it never prints keys, PINs, response bodies, row counts, or private rows.
 
+Every network request fails closed after 10 seconds so an unavailable preview or Supabase endpoint cannot hang the gate. Set `SECURITY_HTTP_TIMEOUT_MS` to an integer from 1 through 60000 only when a slower approved test environment needs a different per-request deadline.
+
 Use `npm run security:check` for the same local gate without network probes. Network probes are included automatically when their environment variables are present. The release command fails closed when the preview or Supabase settings are absent.
 
 ## Before running
