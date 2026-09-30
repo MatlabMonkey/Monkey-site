@@ -14,11 +14,20 @@ function endpoint(path) {
   return new URL(path, target).toString()
 }
 
+function stopIfDeploymentProtected(response) {
+  const location = response.headers.get("location") ?? ""
+  if (response.status === 302 && /^https:\/\/vercel\.com\/sso-api\?/i.test(location)) {
+    console.error("BLOCKED target is behind Vercel deployment protection; provide an approved bypass or run from an authorized context")
+    process.exit(2)
+  }
+}
+
 async function probe(path, expectedStatuses, extraHeaders = {}) {
   const response = await fetch(endpoint(path), {
     redirect: "manual",
     headers: { "User-Agent": "Monkey-site-security-regression/1.0", ...extraHeaders },
   })
+  stopIfDeploymentProtected(response)
   await response.body?.cancel()
   const passed = expectedStatuses.includes(response.status)
   console.log(`${passed ? "PASS" : "FAIL"} GET ${path} returned ${response.status}; expected ${expectedStatuses.join("/")}`)
