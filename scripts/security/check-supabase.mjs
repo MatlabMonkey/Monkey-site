@@ -35,13 +35,18 @@ const privateTables = [
 
 let passed = true
 for (const table of privateTables) {
-  const readResponse = await fetch(new URL(`/rest/v1/${table}?select=*&limit=0`, base), {
-    headers: { ...headers, Prefer: "count=exact" },
+  // HEAD plus a one-row range proves whether any row is visible without downloading
+  // row contents or disclosing an exact production row count.
+  const readResponse = await fetch(new URL(`/rest/v1/${table}?select=*&limit=1`, base), {
+    method: "HEAD",
+    headers: { ...headers, Range: "0-0" },
   })
   await readResponse.body?.cancel()
-  const readDenied = deniedStatuses.has(readResponse.status)
-  console.log(`${readDenied ? "PASS" : "FAIL"} anonymous SELECT denied for ${table} (${readResponse.status})`)
-  passed = readDenied && passed
+  const contentRange = readResponse.headers.get("content-range") ?? ""
+  const noVisibleRows = /^\*\/(?:0|\*)$/.test(contentRange)
+  const readSafe = deniedStatuses.has(readResponse.status) || (readResponse.ok && noVisibleRows)
+  console.log(`${readSafe ? "PASS" : "FAIL"} anonymous SELECT exposes no ${table} rows (${readResponse.status}; range ${contentRange || "missing"})`)
+  passed = readSafe && passed
 
   // Explicit null primary keys make this transaction-safe even if authorization regresses.
   const writeResponse = await fetch(new URL(`/rest/v1/${table}`, base), {
