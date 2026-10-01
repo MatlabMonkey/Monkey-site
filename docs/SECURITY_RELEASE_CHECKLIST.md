@@ -11,6 +11,7 @@ SECURITY_TARGET_URL="https://candidate-preview.example" \
 SECURITY_SUPABASE_URL="https://project.supabase.co" \
 SECURITY_SUPABASE_PUBLISHABLE_KEY="<publishable-key>" \
 SECURITY_PIN="<preview-pin>" \
+SECURITY_VERCEL_PROTECTION_BYPASS="<approved-automation-bypass>" \
 npm run security:release
 ```
 
@@ -25,6 +26,7 @@ Use `npm run security:check` for the same local gate without network probes. Net
 - Confirm the exact candidate commit and a successful preview deployment. Never target production before separate deployment approval.
 - Use only the public Supabase publishable key. Never provide the service-role key to this command.
 - Use the candidate preview's PIN only through `SECURITY_PIN`; the script does not print or persist it.
+- If Vercel Deployment Protection blocks the preview, obtain explicit approval for an automation bypass and provide it only through `SECURITY_VERCEL_PROTECTION_BYPASS`. The checker sends it as `x-vercel-protection-bypass` to the configured target, and never prints or persists it. Omit this variable for an unprotected preview or an already authorized execution context.
 - Confirm provider calls are disabled or mocked in test environments. The gate never invokes meal-prep/workout generation.
 - Attach a reviewed migration plan, rollback/forward-fix SQL, expected schema diff, and unique migration versions. Do not apply migrations from this checklist.
 - Confirm the exposed legacy provider credential has been revoked through the provider control plane; record only the confirmation, never the value.

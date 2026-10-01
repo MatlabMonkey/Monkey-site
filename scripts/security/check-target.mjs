@@ -12,6 +12,18 @@ if (target.protocol !== "https:" && !["localhost", "127.0.0.1"].includes(target.
   process.exit(2)
 }
 
+const deploymentProtectionBypass = process.env.SECURITY_VERCEL_PROTECTION_BYPASS
+
+function requestHeaders(extraHeaders = {}) {
+  return {
+    "User-Agent": "Monkey-site-security-regression/1.0",
+    ...(deploymentProtectionBypass
+      ? { "x-vercel-protection-bypass": deploymentProtectionBypass }
+      : {}),
+    ...extraHeaders,
+  }
+}
+
 function endpoint(path) {
   return new URL(path, target).toString()
 }
@@ -19,7 +31,7 @@ function endpoint(path) {
 function stopIfDeploymentProtected(response) {
   const location = response.headers.get("location") ?? ""
   if (response.status === 302 && /^https:\/\/vercel\.com\/sso-api\?/i.test(location)) {
-    console.error("BLOCKED target is behind Vercel deployment protection; provide an approved bypass or run from an authorized context")
+    console.error("BLOCKED target is behind Vercel deployment protection; set an approved SECURITY_VERCEL_PROTECTION_BYPASS or run from an authorized context")
     process.exit(2)
   }
 }
@@ -27,7 +39,7 @@ function stopIfDeploymentProtected(response) {
 async function probe(path, expectedStatuses, extraHeaders = {}) {
   const response = await fetchWithTimeout(endpoint(path), {
     redirect: "manual",
-    headers: { "User-Agent": "Monkey-site-security-regression/1.0", ...extraHeaders },
+    headers: requestHeaders(extraHeaders),
   })
   stopIfDeploymentProtected(response)
   await response.body?.cancel()
@@ -60,7 +72,7 @@ const malformedSession = await fetchWithTimeout(endpoint("/api/journal/dashboard
   redirect: "manual",
   headers: {
     Cookie: "pin_session=malformed-security-regression-token",
-    "User-Agent": "Monkey-site-security-regression/1.0",
+    ...requestHeaders(),
   },
 })
 await malformedSession.body?.cancel()
@@ -72,7 +84,7 @@ const crossOrigin = await fetchWithTimeout(endpoint("/api/journal/dashboard"), {
   redirect: "manual",
   headers: {
     Origin: "https://security-regression.invalid",
-    "User-Agent": "Monkey-site-security-regression/1.0",
+    ...requestHeaders(),
   },
 })
 await crossOrigin.body?.cancel()
@@ -82,7 +94,7 @@ passed = crossOriginDenied && passed
 
 const root = await fetchWithTimeout(endpoint("/"), {
   redirect: "manual",
-  headers: { "User-Agent": "Monkey-site-security-regression/1.0" },
+  headers: requestHeaders(),
 })
 await root.body?.cancel()
 const requiredHeaders = [
@@ -100,7 +112,7 @@ for (const name of requiredHeaders) {
 
 const authStatus = await fetchWithTimeout(endpoint("/api/auth/status"), {
   redirect: "manual",
-  headers: { "User-Agent": "Monkey-site-security-regression/1.0" },
+  headers: requestHeaders(),
 })
 await authStatus.body?.cancel()
 const cacheControl = authStatus.headers.get("cache-control") ?? ""
@@ -114,7 +126,7 @@ if (process.env.SECURITY_PIN) {
     redirect: "manual",
     headers: {
       "Content-Type": "application/json",
-      "User-Agent": "Monkey-site-security-regression/1.0",
+      ...requestHeaders(),
     },
     body: JSON.stringify({ pin: process.env.SECURITY_PIN }),
   })
@@ -134,7 +146,7 @@ if (process.env.SECURITY_PIN) {
   if (cookieSafe) {
     const authorizedStatus = await fetchWithTimeout(endpoint("/api/auth/status"), {
       redirect: "manual",
-      headers: { Cookie: cookie, "User-Agent": "Monkey-site-security-regression/1.0" },
+      headers: requestHeaders({ Cookie: cookie }),
     })
     const statusBody = await authorizedStatus.json().catch(() => null)
     const validAccepted = authorizedStatus.status === 200 && statusBody?.authenticated === true
@@ -143,7 +155,7 @@ if (process.env.SECURITY_PIN) {
 
     const missingReport = await fetchWithTimeout(endpoint("/reports/raw/security-regression-no-record"), {
       redirect: "manual",
-      headers: { Cookie: cookie, "User-Agent": "Monkey-site-security-regression/1.0" },
+      headers: requestHeaders({ Cookie: cookie }),
     })
     await missingReport.body?.cancel()
     const validReachesProtectedRoute = missingReport.status === 404
