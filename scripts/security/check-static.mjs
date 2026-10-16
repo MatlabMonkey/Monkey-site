@@ -147,10 +147,14 @@ record(
 )
 
 const pinRoute = read("app/api/auth/pin/route.ts")
+const pinLimiter = existsSync("lib/server/pinRateLimit.ts") ? read("lib/server/pinRateLimit.ts") : ""
 record(
-  "PIN lockout is not process-local",
-  !/new\s+Map\s*</.test(pinRoute),
-  /new\s+Map\s*</.test(pinRoute) ? "module-level Map lockout found" : "no process-local Map lockout found",
+  "PIN lockout uses a shared distributed backend",
+  /from\s+["'][^"']*pinRateLimit["']/.test(pinRoute) &&
+    /\.rpc\(functionName/.test(pinLimiter) &&
+    pinLimiter.includes('"check_pin_auth_lockout"') &&
+    pinLimiter.includes('"record_pin_auth_failure"'),
+  "requires the PIN route and shared Supabase lockout RPCs",
 )
 
 const contactSources = files

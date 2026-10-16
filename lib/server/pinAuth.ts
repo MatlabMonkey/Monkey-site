@@ -1,4 +1,4 @@
-import { type NextRequest } from "next/server"
+import { type NextRequest } from "next/server.js"
 
 const encoder = new TextEncoder()
 
@@ -134,5 +134,6 @@ export function pinSessionCookieOptions() {
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: SESSION_TTL_SECONDS,
+    priority: "high" as const,
   }
 }
