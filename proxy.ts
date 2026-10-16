@@ -40,6 +40,8 @@ export const config = {
     "/tools/medication-visualizer/:path*",
     "/api/journal/:path*",
     "/api/todos/:path*",
+    "/api/tasks/:path*",
+    "/api/task-events/:path*",
     "/api/ideas/:path*",
     "/api/contacts/:path*",
     "/api/ops/:path*",
