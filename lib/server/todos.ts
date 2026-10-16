@@ -8,6 +8,9 @@ import {
   type TodoItemType,
   type TodoOutcome,
 } from "../todos"
+import { normalizeTodoCaptureIdentity, TodoValidationError } from "../todoCaptureIdentity"
+
+export { TodoValidationError } from "../todoCaptureIdentity"
 
 type NullableString = string | null
 
@@ -23,6 +26,9 @@ export type TodoRecord = {
   scheduled_for: NullableString
   waiting_for: NullableString
   clarified_at: NullableString
+  source: string
+  source_id: NullableString
+  idempotency_key: NullableString
   created_at: string
   updated_at: string
 }
@@ -50,9 +56,17 @@ export type CreateTodoInput = {
   waiting_for?: NullableString
   clarified_at?: NullableString
   completed?: boolean
+  source?: string
+  source_id?: NullableString
+  idempotency_key?: NullableString
 }
 
-export type UpdateTodoInput = Partial<CreateTodoInput>
+export type UpdateTodoInput = Partial<Omit<CreateTodoInput, "source" | "source_id" | "idempotency_key">>
+
+export type CreateTodoResult = {
+  todo: TodoRecord
+  duplicate: boolean
+}
 
 export type ProcessTodoInput = {
   id: string
@@ -60,13 +74,6 @@ export type ProcessTodoInput = {
   project_id?: NullableString
   scheduled_for?: NullableString
   waiting_for?: NullableString
-}
-
-export class TodoValidationError extends Error {
-  constructor(message: string) {
-    super(message)
-    this.name = "TodoValidationError"
-  }
 }
 
 export function getSupabaseAdmin() {
@@ -177,7 +184,14 @@ function normalizeSortOrder(value: unknown): number | null | undefined {
   return value
 }
 
-function normalizeCreateInput(input: CreateTodoInput): Record<string, unknown> {
+type NormalizedCreateTodoInput = Record<string, unknown> & {
+  context: TodoContext
+  source: string
+  source_id: NullableString
+  idempotency_key: NullableString
+}
+
+function normalizeCreateInput(input: CreateTodoInput): NormalizedCreateTodoInput {
   const content = normalizeContent(input.content)
   const folder = normalizeBucket(input.folder) || "inbox"
   const context = normalizeTodoContextOrDefault(input.context)
@@ -188,6 +202,7 @@ function normalizeCreateInput(input: CreateTodoInput): Record<string, unknown> {
   const waitingFor = normalizeOptionalString(input.waiting_for)
   const clarifiedAt = normalizeIsoTimestamp(input.clarified_at, "clarified_at")
   const completed = normalizeBoolean(input.completed, "completed") ?? false
+  const captureIdentity = normalizeTodoCaptureIdentity(input)
 
   return {
     content,
@@ -200,6 +215,7 @@ function normalizeCreateInput(input: CreateTodoInput): Record<string, unknown> {
     waiting_for: waitingFor ?? null,
     clarified_at: clarifiedAt ?? null,
     completed,
+    ...captureIdentity,
   }
 }
 
@@ -302,13 +318,56 @@ export async function listTodos(options: ListTodosOptions = {}): Promise<TodoRec
   return (todos || []) as TodoRecord[]
 }
 
-export async function createTodo(input: CreateTodoInput): Promise<TodoRecord> {
+async function findTodoByIdentity(input: NormalizedCreateTodoInput): Promise<TodoRecord | null> {
+  if (!input.idempotency_key && !input.source_id) return null
+
+  const supabase = getSupabaseAdmin()
+  if (input.idempotency_key) {
+    const { data, error } = await supabase
+      .from("todos")
+      .select("*")
+      .eq("context", input.context)
+      .eq("source", input.source)
+      .eq("idempotency_key", input.idempotency_key)
+      .maybeSingle()
+
+    if (error) throw new Error(error.message)
+    if (data) return data as TodoRecord
+  }
+
+  if (input.source_id) {
+    const { data, error } = await supabase
+      .from("todos")
+      .select("*")
+      .eq("context", input.context)
+      .eq("source", input.source)
+      .eq("source_id", input.source_id)
+      .maybeSingle()
+
+    if (error) throw new Error(error.message)
+    if (data) return data as TodoRecord
+  }
+
+  return null
+}
+
+export async function createTodoWithResult(input: CreateTodoInput): Promise<CreateTodoResult> {
   const payload = normalizeCreateInput(input)
+  const existingTodo = await findTodoByIdentity(payload)
+  if (existingTodo) {
+    return { todo: existingTodo, duplicate: true }
+  }
 
   const supabase = getSupabaseAdmin()
   const { data: todo, error } = await supabase.from("todos").insert([payload]).select("*").single()
 
   if (error) {
+    if (error.code === "23505" && (payload.idempotency_key || payload.source_id)) {
+      const racedTodo = await findTodoByIdentity(payload)
+      if (racedTodo) {
+        return { todo: racedTodo, duplicate: true }
+      }
+    }
     throw new Error(error.message)
   }
 
@@ -316,7 +375,12 @@ export async function createTodo(input: CreateTodoInput): Promise<TodoRecord> {
     throw new Error("Todo created but not returned")
   }
 
-  return todo as TodoRecord
+  return { todo: todo as TodoRecord, duplicate: false }
+}
+
+export async function createTodo(input: CreateTodoInput): Promise<TodoRecord> {
+  const result = await createTodoWithResult(input)
+  return result.todo
 }
 
 export async function updateTodoById(id: string, input: UpdateTodoInput): Promise<TodoRecord> {

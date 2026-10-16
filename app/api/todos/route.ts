@@ -99,6 +99,7 @@ export async function POST(request: NextRequest) {
       project_id: typeof projectId === "string" || projectId === null ? projectId : undefined,
       scheduled_for: typeof scheduledFor === "string" || scheduledFor === null ? scheduledFor : undefined,
       waiting_for: typeof waitingFor === "string" || waitingFor === null ? waitingFor : undefined,
+      source: "web",
     })
 
     return NextResponse.json({ todo }, { status: 201 })
