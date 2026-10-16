@@ -17,6 +17,7 @@ import {
   Plus,
   PlayCircle,
   Repeat2,
+  RotateCcw,
   Trash2,
   Users,
   Archive,
@@ -28,6 +29,7 @@ import {
 import PinGate from "../components/PinGate"
 import PrivateSectionNav from "../components/PrivateSectionNav"
 import { describeRecurringRRule } from "../../lib/recurring"
+import { buildRestartSummary } from "../../lib/todoRestart"
 import { selectTodayTodos, type TodayScheduleState } from "../../lib/todoToday"
 import { isTodoBucket, normalizeTodoContext, type TodoBucket, type TodoContext } from "../../lib/todos"
 
@@ -76,6 +78,7 @@ type TodoRowOptions = {
   showSchedule?: boolean
   scheduleState?: TodayScheduleState
   showWaiting?: boolean
+  showUpdated?: boolean
   dragHandle?: React.ReactNode
   dragging?: boolean
 }
@@ -333,6 +336,7 @@ export default function TodosPage() {
   const [addingRecurring, setAddingRecurring] = useState(false)
   const [recurringActionId, setRecurringActionId] = useState<string | null>(null)
   const [syncingTodoIds, setSyncingTodoIds] = useState<Set<string>>(new Set())
+  const [restartMode, setRestartMode] = useState(false)
 
   useEffect(() => {
     const syncFromLocation = () => {
@@ -742,6 +746,16 @@ export default function TodosPage() {
     [buckets.calendar, buckets.next_action],
   )
 
+  const restartSummary = useMemo(
+    () =>
+      buildRestartSummary(
+        [...buckets.next_action, ...buckets.calendar],
+        buckets.inbox,
+        buckets.waiting_for,
+      ),
+    [buckets.calendar, buckets.inbox, buckets.next_action, buckets.waiting_for],
+  )
+
   const saveNextActionOrder = useCallback(async (orderedTodos: Todo[]) => {
     const response = await fetch("/api/todos/reorder", {
       method: "POST",
@@ -835,6 +849,9 @@ export default function TodosPage() {
           {options?.showWaiting && todo.waiting_for && (
             <p className="text-xs text-[rgb(var(--text-muted))] mt-1">Waiting on: {todo.waiting_for}</p>
           )}
+          {options?.showUpdated && (
+            <p className="text-xs text-[rgb(var(--text-muted))] mt-1">Last updated {formatRelative(todo.updated_at)}</p>
+          )}
         </div>
         <button
           type="button"
@@ -878,6 +895,19 @@ export default function TodosPage() {
                 <PrivateSectionNav className="mt-3" />
               </div>
               <div className="flex flex-wrap gap-2 text-sm">
+                <button
+                  type="button"
+                  onClick={() => setRestartMode((current) => !current)}
+                  className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border transition-colors ${
+                    restartMode
+                      ? "border-[rgb(var(--brand))] bg-[rgb(var(--brand))] text-[rgb(var(--bg))]"
+                      : "border-[rgb(var(--brand))] bg-[rgb(var(--brand-weak)_/_0.65)] hover:bg-[rgb(var(--brand-weak))]"
+                  }`}
+                  aria-pressed={restartMode}
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  {restartMode ? "Exit restart" : "Restart mode"}
+                </button>
                 <span className="px-3 py-1.5 rounded-full border border-[rgb(var(--brand))] bg-[rgb(var(--brand-weak)_/_0.65)]">
                   {activeContext === "work" ? "Work Context" : "Personal Context"}
                 </span>
@@ -917,6 +947,99 @@ export default function TodosPage() {
             </div>
           )}
 
+          {restartMode && (
+            <section className="rounded-3xl border border-[rgb(var(--brand))] bg-[rgb(var(--brand-weak)_/_0.22)] p-6 space-y-6">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-[rgb(var(--text-muted))]">Recovery</p>
+                  <h2 className="mt-1 text-2xl font-semibold inline-flex items-center gap-2">
+                    <RotateCcw className="w-6 h-6 text-[rgb(var(--brand))]" />
+                    Back on track in 10 minutes
+                  </h2>
+                  <p className="mt-1 text-sm text-[rgb(var(--text-muted))]">
+                    No backlog wall. Review only what needs a decision, then return to Today.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setRestartMode(false)}
+                  className="px-4 py-2 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.65)] hover:bg-[rgb(var(--surface-2)_/_0.7)] transition-colors"
+                >
+                  Return to dashboard
+                </button>
+              </div>
+
+              {!restartSummary.needsCleanup ? (
+                <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.6)] p-5">
+                  <p className="font-semibold">Your system is clear.</p>
+                  <p className="mt-1 text-sm text-[rgb(var(--text-muted))]">
+                    No missed commitments, Inbox items, or stale Waiting items need recovery.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <article className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.65)] p-5">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-[rgb(var(--text-muted))]">Minutes 0–3</p>
+                        <h3 className="mt-1 text-xl font-semibold">Missed commitments</h3>
+                      </div>
+                      <span className="text-sm text-[rgb(var(--text-muted))]">{restartSummary.missedCommitments.length}</span>
+                    </div>
+                    {restartSummary.missedCommitments.length === 0 ? (
+                      <p className="mt-3 text-sm text-[rgb(var(--text-muted))]">Nothing overdue.</p>
+                    ) : (
+                      <div className="mt-4 space-y-3">
+                        {restartSummary.missedCommitments.map((todo) =>
+                          renderTodoRow(todo, { showProject: true, showSchedule: true, scheduleState: "overdue" }),
+                        )}
+                      </div>
+                    )}
+                  </article>
+
+                  <article className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.65)] p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-[rgb(var(--text-muted))]">Minutes 3–7</p>
+                        <h3 className="mt-1 text-xl font-semibold">Inbox</h3>
+                        <p className="mt-1 text-sm text-[rgb(var(--text-muted))]">
+                          {restartSummary.inboxCount} item{restartSummary.inboxCount === 1 ? "" : "s"} waiting for a quick decision.
+                        </p>
+                      </div>
+                      <Link
+                        href={`/todos/process?context=${activeContext}&bucket=inbox`}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[rgb(var(--brand))] hover:bg-[rgb(var(--brand-strong))] transition-colors"
+                      >
+                        Process Inbox
+                        <ChevronRight className="w-4 h-4" />
+                      </Link>
+                    </div>
+                  </article>
+
+                  <article className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.65)] p-5">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-[rgb(var(--text-muted))]">Minutes 7–10</p>
+                        <h3 className="mt-1 text-xl font-semibold">Stale Waiting</h3>
+                      </div>
+                      <span className="text-sm text-[rgb(var(--text-muted))]">{restartSummary.staleWaiting.length}</span>
+                    </div>
+                    {restartSummary.staleWaiting.length === 0 ? (
+                      <p className="mt-3 text-sm text-[rgb(var(--text-muted))]">No Waiting items have gone quiet for a week.</p>
+                    ) : (
+                      <div className="mt-4 space-y-3">
+                        {restartSummary.staleWaiting.map((todo) =>
+                          renderTodoRow(todo, { showWaiting: true, showUpdated: true }),
+                        )}
+                      </div>
+                    )}
+                  </article>
+                </div>
+              )}
+            </section>
+          )}
+
+          <div className={restartMode ? "hidden" : "contents"}>
           <section>
             <form onSubmit={addInboxTodo} className="rounded-3xl border border-[rgb(var(--border))] bg-[rgb(var(--surface)_/_0.7)] p-5">
               <div className="flex items-center gap-2 mb-3">
@@ -1342,6 +1465,7 @@ export default function TodosPage() {
               )}
             </div>
           </details>
+          </div>
         </div>
       </div>
     </PinGate>
