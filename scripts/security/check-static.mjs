@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 
 const checks = []
 
@@ -33,8 +33,9 @@ function middlewareCovers(path, matchers) {
 }
 
 const files = trackedFiles()
-const middleware = read("middleware.ts")
-const matchers = [...middleware.matchAll(/["'](\/[^"']+)["']/g)]
+const requestBoundaryFile = existsSync("proxy.ts") ? "proxy.ts" : "middleware.ts"
+const requestBoundary = read(requestBoundaryFile)
+const matchers = [...requestBoundary.matchAll(/["'](\/[^"']+)["']/g)]
   .map((match) => match[1])
   .filter((value) => value.includes(":path*") || value.startsWith("/api/"))
 
