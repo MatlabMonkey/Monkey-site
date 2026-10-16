@@ -9,6 +9,8 @@
     "lint": "eslint .",
     "db:push-todos": "node scripts/push-todos-migration.js",
     "import-legacy": "node scripts/import-legacy-journal.js",
+    "test:todo-restart": "node --test tests/todo-restart.test.ts",
+    "test:todo-today": "node --test tests/todo-today.test.ts",
     "test:webhook:todo": "bash scripts/test-todo-webhook.sh"
   },
   "dependencies": {
