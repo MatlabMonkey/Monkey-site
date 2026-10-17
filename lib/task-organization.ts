@@ -9,9 +9,11 @@ import {
 
 export const ORGANIZATION_BOUNDARIES = ["auto_apply", "needs_review"] as const
 export const ORGANIZATION_REVIEW_STATES = ["pending", "applied", "rejected", "superseded"] as const
+export const ORGANIZATION_REVIEW_ACTIONS = ["apply", "reject", "supersede"] as const
 
 export type OrganizationBoundary = (typeof ORGANIZATION_BOUNDARIES)[number]
 export type OrganizationReviewState = (typeof ORGANIZATION_REVIEW_STATES)[number]
+export type OrganizationReviewAction = (typeof ORGANIZATION_REVIEW_ACTIONS)[number]
 
 export type TaskOrganizationChanges = {
   title?: string
@@ -40,11 +42,61 @@ export type TaskOrganizationProposalInput = {
   rule_id: unknown
 }
 
+export type TaskOrganizationProposalRecord = TaskOrganizationProposalDraft & {
+  id: string
+  state: OrganizationReviewState
+  created_by: string
+  reviewer: string | null
+  review_reason: string | null
+  reviewed_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type TaskOrganizationReviewInput = {
+  action: unknown
+  reviewer: unknown
+  reason: unknown
+}
+
+export type NormalizedTaskOrganizationReview = {
+  state: Exclude<OrganizationReviewState, "pending">
+  reviewer: string
+  reason: string
+}
+
+export class TaskOrganizationConflictError extends Error {
+  proposal?: TaskOrganizationProposalRecord
+
+  constructor(message: string, proposal?: TaskOrganizationProposalRecord) {
+    super(message)
+    this.name = "TaskOrganizationConflictError"
+    this.proposal = proposal
+  }
+}
+
+export class TaskOrganizationNotFoundError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "TaskOrganizationNotFoundError"
+  }
+}
+
 function normalizeIdentifier(value: unknown, field: string): string {
   if (typeof value !== "string" || !/^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,99}$/.test(value)) {
     throw new TaskValidationError(`${field} must be a short machine-readable identifier`)
   }
   return value
+}
+
+export function normalizeOrganizationUuid(value: unknown, field: string): string {
+  if (
+    typeof value !== "string"
+    || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+  ) {
+    throw new TaskValidationError(`${field} must be a UUID`)
+  }
+  return value.toLowerCase()
 }
 
 function normalizeVersion(value: unknown): number {
@@ -109,7 +161,7 @@ export function normalizeOrganizationProposal(
   const confidence = normalizeConfidence(input.confidence)
 
   return {
-    task_id: normalizeIdentifier(input.task_id, "task_id"),
+    task_id: normalizeOrganizationUuid(input.task_id, "task_id"),
     task_version: normalizeVersion(input.task_version),
     changes,
     confidence,
@@ -117,4 +169,33 @@ export function normalizeOrganizationProposal(
     rationale: normalizeRationale(input.rationale),
     rule_id: normalizeIdentifier(input.rule_id, "rule_id"),
   }
+}
+
+export function normalizeOrganizationReview(
+  input: TaskOrganizationReviewInput,
+): NormalizedTaskOrganizationReview {
+  if (
+    typeof input.action !== "string"
+    || !ORGANIZATION_REVIEW_ACTIONS.includes(input.action as OrganizationReviewAction)
+  ) {
+    throw new TaskValidationError("action must be apply, reject, or supersede")
+  }
+
+  const states: Record<OrganizationReviewAction, Exclude<OrganizationReviewState, "pending">> = {
+    apply: "applied",
+    reject: "rejected",
+    supersede: "superseded",
+  }
+
+  return {
+    state: states[input.action as OrganizationReviewAction],
+    reviewer: normalizeIdentifier(input.reviewer, "reviewer"),
+    reason: normalizeRationale(input.reason),
+  }
+}
+
+export function parseOrganizationReviewState(value: string | null): OrganizationReviewState {
+  return value && ORGANIZATION_REVIEW_STATES.includes(value as OrganizationReviewState)
+    ? value as OrganizationReviewState
+    : "pending"
 }

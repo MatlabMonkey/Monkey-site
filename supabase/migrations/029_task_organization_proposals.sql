@@ -144,9 +144,179 @@ CREATE TRIGGER task_organization_events_immutable
 BEFORE UPDATE OR DELETE ON task_organization_events
 FOR EACH ROW EXECUTE FUNCTION reject_task_organization_event_mutation();
 
+CREATE OR REPLACE FUNCTION validate_task_organization_proposal_version()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  current_task_version INTEGER;
+BEGIN
+  SELECT version
+  INTO current_task_version
+  FROM tasks
+  WHERE id = NEW.task_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0002', MESSAGE = 'task_not_found';
+  END IF;
+  IF current_task_version <> NEW.task_version THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0001', MESSAGE = 'task_version_conflict';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER task_organization_proposals_validate_version
+BEFORE INSERT ON task_organization_proposals
+FOR EACH ROW EXECUTE FUNCTION validate_task_organization_proposal_version();
+
+-- Attribute task history to the authenticated reviewer or assistant rule executor.
+CREATE OR REPLACE FUNCTION record_task_event()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  event_name TEXT;
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    event_name := 'captured';
+  ELSIF NEW.status = 'done' AND OLD.status <> 'done' THEN
+    event_name := 'completed';
+  ELSIF NEW.status = 'archived' AND OLD.status <> 'archived' THEN
+    event_name := 'archived';
+  ELSIF NEW.status IS DISTINCT FROM OLD.status THEN
+    event_name := 'status_changed';
+  ELSE
+    event_name := 'updated';
+  END IF;
+
+  INSERT INTO task_events(task_id, event_type, actor, before_state, after_state, reason)
+  VALUES (
+    NEW.id,
+    event_name,
+    COALESCE(NULLIF(current_setting('app.task_actor', true), ''), 'user'),
+    CASE WHEN TG_OP = 'INSERT' THEN NULL ELSE to_jsonb(OLD) - 'change_reason' END,
+    to_jsonb(NEW) - 'change_reason',
+    NEW.change_reason
+  );
+  RETURN NEW;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION review_task_organization_proposal(
+  p_proposal_id UUID,
+  p_target_state TEXT,
+  p_reviewer TEXT,
+  p_review_reason TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  proposal task_organization_proposals%ROWTYPE;
+  reviewed_proposal task_organization_proposals%ROWTYPE;
+  current_task_version INTEGER;
+  current_task_status TEXT;
+  stale_reason TEXT;
+BEGIN
+  IF p_target_state NOT IN ('applied', 'rejected', 'superseded') THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_organization_review_state';
+  END IF;
+  IF p_reviewer IS NULL OR p_reviewer !~ '^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,99}$' THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_organization_reviewer';
+  END IF;
+  IF p_review_reason IS NULL OR char_length(btrim(p_review_reason)) NOT BETWEEN 1 AND 2000 THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_organization_review_reason';
+  END IF;
+
+  SELECT *
+  INTO proposal
+  FROM task_organization_proposals
+  WHERE id = p_proposal_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0002', MESSAGE = 'task_organization_proposal_not_found';
+  END IF;
+  IF proposal.state <> 'pending' THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0001', MESSAGE = 'task_organization_proposal_not_pending';
+  END IF;
+
+  IF p_target_state = 'applied' THEN
+    SELECT version, status
+    INTO current_task_version, current_task_status
+    FROM tasks
+    WHERE id = proposal.task_id
+    FOR UPDATE;
+
+    IF NOT FOUND THEN
+      RAISE EXCEPTION USING ERRCODE = 'P0002', MESSAGE = 'task_not_found';
+    END IF;
+
+    IF current_task_version <> proposal.task_version THEN
+      stale_reason := format(
+        'Stale task version: expected %s, found %s. Review request: %s',
+        proposal.task_version,
+        current_task_version,
+        btrim(p_review_reason)
+      );
+    ELSIF proposal.boundary = 'auto_apply' AND current_task_status <> 'inbox' THEN
+      stale_reason := format(
+        'Safe auto-apply requires an Inbox task; found %s. Review request: %s',
+        current_task_status,
+        btrim(p_review_reason)
+      );
+    END IF;
+
+    IF stale_reason IS NOT NULL THEN
+      UPDATE task_organization_proposals
+      SET state = 'superseded', reviewer = p_reviewer, review_reason = stale_reason
+      WHERE id = proposal.id
+      RETURNING * INTO reviewed_proposal;
+
+      RETURN jsonb_build_object('outcome', 'stale', 'proposal', to_jsonb(reviewed_proposal));
+    END IF;
+
+    PERFORM set_config('app.task_actor', p_reviewer, true);
+    UPDATE tasks
+    SET
+      title = CASE WHEN proposal.changes ? 'title' THEN proposal.changes->>'title' ELSE title END,
+      notes = CASE WHEN proposal.changes ? 'notes' THEN proposal.changes->>'notes' ELSE notes END,
+      status = CASE WHEN proposal.changes ? 'status' THEN proposal.changes->>'status' ELSE status END,
+      due_on = CASE
+        WHEN proposal.changes ? 'due_on' THEN (proposal.changes->>'due_on')::DATE
+        ELSE due_on
+      END,
+      waiting_on = CASE
+        WHEN proposal.changes ? 'waiting_on' THEN proposal.changes->>'waiting_on'
+        ELSE waiting_on
+      END,
+      change_reason = format('Organization proposal %s applied: %s', proposal.id, btrim(p_review_reason))
+    WHERE id = proposal.task_id;
+  END IF;
+
+  UPDATE task_organization_proposals
+  SET
+    state = p_target_state,
+    reviewer = p_reviewer,
+    review_reason = btrim(p_review_reason)
+  WHERE id = proposal.id
+  RETURNING * INTO reviewed_proposal;
+
+  RETURN jsonb_build_object('outcome', p_target_state, 'proposal', to_jsonb(reviewed_proposal));
+END;
+$$;
+
 ALTER TABLE task_organization_proposals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE task_organization_events ENABLE ROW LEVEL SECURITY;
 
 -- Only trusted server code may create or review organization proposals.
 REVOKE ALL ON task_organization_proposals FROM anon, authenticated;
 REVOKE ALL ON task_organization_events FROM anon, authenticated;
+REVOKE ALL ON FUNCTION review_task_organization_proposal(UUID, TEXT, TEXT, TEXT) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION review_task_organization_proposal(UUID, TEXT, TEXT, TEXT) TO service_role;

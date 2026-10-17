@@ -4,12 +4,13 @@ import test from "node:test"
 
 import {
   normalizeOrganizationProposal,
+  normalizeOrganizationReview,
   organizationBoundaryFor,
 } from "../lib/task-organization.ts"
 import { TaskValidationError } from "../lib/tasks.ts"
 
 const baseInput = {
-  task_id: "task-123",
+  task_id: "123e4567-e89b-42d3-a456-426614174000",
   task_version: 2,
   changes: { status: "today" },
   confidence: 0.94,
@@ -49,6 +50,29 @@ test("proposal validation rejects ambiguous or unsupported output", () => {
     () => normalizeOrganizationProposal({ ...baseInput, changes: { priority: "urgent" } }),
     /Unsupported organization field/,
   )
+  assert.throws(
+    () => normalizeOrganizationProposal({ ...baseInput, task_id: "task-123" }),
+    /UUID/,
+  )
+})
+
+test("review commands normalize to one explicit terminal state with rationale", () => {
+  assert.deepEqual(
+    normalizeOrganizationReview({ action: "apply", reviewer: "user", reason: "  Looks right. " }),
+    { state: "applied", reviewer: "user", reason: "Looks right." },
+  )
+  assert.equal(
+    normalizeOrganizationReview({ action: "reject", reviewer: "user", reason: "Wrong date" }).state,
+    "rejected",
+  )
+  assert.throws(
+    () => normalizeOrganizationReview({ action: "edit", reviewer: "user", reason: "No" }),
+    /apply, reject, or supersede/,
+  )
+  assert.throws(
+    () => normalizeOrganizationReview({ action: "apply", reviewer: "user", reason: "  " }),
+    /rationale is required/,
+  )
 })
 
 test("organization persistence keeps proposal rationale and review history immutable", () => {
@@ -63,5 +87,30 @@ test("organization persistence keeps proposal rationale and review history immut
   assert.match(sql, /BEFORE UPDATE OR DELETE ON task_organization_events/)
   assert.match(sql, /state IN \('pending', 'applied', 'rejected', 'superseded'\)/)
   assert.match(sql, /changes->>'status' IN \('today', 'later'\)/)
+  assert.match(sql, /CREATE OR REPLACE FUNCTION review_task_organization_proposal/)
+  assert.match(sql, /current_task_version <> proposal\.task_version/)
+  assert.match(sql, /proposal\.boundary = 'auto_apply' AND current_task_status <> 'inbox'/)
+  assert.match(sql, /'outcome', 'stale'/)
+  assert.match(sql, /set_config\('app\.task_actor', p_reviewer, true\)/)
   assert.match(sql, /REVOKE ALL ON task_organization_proposals FROM anon, authenticated/)
+  assert.match(sql, /REVOKE ALL ON FUNCTION review_task_organization_proposal/)
+})
+
+test("organization server routes require authentication and expose conflicts", () => {
+  const routeFiles = [
+    "../app/api/task-organization-proposals/route.ts",
+    "../app/api/task-organization-proposals/[id]/route.ts",
+  ]
+
+  for (const routeFile of routeFiles) {
+    const source = readFileSync(new URL(routeFile, import.meta.url), "utf8")
+    assert.match(source, /isRequestAuthenticated\(request\)/)
+    assert.match(source, /status: 401/)
+  }
+
+  const createRoute = readFileSync(new URL(routeFiles[0], import.meta.url), "utf8")
+  const reviewRoute = readFileSync(new URL(routeFiles[1], import.meta.url), "utf8")
+  assert.match(createRoute, /createOrganizationProposal/)
+  assert.match(reviewRoute, /reviewOrganizationProposal/)
+  assert.match(reviewRoute, /status: 409/)
 })
