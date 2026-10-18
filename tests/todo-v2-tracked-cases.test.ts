@@ -12,6 +12,8 @@ import {
   CASE_TASK_ROLES,
   DEADLINE_PROVENANCE_TYPES,
   normalizeTrackedCase,
+  normalizeTrackedCaseUpdate,
+  normalizeTrackedCaseUuid,
 } from "../lib/tracked-cases.ts"
 import { TaskValidationError } from "../lib/tasks.ts"
 
@@ -71,6 +73,76 @@ test("tracked cases permit no deadline or a complete provenance bundle, never a 
   )
 })
 
+test("tracked-case lifecycle updates require a reason and optimistic version", () => {
+  const input = {
+    expected_version: 3,
+    reason: "  External confirmation   arrived. ",
+    status: "completed",
+    automation_state: "finished",
+    ...completeDeadline,
+  }
+
+  assert.deepEqual(normalizeTrackedCaseUpdate(input), normalizeTrackedCaseUpdate(structuredClone(input)))
+  assert.deepEqual(normalizeTrackedCaseUpdate(input), {
+    expected_version: 3,
+    reason: "External confirmation arrived.",
+    changes: {
+      status: "completed",
+      automation_state: "finished",
+      deadline_on: "2026-11-01",
+      deadline_provenance_type: "external",
+      deadline_provenance_ref: "email:message-42",
+      deadline_confidence: 0.96,
+    },
+  })
+
+  assert.deepEqual(normalizeTrackedCaseUpdate({
+    expected_version: 4,
+    reason: "Deadline no longer applies",
+    deadline_on: null,
+    deadline_provenance_type: null,
+    deadline_provenance_ref: null,
+    deadline_confidence: null,
+  }).changes, {
+    deadline_on: null,
+    deadline_provenance_type: null,
+    deadline_provenance_ref: null,
+    deadline_confidence: null,
+  })
+})
+
+test("tracked-case lifecycle validation rejects ambiguous or stale-prone commands", () => {
+  assert.equal(
+    normalizeTrackedCaseUuid("123E4567-E89B-42D3-A456-426614174000"),
+    "123e4567-e89b-42d3-a456-426614174000",
+  )
+  assert.throws(() => normalizeTrackedCaseUuid("case-1"), /UUID/)
+  assert.throws(
+    () => normalizeTrackedCaseUpdate({ expected_version: 0, reason: "No", status: "blocked" }),
+    /positive integer/,
+  )
+  assert.throws(
+    () => normalizeTrackedCaseUpdate({ expected_version: 1, reason: " ", status: "blocked" }),
+    /reason is required/,
+  )
+  assert.throws(
+    () => normalizeTrackedCaseUpdate({ expected_version: 1, reason: "Change", status: "waiting" }),
+    /status must be one of/,
+  )
+  assert.throws(
+    () => normalizeTrackedCaseUpdate({
+      expected_version: 1,
+      reason: "Change deadline",
+      deadline_on: "2026-11-02",
+    }),
+    /all deadline fields/,
+  )
+  assert.throws(
+    () => normalizeTrackedCaseUpdate({ expected_version: 1, reason: "Nothing" }),
+    /No tracked case changes/,
+  )
+})
+
 test("tracked-case migration models reviewable outcomes, dependencies, evidence, automation, and escalation", () => {
   const sql = readFileSync(
     new URL("../supabase/migrations/030_tracked_cases.sql", import.meta.url),
@@ -112,4 +184,38 @@ test("tracked-case migration models reviewable outcomes, dependencies, evidence,
   assert.match(sql, /AFTER INSERT OR UPDATE ON case_escalations/)
   assert.match(sql, /BEFORE UPDATE OR DELETE ON case_evidence/)
   assert.match(sql, /BEFORE UPDATE OR DELETE ON case_events/)
+  assert.match(sql, /CREATE OR REPLACE FUNCTION create_tracked_case/)
+  assert.match(sql, /CREATE OR REPLACE FUNCTION update_tracked_case/)
+  assert.match(sql, /current_case\.version <> p_expected_version/)
+  assert.match(sql, /set_config\('app\.case_actor', p_actor, true\)/)
+  assert.match(sql, /FOR UPDATE/)
+  assert.match(sql, /REVOKE ALL ON FUNCTION create_tracked_case/)
+  assert.match(sql, /REVOKE ALL ON FUNCTION update_tracked_case/)
+})
+
+test("tracked-case lifecycle routes require authentication and expose version conflicts", () => {
+  const collectionRoute = readFileSync(
+    new URL("../app/api/tracked-cases/route.ts", import.meta.url),
+    "utf8",
+  )
+  const detailRoute = readFileSync(
+    new URL("../app/api/tracked-cases/[id]/route.ts", import.meta.url),
+    "utf8",
+  )
+  const serverSource = readFileSync(
+    new URL("../lib/server/tracked-cases.ts", import.meta.url),
+    "utf8",
+  )
+
+  for (const source of [collectionRoute, detailRoute]) {
+    assert.match(source, /isRequestAuthenticated\(request\)/)
+    assert.match(source, /status: 401/)
+  }
+  assert.match(collectionRoute, /createTrackedCase/)
+  assert.match(detailRoute, /updateTrackedCase/)
+  assert.match(detailRoute, /getTrackedCase/)
+  assert.match(detailRoute, /status: 409/)
+  assert.match(serverSource, /rpc\("create_tracked_case"/)
+  assert.match(serverSource, /rpc\("update_tracked_case"/)
+  assert.match(serverSource, /from\("case_events"\)/)
 })

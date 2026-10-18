@@ -7,6 +7,16 @@ The first tracked-case slice adds a server-owned persistence boundary for work t
 - Tasks attach to a case as next actions or milestones. Dependency edges are restricted to tasks already attached to the same case and preserve open, satisfied, or explicitly waived state.
 - Evidence stores a bounded summary plus source identity, observed time, and optional content hash. This slice intentionally stores no message or document body. Evidence rows and case-event rows are append-only.
 - Exception escalations preserve severity, reason, acknowledgement, and resolution state. They may point to one dependency or evidence record, while still allowing a case-level exception.
-- Browser roles have no direct table access. Authenticated server lifecycle operations, deterministic reconciliation, and the review UI remain separate bounded work.
+- Browser roles have no direct table access.
+
+## Authenticated lifecycle operations
+
+- `GET /api/tracked-cases` lists the 200 most recently updated cases.
+- `POST /api/tracked-cases` creates an outcome-first case after enforcing the complete deadline-provenance bundle.
+- `GET /api/tracked-cases/:id` returns one case and its append-only event history.
+- `PATCH /api/tracked-cases/:id` explicitly changes case fields, status, automation state, or the complete deadline bundle. Every update requires a human-readable reason and the caller's expected case version; stale updates fail with `409 Conflict`.
+- Creation and updates run through service-role-only database functions so event attribution, row locking, version checks, and mutation happen in one transaction. PIN-authenticated requests are attributed to `user`.
+
+Task attachment/dependency operations, deterministic evidence reconciliation and escalation, and the review UI remain separate bounded work.
 
 Migration 030 intentionally does not read production data, migrate legacy todos, or run automatically.

@@ -273,6 +273,147 @@ CREATE TRIGGER case_events_immutable
 BEFORE UPDATE OR DELETE ON case_events
 FOR EACH ROW EXECUTE FUNCTION reject_case_event_mutation();
 
+CREATE OR REPLACE FUNCTION create_tracked_case(
+  p_title TEXT,
+  p_outcome TEXT,
+  p_deadline_on DATE,
+  p_deadline_provenance_type TEXT,
+  p_deadline_provenance_ref TEXT,
+  p_deadline_confidence NUMERIC,
+  p_actor TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  created_case tracked_cases%ROWTYPE;
+BEGIN
+  IF p_actor IS NULL OR p_actor !~ '^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,99}$' THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_case_actor';
+  END IF;
+
+  PERFORM set_config('app.case_actor', p_actor, true);
+  INSERT INTO tracked_cases(
+    title,
+    outcome,
+    deadline_on,
+    deadline_provenance_type,
+    deadline_provenance_ref,
+    deadline_confidence
+  )
+  VALUES (
+    p_title,
+    p_outcome,
+    p_deadline_on,
+    p_deadline_provenance_type,
+    p_deadline_provenance_ref,
+    p_deadline_confidence
+  )
+  RETURNING * INTO created_case;
+
+  RETURN to_jsonb(created_case);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION update_tracked_case(
+  p_case_id UUID,
+  p_expected_version INTEGER,
+  p_changes JSONB,
+  p_actor TEXT,
+  p_reason TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  current_case tracked_cases%ROWTYPE;
+  updated_case tracked_cases%ROWTYPE;
+  deadline_keys TEXT[] := ARRAY[
+    'deadline_on',
+    'deadline_provenance_type',
+    'deadline_provenance_ref',
+    'deadline_confidence'
+  ];
+BEGIN
+  IF p_expected_version IS NULL OR p_expected_version < 1 THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_case_expected_version';
+  END IF;
+  IF p_changes IS NULL OR jsonb_typeof(p_changes) <> 'object' OR p_changes = '{}'::JSONB THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_case_changes';
+  END IF;
+  IF p_changes - ARRAY[
+    'title',
+    'outcome',
+    'status',
+    'automation_state',
+    'deadline_on',
+    'deadline_provenance_type',
+    'deadline_provenance_ref',
+    'deadline_confidence'
+  ] <> '{}'::JSONB THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'unsupported_case_change';
+  END IF;
+  IF (p_changes ?| deadline_keys) AND NOT (p_changes ?& deadline_keys) THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'incomplete_case_deadline_change';
+  END IF;
+  IF p_actor IS NULL OR p_actor !~ '^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,99}$' THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_case_actor';
+  END IF;
+  IF p_reason IS NULL OR char_length(btrim(p_reason)) NOT BETWEEN 1 AND 2000 THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_case_change_reason';
+  END IF;
+
+  SELECT *
+  INTO current_case
+  FROM tracked_cases
+  WHERE id = p_case_id
+  FOR UPDATE;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0002', MESSAGE = 'tracked_case_not_found';
+  END IF;
+  IF current_case.version <> p_expected_version THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0001', MESSAGE = 'tracked_case_version_conflict';
+  END IF;
+
+  PERFORM set_config('app.case_actor', p_actor, true);
+  UPDATE tracked_cases
+  SET
+    title = CASE WHEN p_changes ? 'title' THEN p_changes->>'title' ELSE title END,
+    outcome = CASE WHEN p_changes ? 'outcome' THEN p_changes->>'outcome' ELSE outcome END,
+    status = CASE WHEN p_changes ? 'status' THEN p_changes->>'status' ELSE status END,
+    automation_state = CASE
+      WHEN p_changes ? 'automation_state' THEN p_changes->>'automation_state'
+      ELSE automation_state
+    END,
+    deadline_on = CASE
+      WHEN p_changes ? 'deadline_on' THEN (p_changes->>'deadline_on')::DATE
+      ELSE deadline_on
+    END,
+    deadline_provenance_type = CASE
+      WHEN p_changes ? 'deadline_provenance_type' THEN p_changes->>'deadline_provenance_type'
+      ELSE deadline_provenance_type
+    END,
+    deadline_provenance_ref = CASE
+      WHEN p_changes ? 'deadline_provenance_ref' THEN p_changes->>'deadline_provenance_ref'
+      ELSE deadline_provenance_ref
+    END,
+    deadline_confidence = CASE
+      WHEN p_changes ? 'deadline_confidence' THEN (p_changes->>'deadline_confidence')::NUMERIC
+      ELSE deadline_confidence
+    END,
+    change_reason = btrim(p_reason)
+  WHERE id = current_case.id
+  RETURNING * INTO updated_case;
+
+  RETURN to_jsonb(updated_case);
+END;
+$$;
+
 ALTER TABLE tracked_cases ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tracked_case_tasks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE case_dependencies ENABLE ROW LEVEL SECURITY;
@@ -287,3 +428,11 @@ REVOKE ALL ON case_dependencies FROM anon, authenticated;
 REVOKE ALL ON case_evidence FROM anon, authenticated;
 REVOKE ALL ON case_escalations FROM anon, authenticated;
 REVOKE ALL ON case_events FROM anon, authenticated;
+REVOKE ALL ON FUNCTION create_tracked_case(TEXT, TEXT, DATE, TEXT, TEXT, NUMERIC, TEXT)
+  FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION update_tracked_case(UUID, INTEGER, JSONB, TEXT, TEXT)
+  FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION create_tracked_case(TEXT, TEXT, DATE, TEXT, TEXT, NUMERIC, TEXT)
+  TO service_role;
+GRANT EXECUTE ON FUNCTION update_tracked_case(UUID, INTEGER, JSONB, TEXT, TEXT)
+  TO service_role;

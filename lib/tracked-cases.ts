@@ -31,6 +31,65 @@ export type TrackedCaseInput = {
   deadline_confidence?: unknown
 }
 
+export type TrackedCaseRecord = TrackedCaseDraft & {
+  id: string
+  status: CaseStatus
+  automation_state: CaseAutomationState
+  version: number
+  change_reason: string | null
+  created_at: string
+  updated_at: string
+  completed_at: string | null
+}
+
+export type CaseEventRecord = {
+  id: number
+  case_id: string
+  entity_type: "case" | "task_link" | "dependency" | "evidence" | "escalation"
+  entity_id: string
+  event_type: string
+  actor: string
+  reason: string | null
+  snapshot: Record<string, unknown>
+  created_at: string
+}
+
+export type TrackedCaseUpdateInput = {
+  expected_version: unknown
+  reason: unknown
+  title?: unknown
+  outcome?: unknown
+  status?: unknown
+  automation_state?: unknown
+  deadline_on?: unknown
+  deadline_provenance_type?: unknown
+  deadline_provenance_ref?: unknown
+  deadline_confidence?: unknown
+}
+
+export type TrackedCaseUpdate = {
+  expected_version: number
+  reason: string
+  changes: Partial<TrackedCaseDraft> & {
+    status?: CaseStatus
+    automation_state?: CaseAutomationState
+  }
+}
+
+export class TrackedCaseNotFoundError extends Error {
+  constructor(message = "Tracked case not found") {
+    super(message)
+    this.name = "TrackedCaseNotFoundError"
+  }
+}
+
+export class TrackedCaseConflictError extends Error {
+  constructor(message = "The tracked case changed before this operation completed") {
+    super(message)
+    this.name = "TrackedCaseConflictError"
+  }
+}
+
 function normalizeOutcome(value: unknown): string {
   if (typeof value !== "string" || !value.trim()) {
     throw new TaskValidationError("outcome is required")
@@ -59,7 +118,31 @@ function normalizeConfidence(value: unknown): number | null {
   return value
 }
 
-export function normalizeTrackedCase(input: TrackedCaseInput): TrackedCaseDraft {
+function normalizeEnum<T extends string>(value: unknown, values: readonly T[], field: string): T {
+  if (typeof value !== "string" || !values.includes(value as T)) {
+    throw new TaskValidationError(`${field} must be one of: ${values.join(", ")}`)
+  }
+  return value as T
+}
+
+function normalizeReason(value: unknown): string {
+  if (typeof value !== "string" || !value.trim()) {
+    throw new TaskValidationError("reason is required")
+  }
+  const reason = value.trim().replace(/\s+/g, " ")
+  if (reason.length > 2000) throw new TaskValidationError("reason must be 2000 characters or fewer")
+  return reason
+}
+
+type DeadlineBundleInput = Pick<
+  TrackedCaseInput,
+  "deadline_on" | "deadline_provenance_type" | "deadline_provenance_ref" | "deadline_confidence"
+>
+
+function normalizeDeadlineBundle(input: DeadlineBundleInput): Pick<
+  TrackedCaseDraft,
+  "deadline_on" | "deadline_provenance_type" | "deadline_provenance_ref" | "deadline_confidence"
+> {
   const deadlineOn = normalizeDateOnly(input.deadline_on) ?? null
   const provenanceType = normalizeDeadlineProvenanceType(input.deadline_provenance_type)
   const provenanceRef = normalizeOptionalText(
@@ -78,11 +161,71 @@ export function normalizeTrackedCase(input: TrackedCaseInput): TrackedCaseDraft 
   }
 
   return {
-    title: normalizeTaskTitle(input.title),
-    outcome: normalizeOutcome(input.outcome),
     deadline_on: deadlineOn,
     deadline_provenance_type: provenanceType,
     deadline_provenance_ref: provenanceRef,
     deadline_confidence: confidence,
+  }
+}
+
+export function normalizeTrackedCase(input: TrackedCaseInput): TrackedCaseDraft {
+  return {
+    title: normalizeTaskTitle(input.title),
+    outcome: normalizeOutcome(input.outcome),
+    ...normalizeDeadlineBundle(input),
+  }
+}
+
+export function normalizeTrackedCaseUuid(value: unknown): string {
+  if (
+    typeof value !== "string"
+    || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+  ) {
+    throw new TaskValidationError("case_id must be a UUID")
+  }
+  return value.toLowerCase()
+}
+
+export function normalizeTrackedCaseUpdate(input: TrackedCaseUpdateInput): TrackedCaseUpdate {
+  if (!Number.isInteger(input.expected_version) || (input.expected_version as number) < 1) {
+    throw new TaskValidationError("expected_version must be a positive integer")
+  }
+
+  const changes: TrackedCaseUpdate["changes"] = {}
+  if (input.title !== undefined) changes.title = normalizeTaskTitle(input.title)
+  if (input.outcome !== undefined) changes.outcome = normalizeOutcome(input.outcome)
+  if (input.status !== undefined) {
+    changes.status = normalizeEnum(input.status, CASE_STATUSES, "status")
+  }
+  if (input.automation_state !== undefined) {
+    changes.automation_state = normalizeEnum(
+      input.automation_state,
+      CASE_AUTOMATION_STATES,
+      "automation_state",
+    )
+  }
+
+  const deadlineKeys = [
+    "deadline_on",
+    "deadline_provenance_type",
+    "deadline_provenance_ref",
+    "deadline_confidence",
+  ] as const
+  const presentDeadlineKeys = deadlineKeys.filter((key) => Object.hasOwn(input, key))
+  if (presentDeadlineKeys.length > 0 && presentDeadlineKeys.length !== deadlineKeys.length) {
+    throw new TaskValidationError("all deadline fields must be updated together")
+  }
+  if (presentDeadlineKeys.length === deadlineKeys.length) {
+    Object.assign(changes, normalizeDeadlineBundle(input))
+  }
+
+  if (Object.keys(changes).length === 0) {
+    throw new TaskValidationError("No tracked case changes provided")
+  }
+
+  return {
+    expected_version: input.expected_version as number,
+    reason: normalizeReason(input.reason),
+    changes,
   }
 }
