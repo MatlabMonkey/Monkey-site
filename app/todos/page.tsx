@@ -6,6 +6,7 @@ import { Archive, ArrowLeft, Check, Circle, Clock3, History, Inbox, Loader2, Plu
 import PinGate from "../components/PinGate"
 import PrivateSectionNav from "../components/PrivateSectionNav"
 import type { TaskOrganizationProposalRecord } from "../../lib/task-organization"
+import type { RestartSummary } from "../../lib/task-operating-loops"
 import type { TaskEventRecord, TaskRecord, TaskStatus } from "../../lib/tasks"
 
 type TaskView = "today" | "inbox" | "review" | "waiting" | "later" | "done" | "history"
@@ -52,6 +53,8 @@ export default function TodosPage() {
   const [tasks, setTasks] = useState<TaskRecord[]>([])
   const [events, setEvents] = useState<TaskEventRecord[]>([])
   const [proposals, setProposals] = useState<TaskOrganizationProposalRecord[]>([])
+  const [restartSummary, setRestartSummary] = useState<RestartSummary | null>(null)
+  const [restartMode, setRestartMode] = useState(false)
   const [capture, setCapture] = useState("")
   const [loading, setLoading] = useState(true)
   const [capturing, setCapturing] = useState(false)
@@ -86,9 +89,28 @@ export default function TodosPage() {
     }
   }, [])
 
+  const loadRestart = useCallback(async () => {
+    setLoading(true)
+    setError("")
+    try {
+      const response = await fetch("/api/task-restart", { cache: "no-store" })
+      const data = (await response.json()) as { summary?: RestartSummary; error?: string }
+      if (!response.ok || !data.summary) throw new Error(data.error || "Unable to load restart summary")
+      setRestartSummary(data.summary)
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Unable to load restart summary")
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     void loadView(view)
   }, [loadView, view])
+
+  useEffect(() => {
+    if (restartMode) void loadRestart()
+  }, [loadRestart, restartMode])
 
   const captureTask = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -125,7 +147,8 @@ export default function TodosPage() {
       })
       const data = (await response.json()) as { error?: string }
       if (!response.ok) throw new Error(data.error || "Unable to update task")
-      setTasks((current) => current.filter((item) => item.id !== task.id))
+      if (restartMode) await loadRestart()
+      else setTasks((current) => current.filter((item) => item.id !== task.id))
     } catch (updateError) {
       setError(updateError instanceof Error ? updateError.message : "Unable to update task")
     } finally {
@@ -173,13 +196,46 @@ export default function TodosPage() {
             <PrivateSectionNav />
           </div>
 
-          <header className="mb-8 max-w-3xl">
-            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[rgb(var(--brand))]">Execution system · v2</p>
-            <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">What needs your attention?</h1>
-            <p className="mt-3 text-base leading-relaxed text-[rgb(var(--text-muted))]">Capture immediately. Organize only when it helps the next action.</p>
+          <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div className="max-w-3xl">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-[rgb(var(--brand))]">Execution system · v2</p>
+              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">What needs your attention?</h1>
+              <p className="mt-3 text-base leading-relaxed text-[rgb(var(--text-muted))]">Capture immediately. Organize only when it helps the next action.</p>
+            </div>
+            {restartMode ? (
+              <button
+                type="button"
+                onClick={() => setRestartMode(false)}
+                className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 text-sm text-[rgb(var(--text-muted))] transition hover:border-[rgb(var(--brand))] hover:text-[rgb(var(--text))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand)_/_0.5)]"
+              >
+                <X className="h-4 w-4" /> Exit restart
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setRestartMode(true)}
+                className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[rgb(var(--brand))] bg-[rgb(var(--brand-weak))] px-4 text-sm font-medium transition hover:bg-[rgb(var(--surface-2))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand)_/_0.5)]"
+              >
+                <RotateCcw className="h-4 w-4" /> Restart mode
+              </button>
+            )}
           </header>
 
-          <form onSubmit={captureTask} className="mb-8 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4 sm:p-5">
+          {restartMode ? (
+            <RestartPanel
+              summary={restartSummary}
+              loading={loading}
+              error={error}
+              busyId={updatingId}
+              onMove={moveTask}
+              onOpenInbox={() => {
+                setRestartMode(false)
+                setView("inbox")
+              }}
+            />
+          ) : (
+            <>
+              <form onSubmit={captureTask} className="mb-8 rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4 sm:p-5">
             <label htmlFor="task-capture" className="mb-2 block text-sm font-medium">Quick capture</label>
             <div className="flex flex-col gap-3 sm:flex-row">
               <input
@@ -202,9 +258,9 @@ export default function TodosPage() {
               {notice && <p className="text-green-400">{notice}</p>}
               {error && <p className="text-red-400">{error}</p>}
             </div>
-          </form>
+              </form>
 
-          <nav className="mb-8 flex gap-2 overflow-x-auto pb-2" aria-label="Task views">
+              <nav className="mb-8 flex gap-2 overflow-x-auto pb-2" aria-label="Task views">
             {VIEWS.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}
@@ -216,9 +272,9 @@ export default function TodosPage() {
                 <Icon className="h-4 w-4" /> {label}
               </button>
             ))}
-          </nav>
+              </nav>
 
-          <section aria-labelledby="view-heading">
+              <section aria-labelledby="view-heading">
             <div className="mb-5 flex items-end justify-between gap-4">
               <div>
                 <h2 id="view-heading" className="text-2xl font-semibold">{copy.title}</h2>
@@ -248,10 +304,145 @@ export default function TodosPage() {
                 {tasks.map((task) => <TaskRow key={task.id} task={task} busy={updatingId === task.id} onMove={moveTask} />)}
               </div>
             )}
-          </section>
+              </section>
+            </>
+          )}
         </div>
       </main>
     </PinGate>
+  )
+}
+
+function RestartPanel({
+  summary,
+  loading,
+  error,
+  busyId,
+  onMove,
+  onOpenInbox,
+}: {
+  summary: RestartSummary | null
+  loading: boolean
+  error: string
+  busyId: string | null
+  onMove: (task: TaskRecord, status: TaskStatus) => void
+  onOpenInbox: () => void
+}) {
+  if (loading) {
+    return (
+      <div className="flex min-h-40 items-center justify-center rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))]">
+        <Loader2 className="h-5 w-5 animate-spin text-[rgb(var(--brand))]" aria-label="Loading restart summary" />
+      </div>
+    )
+  }
+
+  if (error || !summary) {
+    return (
+      <div className="rounded-2xl border border-red-400/40 bg-red-400/10 p-5 text-sm text-red-200">
+        {error || "Unable to load restart summary."}
+      </div>
+    )
+  }
+
+  return (
+    <section aria-labelledby="restart-heading" className="space-y-6 rounded-2xl border border-[rgb(var(--brand))] bg-[rgb(var(--brand-weak))] p-4 sm:p-6">
+      <div className="max-w-3xl">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[rgb(var(--brand))]">Recovery</p>
+        <h2 id="restart-heading" className="mt-2 text-2xl font-semibold">Back on track in 10 minutes</h2>
+        <p className="mt-2 text-sm leading-relaxed text-[rgb(var(--text-muted))]">
+          Review only missed commitments, the Inbox, and Waiting work that has gone quiet. Nothing changes until you choose an action.
+        </p>
+      </div>
+
+      {!summary.needs_cleanup ? (
+        <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-5">
+          <p className="font-medium">Your system is clear.</p>
+          <p className="mt-1 text-sm text-[rgb(var(--text-muted))]">No missed commitments, Inbox items, or stale Waiting work need recovery.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <RestartStep
+            time="Minutes 0–3"
+            title="Missed commitments"
+            count={summary.missed_commitments.count}
+            visibleCount={summary.missed_commitments.tasks.length}
+            empty="Nothing is past its real deadline."
+          >
+            {summary.missed_commitments.tasks.map((task) => (
+              <TaskRow key={task.id} task={task} busy={busyId === task.id} onMove={onMove} />
+            ))}
+          </RestartStep>
+
+          <RestartStep
+            time="Minutes 3–7"
+            title="Inbox"
+            count={summary.inbox_count}
+            visibleCount={0}
+            empty="Inbox is clear."
+          >
+            {summary.inbox_count > 0 && (
+              <button
+                type="button"
+                onClick={onOpenInbox}
+                className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[rgb(var(--brand))] px-4 text-sm font-semibold text-[rgb(var(--bg))] transition hover:bg-[rgb(var(--brand-strong))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand))] focus:ring-offset-2 focus:ring-offset-[rgb(var(--surface))]"
+              >
+                <Inbox className="h-4 w-4" /> Make one quick decision
+              </button>
+            )}
+          </RestartStep>
+
+          <RestartStep
+            time="Minutes 7–10"
+            title="Stale Waiting"
+            count={summary.stale_waiting.count}
+            visibleCount={summary.stale_waiting.tasks.length}
+            empty={`No Waiting work has gone quiet for ${summary.stale_after_days} days.`}
+          >
+            {summary.stale_waiting.tasks.map((task) => (
+              <TaskRow key={task.id} task={task} busy={busyId === task.id} onMove={onMove} />
+            ))}
+          </RestartStep>
+        </div>
+      )}
+    </section>
+  )
+}
+
+function RestartStep({
+  time,
+  title,
+  count,
+  visibleCount,
+  empty,
+  children,
+}: {
+  time: string
+  title: string
+  count: number
+  visibleCount: number
+  empty: string
+  children: React.ReactNode
+}) {
+  return (
+    <section className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4 sm:p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[rgb(var(--text-muted))]">{time}</p>
+          <h3 className="mt-2 text-xl font-semibold">{title}</h3>
+        </div>
+        <span className="font-mono text-sm text-[rgb(var(--text-muted))]">{count}</span>
+      </div>
+      {count === 0 ? (
+        <p className="mt-4 text-sm text-[rgb(var(--text-muted))]">{empty}</p>
+      ) : (
+        <div className="mt-4 space-y-3">
+          {children}
+          {visibleCount > 0 && count > visibleCount && (
+            <p className="text-xs text-[rgb(var(--text-muted))]">Showing the {visibleCount} oldest of {count}. Finish these before loading more.</p>
+          )}
+        </div>
+      )}
+    </section>
   )
 }
 
