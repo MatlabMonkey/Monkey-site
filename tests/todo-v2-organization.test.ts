@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs"
 import test from "node:test"
 
 import {
+  generateDueDateOrganizationProposal,
   normalizeOrganizationProposal,
   normalizeOrganizationReview,
   organizationBoundaryFor,
@@ -25,6 +26,40 @@ test("organization proposals normalize to deterministic structured output", () =
   assert.deepEqual(first, second)
   assert.equal(first.rationale, "Clear action for today.")
   assert.equal(first.boundary, "auto_apply")
+})
+
+test("due-date rules deterministically route only Inbox tasks", () => {
+  const task = {
+    id: baseInput.task_id,
+    version: 2,
+    status: "inbox" as const,
+    due_on: "2026-10-17",
+  }
+
+  assert.deepEqual(
+    generateDueDateOrganizationProposal(task, "2026-10-17"),
+    generateDueDateOrganizationProposal(structuredClone(task), "2026-10-17"),
+  )
+  assert.deepEqual(
+    generateDueDateOrganizationProposal(task, "2026-10-17")?.changes,
+    { status: "today" },
+  )
+  assert.equal(
+    generateDueDateOrganizationProposal({ ...task, due_on: "2026-10-18" }, "2026-10-17")?.changes.status,
+    "later",
+  )
+  assert.equal(
+    generateDueDateOrganizationProposal({ ...task, status: "today" }, "2026-10-17"),
+    null,
+  )
+  assert.equal(
+    generateDueDateOrganizationProposal({ ...task, due_on: null }, "2026-10-17"),
+    null,
+  )
+  assert.throws(
+    () => generateDueDateOrganizationProposal(task, "2026-02-30"),
+    /real calendar date/,
+  )
 })
 
 test("only high-confidence, non-destructive status routing can auto-apply", () => {
@@ -100,6 +135,7 @@ test("organization server routes require authentication and expose conflicts", (
   const routeFiles = [
     "../app/api/task-organization-proposals/route.ts",
     "../app/api/task-organization-proposals/[id]/route.ts",
+    "../app/api/task-organization-proposals/generate/route.ts",
   ]
 
   for (const routeFile of routeFiles) {
@@ -110,9 +146,11 @@ test("organization server routes require authentication and expose conflicts", (
 
   const createRoute = readFileSync(new URL(routeFiles[0], import.meta.url), "utf8")
   const reviewRoute = readFileSync(new URL(routeFiles[1], import.meta.url), "utf8")
+  const generateRoute = readFileSync(new URL(routeFiles[2], import.meta.url), "utf8")
   assert.match(createRoute, /createOrganizationProposal/)
   assert.match(reviewRoute, /reviewOrganizationProposal/)
   assert.match(reviewRoute, /status: 409/)
+  assert.match(generateRoute, /generateDueDateOrganizationProposals/)
 })
 
 test("organization review UI shows task context and requires review rationale", () => {

@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js"
 import {
+  generateDueDateOrganizationProposal,
   normalizeOrganizationProposal,
   normalizeOrganizationReview,
   normalizeOrganizationUuid,
@@ -11,6 +12,13 @@ import {
   type TaskOrganizationReviewInput,
 } from "../task-organization"
 
+export type OrganizationGenerationResult = {
+  reference_date: string
+  evaluated_count: number
+  generated_count: number
+  proposals: TaskOrganizationProposalRecord[]
+}
+
 type OrganizationReviewResult = {
   outcome: "applied" | "rejected" | "superseded" | "stale"
   proposal: TaskOrganizationProposalRecord
@@ -21,6 +29,17 @@ function getSupabaseAdmin() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!url || !key) throw new Error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
   return createClient(url, key, { auth: { persistSession: false } })
+}
+
+function dateInTimeZone(now: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now)
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]))
+  return `${values.year}-${values.month}-${values.day}`
 }
 
 function throwOrganizationDatabaseError(error: { code?: string; message: string }): never {
@@ -91,6 +110,38 @@ export async function createOrganizationProposal(
     reviewer: "assistant",
     reason: `Automatically applied safe rule ${created.rule_id}`,
   })
+}
+
+export async function generateDueDateOrganizationProposals(
+  now = new Date(),
+): Promise<OrganizationGenerationResult> {
+  const referenceDate = dateInTimeZone(
+    now,
+    process.env.TODO_TIME_ZONE || "America/Los_Angeles",
+  )
+  const { data, error } = await getSupabaseAdmin()
+    .from("tasks")
+    .select("id, version, status, due_on")
+    .eq("status", "inbox")
+    .not("due_on", "is", null)
+    .order("created_at", { ascending: true })
+    .limit(200)
+
+  if (error) throwOrganizationDatabaseError(error)
+
+  const tasks = data || []
+  const proposals: TaskOrganizationProposalRecord[] = []
+  for (const task of tasks) {
+    const draft = generateDueDateOrganizationProposal(task, referenceDate)
+    if (draft) proposals.push(await createOrganizationProposal(draft))
+  }
+
+  return {
+    reference_date: referenceDate,
+    evaluated_count: tasks.length,
+    generated_count: proposals.length,
+    proposals,
+  }
 }
 
 export async function reviewOrganizationProposal(

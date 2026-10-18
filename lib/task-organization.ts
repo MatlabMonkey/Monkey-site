@@ -42,6 +42,13 @@ export type TaskOrganizationProposalInput = {
   rule_id: unknown
 }
 
+export type OrganizationRuleTask = {
+  id: string
+  version: number
+  status: TaskStatus
+  due_on: string | null
+}
+
 export type TaskOrganizationProposalRecord = TaskOrganizationProposalDraft & {
   id: string
   state: OrganizationReviewState
@@ -177,6 +184,33 @@ export function normalizeOrganizationProposal(
     rationale: normalizeRationale(input.rationale),
     rule_id: normalizeIdentifier(input.rule_id, "rule_id"),
   }
+}
+
+export function generateDueDateOrganizationProposal(
+  task: OrganizationRuleTask,
+  referenceDate: unknown,
+): TaskOrganizationProposalDraft | null {
+  const normalizedReferenceDate = normalizeDateOnly(referenceDate)
+  if (!normalizedReferenceDate) {
+    throw new TaskValidationError("reference_date is required")
+  }
+
+  if (task.status !== "inbox" || !task.due_on) return null
+
+  const dueOn = normalizeDateOnly(task.due_on)
+  if (!dueOn) return null
+
+  const destination = dueOn <= normalizedReferenceDate ? "today" : "later"
+  const timing = destination === "today" ? "on or before" : "after"
+
+  return normalizeOrganizationProposal({
+    task_id: task.id,
+    task_version: task.version,
+    changes: { status: destination },
+    confidence: 1,
+    rationale: `Due-date rule routed this Inbox task to ${destination === "today" ? "Today" : "Later"} because ${dueOn} is ${timing} the reference date ${normalizedReferenceDate}.`,
+    rule_id: `inbox.due-date.${destination}.v1`,
+  })
 }
 
 export function normalizeOrganizationReview(
