@@ -2,8 +2,10 @@ import { normalizeDateOnly, type TaskRecord, type TaskStatus } from "./tasks.ts"
 
 export const RESTART_STALE_AFTER_DAYS = 7
 export const RESTART_PREVIEW_LIMIT = 5
+export const DAILY_REVIEW_PREVIEW_LIMIT = 5
 
 type RestartTask = Pick<TaskRecord, "id" | "status" | "due_on" | "updated_at">
+type DailyReviewTask = Pick<TaskRecord, "id" | "status" | "due_on" | "created_at">
 
 export type RestartSummary<T extends RestartTask = TaskRecord> = {
   reference_date: string
@@ -25,6 +27,27 @@ type RestartSummaryCounts = {
   missed_commitments?: number
   inbox?: number
   stale_waiting?: number
+}
+
+export type DailyReviewSummary<T extends DailyReviewTask = TaskRecord> = {
+  reference_date: string
+  preview_limit: number
+  due_outside_today: {
+    count: number
+    tasks: T[]
+  }
+  today: {
+    count: number
+    tasks: T[]
+  }
+  inbox_count: number
+  needs_review: boolean
+}
+
+type DailyReviewSummaryCounts = {
+  due_outside_today?: number
+  today?: number
+  inbox?: number
 }
 
 const OPEN_TASK_STATUSES = new Set<TaskStatus>(["inbox", "today", "waiting", "later"])
@@ -106,5 +129,55 @@ export function buildRestartSummary<T extends RestartTask>(
       tasks: staleWaiting.slice(0, safePreviewLimit),
     },
     needs_cleanup: missedCount > 0 || exactInboxCount > 0 || waitingCount > 0,
+  }
+}
+
+export function buildDailyReviewSummary<T extends DailyReviewTask>(
+  tasks: T[],
+  referenceDate: unknown,
+  counts: DailyReviewSummaryCounts = {},
+  previewLimit = DAILY_REVIEW_PREVIEW_LIMIT,
+): DailyReviewSummary<T> {
+  const normalizedReferenceDate = normalizeDateOnly(referenceDate)
+  if (!normalizedReferenceDate) throw new Error("reference_date is required")
+
+  const safePreviewLimit = Math.max(1, Math.min(Math.trunc(previewLimit), DAILY_REVIEW_PREVIEW_LIMIT))
+  const dueOutsideToday = tasks
+    .filter((task) => (
+      task.status !== "today"
+      && OPEN_TASK_STATUSES.has(task.status)
+      && task.due_on !== null
+      && task.due_on <= normalizedReferenceDate
+    ))
+    .sort((left, right) => (
+      (left.due_on as string).localeCompare(right.due_on as string)
+      || left.created_at.localeCompare(right.created_at)
+      || left.id.localeCompare(right.id)
+    ))
+  const today = tasks
+    .filter((task) => task.status === "today")
+    .sort((left, right) => (
+      (left.due_on || "9999-12-31").localeCompare(right.due_on || "9999-12-31")
+      || left.created_at.localeCompare(right.created_at)
+      || left.id.localeCompare(right.id)
+    ))
+  const inboxCount = tasks.filter((task) => task.status === "inbox").length
+  const dueCount = normalizedCount(counts.due_outside_today, dueOutsideToday.length)
+  const todayCount = normalizedCount(counts.today, today.length)
+  const exactInboxCount = normalizedCount(counts.inbox, inboxCount)
+
+  return {
+    reference_date: normalizedReferenceDate,
+    preview_limit: safePreviewLimit,
+    due_outside_today: {
+      count: dueCount,
+      tasks: dueOutsideToday.slice(0, safePreviewLimit),
+    },
+    today: {
+      count: todayCount,
+      tasks: today.slice(0, safePreviewLimit),
+    },
+    inbox_count: exactInboxCount,
+    needs_review: dueCount > 0 || todayCount > 0 || exactInboxCount > 0,
   }
 }

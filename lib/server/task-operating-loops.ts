@@ -1,8 +1,10 @@
 import { createClient } from "@supabase/supabase-js"
 import {
+  buildDailyReviewSummary,
   buildRestartSummary,
   dateInTimeZone,
   RESTART_STALE_AFTER_DAYS,
+  type DailyReviewSummary,
   type RestartSummary,
 } from "../task-operating-loops"
 import type { TaskRecord } from "../tasks"
@@ -63,6 +65,49 @@ export async function getRestartSummary(now = new Date()): Promise<RestartSummar
       missed_commitments: missedResult.count ?? undefined,
       inbox: inboxResult.count ?? undefined,
       stale_waiting: waitingResult.count ?? undefined,
+    },
+  )
+}
+
+export async function getDailyReviewSummary(now = new Date()): Promise<DailyReviewSummary> {
+  const referenceDate = dateInTimeZone(
+    now,
+    process.env.TODO_TIME_ZONE || "America/Los_Angeles",
+  )
+  const supabase = getSupabaseAdmin()
+
+  const [dueResult, todayResult, inboxResult] = await Promise.all([
+    supabase
+      .from("tasks")
+      .select("*", { count: "exact" })
+      .in("status", ["inbox", "waiting", "later"])
+      .lte("due_on", referenceDate)
+      .order("due_on", { ascending: true })
+      .order("created_at", { ascending: true })
+      .limit(RESTART_QUERY_LIMIT),
+    supabase
+      .from("tasks")
+      .select("*", { count: "exact" })
+      .eq("status", "today")
+      .order("due_on", { ascending: true, nullsFirst: false })
+      .order("created_at", { ascending: true })
+      .limit(RESTART_QUERY_LIMIT),
+    supabase
+      .from("tasks")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "inbox"),
+  ])
+
+  const databaseError = dueResult.error || todayResult.error || inboxResult.error
+  if (databaseError) throw new Error(databaseError.message)
+
+  return buildDailyReviewSummary(
+    [...(dueResult.data || []), ...(todayResult.data || [])] as TaskRecord[],
+    referenceDate,
+    {
+      due_outside_today: dueResult.count ?? undefined,
+      today: todayResult.count ?? undefined,
+      inbox: inboxResult.count ?? undefined,
     },
   )
 }

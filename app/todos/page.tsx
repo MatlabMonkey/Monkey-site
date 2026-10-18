@@ -2,14 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Archive, ArrowLeft, Check, Circle, Clock3, History, Inbox, Loader2, Plus, RotateCcw, Sparkles, Sun, X } from "lucide-react"
+import { Archive, ArrowLeft, CalendarDays, Check, Circle, Clock3, History, Inbox, Loader2, Plus, RotateCcw, Sparkles, Sun, X } from "lucide-react"
 import PinGate from "../components/PinGate"
 import PrivateSectionNav from "../components/PrivateSectionNav"
 import type { TaskOrganizationProposalRecord } from "../../lib/task-organization"
-import type { RestartSummary } from "../../lib/task-operating-loops"
+import type { DailyReviewSummary, RestartSummary } from "../../lib/task-operating-loops"
 import type { TaskEventRecord, TaskRecord, TaskStatus } from "../../lib/tasks"
 
 type TaskView = "today" | "inbox" | "review" | "waiting" | "later" | "done" | "history"
+type OperatingMode = "normal" | "daily" | "restart"
 
 const VIEWS: Array<{ id: TaskView; label: string; icon: typeof Sun }> = [
   { id: "today", label: "Today", icon: Sun },
@@ -54,7 +55,8 @@ export default function TodosPage() {
   const [events, setEvents] = useState<TaskEventRecord[]>([])
   const [proposals, setProposals] = useState<TaskOrganizationProposalRecord[]>([])
   const [restartSummary, setRestartSummary] = useState<RestartSummary | null>(null)
-  const [restartMode, setRestartMode] = useState(false)
+  const [dailyReviewSummary, setDailyReviewSummary] = useState<DailyReviewSummary | null>(null)
+  const [operatingMode, setOperatingMode] = useState<OperatingMode>("normal")
   const [capture, setCapture] = useState("")
   const [loading, setLoading] = useState(true)
   const [capturing, setCapturing] = useState(false)
@@ -104,13 +106,29 @@ export default function TodosPage() {
     }
   }, [])
 
+  const loadDailyReview = useCallback(async () => {
+    setLoading(true)
+    setError("")
+    try {
+      const response = await fetch("/api/task-daily-review", { cache: "no-store" })
+      const data = (await response.json()) as { summary?: DailyReviewSummary; error?: string }
+      if (!response.ok || !data.summary) throw new Error(data.error || "Unable to load daily review")
+      setDailyReviewSummary(data.summary)
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Unable to load daily review")
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     void loadView(view)
   }, [loadView, view])
 
   useEffect(() => {
-    if (restartMode) void loadRestart()
-  }, [loadRestart, restartMode])
+    if (operatingMode === "restart") void loadRestart()
+    if (operatingMode === "daily") void loadDailyReview()
+  }, [loadDailyReview, loadRestart, operatingMode])
 
   const captureTask = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -147,7 +165,8 @@ export default function TodosPage() {
       })
       const data = (await response.json()) as { error?: string }
       if (!response.ok) throw new Error(data.error || "Unable to update task")
-      if (restartMode) await loadRestart()
+      if (operatingMode === "restart") await loadRestart()
+      else if (operatingMode === "daily") await loadDailyReview()
       else setTasks((current) => current.filter((item) => item.id !== task.id))
     } catch (updateError) {
       setError(updateError instanceof Error ? updateError.message : "Unable to update task")
@@ -202,26 +221,35 @@ export default function TodosPage() {
               <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">What needs your attention?</h1>
               <p className="mt-3 text-base leading-relaxed text-[rgb(var(--text-muted))]">Capture immediately. Organize only when it helps the next action.</p>
             </div>
-            {restartMode ? (
+            {operatingMode !== "normal" ? (
               <button
                 type="button"
-                onClick={() => setRestartMode(false)}
+                onClick={() => setOperatingMode("normal")}
                 className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 text-sm text-[rgb(var(--text-muted))] transition hover:border-[rgb(var(--brand))] hover:text-[rgb(var(--text))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand)_/_0.5)]"
               >
-                <X className="h-4 w-4" /> Exit restart
+                <X className="h-4 w-4" /> Exit {operatingMode === "daily" ? "daily reset" : "restart"}
               </button>
             ) : (
-              <button
-                type="button"
-                onClick={() => setRestartMode(true)}
-                className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[rgb(var(--brand))] bg-[rgb(var(--brand-weak))] px-4 text-sm font-medium transition hover:bg-[rgb(var(--surface-2))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand)_/_0.5)]"
-              >
-                <RotateCcw className="h-4 w-4" /> Restart mode
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setOperatingMode("daily")}
+                  className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[rgb(var(--brand))] bg-[rgb(var(--brand-weak))] px-4 text-sm font-medium transition hover:bg-[rgb(var(--surface-2))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand)_/_0.5)]"
+                >
+                  <CalendarDays className="h-4 w-4" /> Daily reset
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOperatingMode("restart")}
+                  className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 text-sm text-[rgb(var(--text-muted))] transition hover:border-[rgb(var(--brand))] hover:text-[rgb(var(--text))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand)_/_0.5)]"
+                >
+                  <RotateCcw className="h-4 w-4" /> Restart mode
+                </button>
+              </div>
             )}
           </header>
 
-          {restartMode ? (
+          {operatingMode === "restart" ? (
             <RestartPanel
               summary={restartSummary}
               loading={loading}
@@ -229,7 +257,19 @@ export default function TodosPage() {
               busyId={updatingId}
               onMove={moveTask}
               onOpenInbox={() => {
-                setRestartMode(false)
+                setOperatingMode("normal")
+                setView("inbox")
+              }}
+            />
+          ) : operatingMode === "daily" ? (
+            <DailyReviewPanel
+              summary={dailyReviewSummary}
+              loading={loading}
+              error={error}
+              busyId={updatingId}
+              onMove={moveTask}
+              onOpenInbox={() => {
+                setOperatingMode("normal")
                 setView("inbox")
               }}
             />
@@ -310,6 +350,101 @@ export default function TodosPage() {
         </div>
       </main>
     </PinGate>
+  )
+}
+
+function DailyReviewPanel({
+  summary,
+  loading,
+  error,
+  busyId,
+  onMove,
+  onOpenInbox,
+}: {
+  summary: DailyReviewSummary | null
+  loading: boolean
+  error: string
+  busyId: string | null
+  onMove: (task: TaskRecord, status: TaskStatus) => void
+  onOpenInbox: () => void
+}) {
+  if (loading) {
+    return (
+      <div className="flex min-h-40 items-center justify-center rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))]">
+        <Loader2 className="h-5 w-5 animate-spin text-[rgb(var(--brand))]" aria-label="Loading daily review" />
+      </div>
+    )
+  }
+
+  if (error || !summary) {
+    return (
+      <div className="rounded-2xl border border-red-400/40 bg-red-400/10 p-5 text-sm text-red-200">
+        {error || "Unable to load daily review."}
+      </div>
+    )
+  }
+
+  return (
+    <section aria-labelledby="daily-review-heading" className="space-y-6 rounded-2xl border border-[rgb(var(--brand))] bg-[rgb(var(--brand-weak))] p-4 sm:p-6">
+      <div className="max-w-3xl">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[rgb(var(--brand))]">Daily reset</p>
+        <h2 id="daily-review-heading" className="mt-2 text-2xl font-semibold">Your day in five minutes</h2>
+        <p className="mt-2 text-sm leading-relaxed text-[rgb(var(--text-muted))]">
+          Check real deadlines, protect the Today list, then make one Inbox decision. Nothing changes until you choose an action.
+        </p>
+      </div>
+
+      {!summary.needs_review ? (
+        <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-5">
+          <p className="font-medium">Nothing needs a daily reset.</p>
+          <p className="mt-1 text-sm text-[rgb(var(--text-muted))]">Today, due commitments, and the Inbox are clear.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <RestartStep
+            time="Minutes 0–2"
+            title="Deadlines outside Today"
+            count={summary.due_outside_today.count}
+            visibleCount={summary.due_outside_today.tasks.length}
+            empty="No due commitment is hiding outside Today."
+          >
+            {summary.due_outside_today.tasks.map((task) => (
+              <TaskRow key={task.id} task={task} busy={busyId === task.id} onMove={onMove} />
+            ))}
+          </RestartStep>
+
+          <RestartStep
+            time="Minutes 2–4"
+            title="Today's focus"
+            count={summary.today.count}
+            visibleCount={summary.today.tasks.length}
+            empty="Today is open. Pull in only what you intend to do."
+          >
+            {summary.today.tasks.map((task) => (
+              <TaskRow key={task.id} task={task} busy={busyId === task.id} onMove={onMove} />
+            ))}
+          </RestartStep>
+
+          <RestartStep
+            time="Minute 5"
+            title="Inbox"
+            count={summary.inbox_count}
+            visibleCount={0}
+            empty="Inbox is clear."
+          >
+            {summary.inbox_count > 0 && (
+              <button
+                type="button"
+                onClick={onOpenInbox}
+                className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[rgb(var(--brand))] px-4 text-sm font-semibold text-[rgb(var(--bg))] transition hover:bg-[rgb(var(--brand-strong))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand))] focus:ring-offset-2 focus:ring-offset-[rgb(var(--surface))]"
+              >
+                <Inbox className="h-4 w-4" /> Make one quick decision
+              </button>
+            )}
+          </RestartStep>
+        </div>
+      )}
+    </section>
   )
 }
 

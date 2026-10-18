@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 
-import { buildRestartSummary, dateInTimeZone } from "../lib/task-operating-loops.ts"
+import { buildDailyReviewSummary, buildRestartSummary, dateInTimeZone } from "../lib/task-operating-loops.ts"
 import type { TaskRecord, TaskStatus } from "../lib/tasks.ts"
 
 const now = new Date("2026-10-18T15:00:00.000Z")
@@ -82,5 +82,52 @@ test("restart API is authenticated and the UI requires explicit entry", () => {
   assert.match(proxy, /\/api\/task-restart\/\:path\*/)
   assert.match(page, /Restart mode/)
   assert.match(page, /Back on track in 10 minutes/)
-  assert.match(page, /setRestartMode\(true\)/)
+  assert.match(page, /setOperatingMode\("restart"\)/)
+})
+
+test("daily review separates due decisions from the chosen Today list", () => {
+  const summary = buildDailyReviewSummary([
+    task("overdue-later", "later", { due_on: "2026-10-17" }),
+    task("due-waiting", "waiting", { due_on: "2026-10-18" }),
+    task("future-later", "later", { due_on: "2026-10-19" }),
+    task("today-due", "today", { due_on: "2026-10-18" }),
+    task("today-undated", "today"),
+    task("captured", "inbox"),
+    task("finished", "done", { due_on: "2026-10-10" }),
+  ], "2026-10-18")
+
+  assert.deepEqual(summary.due_outside_today.tasks.map((item) => item.id), ["overdue-later", "due-waiting"])
+  assert.deepEqual(summary.today.tasks.map((item) => item.id), ["today-due", "today-undated"])
+  assert.equal(summary.inbox_count, 1)
+  assert.equal(summary.needs_review, true)
+})
+
+test("daily review stays bounded while preserving exact server counts", () => {
+  const tasks = Array.from({ length: 8 }, (_, index) => (
+    task(`today-${index}`, "today", { created_at: `2026-10-${String(index + 1).padStart(2, "0")}T12:00:00.000Z` })
+  ))
+  const summary = buildDailyReviewSummary(tasks, "2026-10-18", {
+    due_outside_today: 11,
+    today: 18,
+    inbox: 7,
+  })
+
+  assert.equal(summary.due_outside_today.count, 11)
+  assert.equal(summary.today.count, 18)
+  assert.equal(summary.today.tasks.length, 5)
+  assert.equal(summary.inbox_count, 7)
+  assert.equal(summary.preview_limit, 5)
+})
+
+test("daily review API is authenticated and the UI requires explicit entry", () => {
+  const route = readFileSync(new URL("../app/api/task-daily-review/route.ts", import.meta.url), "utf8")
+  const page = readFileSync(new URL("../app/todos/page.tsx", import.meta.url), "utf8")
+  const proxy = readFileSync(new URL("../proxy.ts", import.meta.url), "utf8")
+
+  assert.match(route, /isRequestAuthenticated\(request\)/)
+  assert.match(route, /status: 401/)
+  assert.match(proxy, /\/api\/task-daily-review\/\:path\*/)
+  assert.match(page, /Daily reset/)
+  assert.match(page, /Your day in five minutes/)
+  assert.match(page, /setOperatingMode\("daily"\)/)
 })
