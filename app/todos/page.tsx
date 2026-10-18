@@ -2,15 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Archive, ArrowLeft, CalendarDays, Check, Circle, Clock3, History, Inbox, Loader2, Plus, RotateCcw, Sparkles, Sun, X } from "lucide-react"
+import { Archive, ArrowLeft, CalendarDays, CalendarRange, Check, Circle, Clock3, History, Inbox, Loader2, Plus, RotateCcw, Sparkles, Sun, X } from "lucide-react"
 import PinGate from "../components/PinGate"
 import PrivateSectionNav from "../components/PrivateSectionNav"
 import type { TaskOrganizationProposalRecord } from "../../lib/task-organization"
-import type { DailyReviewSummary, RestartSummary } from "../../lib/task-operating-loops"
+import type { DailyReviewSummary, RestartSummary, WeeklyReviewSummary } from "../../lib/task-operating-loops"
 import type { TaskEventRecord, TaskRecord, TaskStatus } from "../../lib/tasks"
 
 type TaskView = "today" | "inbox" | "review" | "waiting" | "later" | "done" | "history"
-type OperatingMode = "normal" | "daily" | "restart"
+type OperatingMode = "normal" | "daily" | "weekly" | "restart"
 
 const VIEWS: Array<{ id: TaskView; label: string; icon: typeof Sun }> = [
   { id: "today", label: "Today", icon: Sun },
@@ -49,6 +49,12 @@ function eventLabel(event: TaskEventRecord) {
   return "Updated"
 }
 
+function operatingModeLabel(mode: Exclude<OperatingMode, "normal">) {
+  if (mode === "daily") return "daily reset"
+  if (mode === "weekly") return "weekly review"
+  return "restart"
+}
+
 export default function TodosPage() {
   const [view, setView] = useState<TaskView>("today")
   const [tasks, setTasks] = useState<TaskRecord[]>([])
@@ -56,6 +62,7 @@ export default function TodosPage() {
   const [proposals, setProposals] = useState<TaskOrganizationProposalRecord[]>([])
   const [restartSummary, setRestartSummary] = useState<RestartSummary | null>(null)
   const [dailyReviewSummary, setDailyReviewSummary] = useState<DailyReviewSummary | null>(null)
+  const [weeklyReviewSummary, setWeeklyReviewSummary] = useState<WeeklyReviewSummary | null>(null)
   const [operatingMode, setOperatingMode] = useState<OperatingMode>("normal")
   const [capture, setCapture] = useState("")
   const [loading, setLoading] = useState(true)
@@ -121,6 +128,21 @@ export default function TodosPage() {
     }
   }, [])
 
+  const loadWeeklyReview = useCallback(async () => {
+    setLoading(true)
+    setError("")
+    try {
+      const response = await fetch("/api/task-weekly-review", { cache: "no-store" })
+      const data = (await response.json()) as { summary?: WeeklyReviewSummary; error?: string }
+      if (!response.ok || !data.summary) throw new Error(data.error || "Unable to load weekly review")
+      setWeeklyReviewSummary(data.summary)
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : "Unable to load weekly review")
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     void loadView(view)
   }, [loadView, view])
@@ -128,7 +150,8 @@ export default function TodosPage() {
   useEffect(() => {
     if (operatingMode === "restart") void loadRestart()
     if (operatingMode === "daily") void loadDailyReview()
-  }, [loadDailyReview, loadRestart, operatingMode])
+    if (operatingMode === "weekly") void loadWeeklyReview()
+  }, [loadDailyReview, loadRestart, loadWeeklyReview, operatingMode])
 
   const captureTask = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -167,6 +190,7 @@ export default function TodosPage() {
       if (!response.ok) throw new Error(data.error || "Unable to update task")
       if (operatingMode === "restart") await loadRestart()
       else if (operatingMode === "daily") await loadDailyReview()
+      else if (operatingMode === "weekly") await loadWeeklyReview()
       else setTasks((current) => current.filter((item) => item.id !== task.id))
     } catch (updateError) {
       setError(updateError instanceof Error ? updateError.message : "Unable to update task")
@@ -227,7 +251,7 @@ export default function TodosPage() {
                 onClick={() => setOperatingMode("normal")}
                 className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 text-sm text-[rgb(var(--text-muted))] transition hover:border-[rgb(var(--brand))] hover:text-[rgb(var(--text))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand)_/_0.5)]"
               >
-                <X className="h-4 w-4" /> Exit {operatingMode === "daily" ? "daily reset" : "restart"}
+                <X className="h-4 w-4" /> Exit {operatingModeLabel(operatingMode)}
               </button>
             ) : (
               <div className="flex flex-wrap gap-2">
@@ -237,6 +261,13 @@ export default function TodosPage() {
                   className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[rgb(var(--brand))] bg-[rgb(var(--brand-weak))] px-4 text-sm font-medium transition hover:bg-[rgb(var(--surface-2))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand)_/_0.5)]"
                 >
                   <CalendarDays className="h-4 w-4" /> Daily reset
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOperatingMode("weekly")}
+                  className="inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] px-4 text-sm text-[rgb(var(--text-muted))] transition hover:border-[rgb(var(--brand))] hover:text-[rgb(var(--text))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand)_/_0.5)]"
+                >
+                  <CalendarRange className="h-4 w-4" /> Weekly review
                 </button>
                 <button
                   type="button"
@@ -272,6 +303,14 @@ export default function TodosPage() {
                 setOperatingMode("normal")
                 setView("inbox")
               }}
+            />
+          ) : operatingMode === "weekly" ? (
+            <WeeklyReviewPanel
+              summary={weeklyReviewSummary}
+              loading={loading}
+              error={error}
+              busyId={updatingId}
+              onMove={moveTask}
             />
           ) : (
             <>
@@ -441,6 +480,93 @@ function DailyReviewPanel({
                 <Inbox className="h-4 w-4" /> Make one quick decision
               </button>
             )}
+          </RestartStep>
+        </div>
+      )}
+    </section>
+  )
+}
+
+function WeeklyReviewPanel({
+  summary,
+  loading,
+  error,
+  busyId,
+  onMove,
+}: {
+  summary: WeeklyReviewSummary | null
+  loading: boolean
+  error: string
+  busyId: string | null
+  onMove: (task: TaskRecord, status: TaskStatus) => void
+}) {
+  if (loading) {
+    return (
+      <div className="flex min-h-40 items-center justify-center rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))]">
+        <Loader2 className="h-5 w-5 animate-spin text-[rgb(var(--brand))]" aria-label="Loading weekly review" />
+      </div>
+    )
+  }
+
+  if (error || !summary) {
+    return (
+      <div className="rounded-2xl border border-red-400/40 bg-red-400/10 p-5 text-sm text-red-200">
+        {error || "Unable to load weekly review."}
+      </div>
+    )
+  }
+
+  return (
+    <section aria-labelledby="weekly-review-heading" className="space-y-6 rounded-2xl border border-[rgb(var(--brand))] bg-[rgb(var(--brand-weak))] p-4 sm:p-6">
+      <div className="max-w-3xl">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[rgb(var(--brand))]">Weekly review</p>
+        <h2 id="weekly-review-heading" className="mt-2 text-2xl font-semibold">A clear week in 15 minutes</h2>
+        <p className="mt-2 text-sm leading-relaxed text-[rgb(var(--text-muted))]">
+          Process the oldest Inbox captures, check the oldest Waiting commitments, then reconsider active work that has gone quiet. Nothing changes until you choose an action.
+        </p>
+      </div>
+
+      {!summary.needs_review ? (
+        <div className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-5">
+          <p className="font-medium">Your weekly review is clear.</p>
+          <p className="mt-1 text-sm text-[rgb(var(--text-muted))]">No Inbox, Waiting, or stale active work needs attention.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <RestartStep
+            time="Minutes 0–5"
+            title="Inbox"
+            count={summary.inbox.count}
+            visibleCount={summary.inbox.tasks.length}
+            empty="Inbox is clear."
+          >
+            {summary.inbox.tasks.map((task) => (
+              <TaskRow key={task.id} task={task} busy={busyId === task.id} onMove={onMove} />
+            ))}
+          </RestartStep>
+
+          <RestartStep
+            time="Minutes 5–10"
+            title="Waiting"
+            count={summary.waiting.count}
+            visibleCount={summary.waiting.tasks.length}
+            empty="Nothing is waiting on someone else."
+          >
+            {summary.waiting.tasks.map((task) => (
+              <TaskRow key={task.id} task={task} busy={busyId === task.id} onMove={onMove} />
+            ))}
+          </RestartStep>
+
+          <RestartStep
+            time="Minutes 10–15"
+            title="Stale active work"
+            count={summary.stale_work.count}
+            visibleCount={summary.stale_work.tasks.length}
+            empty={`No Today or Later work has gone quiet for ${summary.stale_after_days} days.`}
+          >
+            {summary.stale_work.tasks.map((task) => (
+              <TaskRow key={task.id} task={task} busy={busyId === task.id} onMove={onMove} />
+            ))}
           </RestartStep>
         </div>
       )}

@@ -43,6 +43,7 @@ export const config = {
     "/api/tasks/:path*",
     "/api/task-events/:path*",
     "/api/task-daily-review/:path*",
+    "/api/task-weekly-review/:path*",
     "/api/task-restart/:path*",
     "/api/ideas/:path*",
     "/api/contacts/:path*",

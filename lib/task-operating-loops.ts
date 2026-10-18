@@ -3,9 +3,12 @@ import { normalizeDateOnly, type TaskRecord, type TaskStatus } from "./tasks.ts"
 export const RESTART_STALE_AFTER_DAYS = 7
 export const RESTART_PREVIEW_LIMIT = 5
 export const DAILY_REVIEW_PREVIEW_LIMIT = 5
+export const WEEKLY_REVIEW_STALE_AFTER_DAYS = 14
+export const WEEKLY_REVIEW_PREVIEW_LIMIT = 5
 
 type RestartTask = Pick<TaskRecord, "id" | "status" | "due_on" | "updated_at">
 type DailyReviewTask = Pick<TaskRecord, "id" | "status" | "due_on" | "created_at">
+type WeeklyReviewTask = Pick<TaskRecord, "id" | "status" | "created_at" | "updated_at">
 
 export type RestartSummary<T extends RestartTask = TaskRecord> = {
   reference_date: string
@@ -48,6 +51,31 @@ type DailyReviewSummaryCounts = {
   due_outside_today?: number
   today?: number
   inbox?: number
+}
+
+export type WeeklyReviewSummary<T extends WeeklyReviewTask = TaskRecord> = {
+  reference_date: string
+  stale_after_days: number
+  preview_limit: number
+  inbox: {
+    count: number
+    tasks: T[]
+  }
+  waiting: {
+    count: number
+    tasks: T[]
+  }
+  stale_work: {
+    count: number
+    tasks: T[]
+  }
+  needs_review: boolean
+}
+
+type WeeklyReviewSummaryCounts = {
+  inbox?: number
+  waiting?: number
+  stale_work?: number
 }
 
 const OPEN_TASK_STATUSES = new Set<TaskStatus>(["inbox", "today", "waiting", "later"])
@@ -179,5 +207,59 @@ export function buildDailyReviewSummary<T extends DailyReviewTask>(
     },
     inbox_count: exactInboxCount,
     needs_review: dueCount > 0 || todayCount > 0 || exactInboxCount > 0,
+  }
+}
+
+export function buildWeeklyReviewSummary<T extends WeeklyReviewTask>(
+  tasks: T[],
+  referenceDate: unknown,
+  now: Date = new Date(),
+  counts: WeeklyReviewSummaryCounts = {},
+  previewLimit = WEEKLY_REVIEW_PREVIEW_LIMIT,
+): WeeklyReviewSummary<T> {
+  const normalizedReferenceDate = normalizeDateOnly(referenceDate)
+  if (!normalizedReferenceDate) throw new Error("reference_date is required")
+
+  const safePreviewLimit = Math.max(1, Math.min(Math.trunc(previewLimit), WEEKLY_REVIEW_PREVIEW_LIMIT))
+  const staleCutoff = now.getTime() - WEEKLY_REVIEW_STALE_AFTER_DAYS * DAY_IN_MS
+  const oldestFirst = (left: T, right: T) => (
+    (validTime(left.updated_at) ?? Number.MAX_SAFE_INTEGER) - (validTime(right.updated_at) ?? Number.MAX_SAFE_INTEGER)
+    || left.created_at.localeCompare(right.created_at)
+    || left.id.localeCompare(right.id)
+  )
+  const inbox = tasks
+    .filter((task) => task.status === "inbox")
+    .sort((left, right) => left.created_at.localeCompare(right.created_at) || left.id.localeCompare(right.id))
+  const waiting = tasks
+    .filter((task) => task.status === "waiting")
+    .sort(oldestFirst)
+  const staleWork = tasks
+    .filter((task) => {
+      if (task.status !== "today" && task.status !== "later") return false
+      const updatedTime = validTime(task.updated_at)
+      return updatedTime !== null && updatedTime <= staleCutoff
+    })
+    .sort(oldestFirst)
+  const inboxCount = normalizedCount(counts.inbox, inbox.length)
+  const waitingCount = normalizedCount(counts.waiting, waiting.length)
+  const staleWorkCount = normalizedCount(counts.stale_work, staleWork.length)
+
+  return {
+    reference_date: normalizedReferenceDate,
+    stale_after_days: WEEKLY_REVIEW_STALE_AFTER_DAYS,
+    preview_limit: safePreviewLimit,
+    inbox: {
+      count: inboxCount,
+      tasks: inbox.slice(0, safePreviewLimit),
+    },
+    waiting: {
+      count: waitingCount,
+      tasks: waiting.slice(0, safePreviewLimit),
+    },
+    stale_work: {
+      count: staleWorkCount,
+      tasks: staleWork.slice(0, safePreviewLimit),
+    },
+    needs_review: inboxCount > 0 || waitingCount > 0 || staleWorkCount > 0,
   }
 }

@@ -2,10 +2,13 @@ import { createClient } from "@supabase/supabase-js"
 import {
   buildDailyReviewSummary,
   buildRestartSummary,
+  buildWeeklyReviewSummary,
   dateInTimeZone,
   RESTART_STALE_AFTER_DAYS,
   type DailyReviewSummary,
   type RestartSummary,
+  type WeeklyReviewSummary,
+  WEEKLY_REVIEW_STALE_AFTER_DAYS,
 } from "../task-operating-loops"
 import type { TaskRecord } from "../tasks"
 
@@ -108,6 +111,57 @@ export async function getDailyReviewSummary(now = new Date()): Promise<DailyRevi
       due_outside_today: dueResult.count ?? undefined,
       today: todayResult.count ?? undefined,
       inbox: inboxResult.count ?? undefined,
+    },
+  )
+}
+
+export async function getWeeklyReviewSummary(now = new Date()): Promise<WeeklyReviewSummary> {
+  const referenceDate = dateInTimeZone(
+    now,
+    process.env.TODO_TIME_ZONE || "America/Los_Angeles",
+  )
+  const staleCutoff = new Date(now.getTime() - WEEKLY_REVIEW_STALE_AFTER_DAYS * DAY_IN_MS).toISOString()
+  const supabase = getSupabaseAdmin()
+
+  const [inboxResult, waitingResult, staleWorkResult] = await Promise.all([
+    supabase
+      .from("tasks")
+      .select("*", { count: "exact" })
+      .eq("status", "inbox")
+      .order("created_at", { ascending: true })
+      .limit(RESTART_QUERY_LIMIT),
+    supabase
+      .from("tasks")
+      .select("*", { count: "exact" })
+      .eq("status", "waiting")
+      .order("updated_at", { ascending: true })
+      .order("created_at", { ascending: true })
+      .limit(RESTART_QUERY_LIMIT),
+    supabase
+      .from("tasks")
+      .select("*", { count: "exact" })
+      .in("status", ["today", "later"])
+      .lte("updated_at", staleCutoff)
+      .order("updated_at", { ascending: true })
+      .order("created_at", { ascending: true })
+      .limit(RESTART_QUERY_LIMIT),
+  ])
+
+  const databaseError = inboxResult.error || waitingResult.error || staleWorkResult.error
+  if (databaseError) throw new Error(databaseError.message)
+
+  return buildWeeklyReviewSummary(
+    [
+      ...(inboxResult.data || []),
+      ...(waitingResult.data || []),
+      ...(staleWorkResult.data || []),
+    ] as TaskRecord[],
+    referenceDate,
+    now,
+    {
+      inbox: inboxResult.count ?? undefined,
+      waiting: waitingResult.count ?? undefined,
+      stale_work: staleWorkResult.count ?? undefined,
     },
   )
 }

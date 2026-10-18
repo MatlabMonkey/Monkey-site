@@ -2,7 +2,12 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 
-import { buildDailyReviewSummary, buildRestartSummary, dateInTimeZone } from "../lib/task-operating-loops.ts"
+import {
+  buildDailyReviewSummary,
+  buildRestartSummary,
+  buildWeeklyReviewSummary,
+  dateInTimeZone,
+} from "../lib/task-operating-loops.ts"
 import type { TaskRecord, TaskStatus } from "../lib/tasks.ts"
 
 const now = new Date("2026-10-18T15:00:00.000Z")
@@ -130,4 +135,53 @@ test("daily review API is authenticated and the UI requires explicit entry", () 
   assert.match(page, /Daily reset/)
   assert.match(page, /Your day in five minutes/)
   assert.match(page, /setOperatingMode\("daily"\)/)
+})
+
+test("weekly review separates Inbox, Waiting, and stale active work", () => {
+  const summary = buildWeeklyReviewSummary([
+    task("newer-inbox", "inbox", { created_at: "2026-10-12T12:00:00.000Z" }),
+    task("older-inbox", "inbox", { created_at: "2026-10-10T12:00:00.000Z" }),
+    task("fresh-waiting", "waiting", { updated_at: "2026-10-17T15:00:00.000Z" }),
+    task("old-waiting", "waiting", { updated_at: "2026-10-01T15:00:00.000Z" }),
+    task("stale-later", "later", { updated_at: "2026-10-01T15:00:00.000Z" }),
+    task("cutoff-today", "today", { updated_at: "2026-10-04T15:00:00.000Z" }),
+    task("fresh-today", "today", { updated_at: "2026-10-04T15:00:01.000Z" }),
+    task("finished", "done", { updated_at: "2026-09-01T15:00:00.000Z" }),
+  ], "2026-10-18", now)
+
+  assert.deepEqual(summary.inbox.tasks.map((item) => item.id), ["older-inbox", "newer-inbox"])
+  assert.deepEqual(summary.waiting.tasks.map((item) => item.id), ["old-waiting", "fresh-waiting"])
+  assert.deepEqual(summary.stale_work.tasks.map((item) => item.id), ["stale-later", "cutoff-today"])
+  assert.equal(summary.stale_after_days, 14)
+  assert.equal(summary.needs_review, true)
+})
+
+test("weekly review stays bounded while preserving exact server counts", () => {
+  const tasks = Array.from({ length: 8 }, (_, index) => (
+    task(`inbox-${index}`, "inbox", { created_at: `2026-10-${String(index + 1).padStart(2, "0")}T12:00:00.000Z` })
+  ))
+  const summary = buildWeeklyReviewSummary(tasks, "2026-10-18", now, {
+    inbox: 21,
+    waiting: 13,
+    stale_work: 8,
+  })
+
+  assert.equal(summary.inbox.count, 21)
+  assert.equal(summary.inbox.tasks.length, 5)
+  assert.equal(summary.waiting.count, 13)
+  assert.equal(summary.stale_work.count, 8)
+  assert.equal(summary.preview_limit, 5)
+})
+
+test("weekly review API is authenticated and the UI requires explicit entry", () => {
+  const route = readFileSync(new URL("../app/api/task-weekly-review/route.ts", import.meta.url), "utf8")
+  const page = readFileSync(new URL("../app/todos/page.tsx", import.meta.url), "utf8")
+  const proxy = readFileSync(new URL("../proxy.ts", import.meta.url), "utf8")
+
+  assert.match(route, /isRequestAuthenticated\(request\)/)
+  assert.match(route, /status: 401/)
+  assert.match(proxy, /\/api\/task-weekly-review\/\:path\*/)
+  assert.match(page, /Weekly review/)
+  assert.match(page, /A clear week in 15 minutes/)
+  assert.match(page, /setOperatingMode\("weekly"\)/)
 })

@@ -15,6 +15,11 @@
 - Each task section shows at most five items while preserving exact counts. All changes still use existing explicit authenticated task actions and append-only history.
 - The flow does not schedule, complete, or otherwise mutate tasks automatically.
 
-## Remaining item 3 work
+## Weekly review
 
-- Add the weekly Inbox, Waiting, and stale-work review flow.
+- Weekly review is an explicitly entered, read-only 15-minute flow using the current `TODO_TIME_ZONE` date.
+- It shows the oldest Inbox captures, the oldest Waiting commitments, and Today or Later work unchanged for at least 14 days.
+- Each section shows at most five items while preserving exact counts, keeping a large backlog bounded and reviewable.
+- Every change requires an existing authenticated task action and remains visible in append-only history; entering the flow never changes a task.
+
+Restart mode, daily reset, and weekly review complete the approved forgiving operating-loop slice. None runs automatically or reads production data during local validation.
