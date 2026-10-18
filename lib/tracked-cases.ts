@@ -54,6 +54,48 @@ export type CaseEventRecord = {
   created_at: string
 }
 
+export type TrackedCaseTaskRecord = {
+  case_id: string
+  task_id: string
+  role: (typeof CASE_TASK_ROLES)[number]
+  created_at: string
+}
+
+export type CaseDependencyRecord = {
+  id: string
+  case_id: string
+  blocked_task_id: string
+  blocking_task_id: string
+  state: (typeof CASE_DEPENDENCY_STATES)[number]
+  rationale: string
+  resolved_by: string | null
+  resolved_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type SetTrackedCaseTaskInput = {
+  task_id: unknown
+  role: unknown
+  reason: unknown
+}
+
+export type RemoveTrackedCaseTaskInput = {
+  task_id: unknown
+  reason: unknown
+}
+
+export type CreateCaseDependencyInput = {
+  blocked_task_id: unknown
+  blocking_task_id: unknown
+  rationale: unknown
+}
+
+export type ResolveCaseDependencyInput = {
+  state: unknown
+  reason: unknown
+}
+
 export type TrackedCaseUpdateInput = {
   expected_version: unknown
   reason: unknown
@@ -134,6 +176,16 @@ function normalizeReason(value: unknown): string {
   return reason
 }
 
+function normalizeUuid(value: unknown, field: string): string {
+  if (
+    typeof value !== "string"
+    || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+  ) {
+    throw new TaskValidationError(`${field} must be a UUID`)
+  }
+  return value.toLowerCase()
+}
+
 type DeadlineBundleInput = Pick<
   TrackedCaseInput,
   "deadline_on" | "deadline_provenance_type" | "deadline_provenance_ref" | "deadline_confidence"
@@ -177,13 +229,46 @@ export function normalizeTrackedCase(input: TrackedCaseInput): TrackedCaseDraft 
 }
 
 export function normalizeTrackedCaseUuid(value: unknown): string {
-  if (
-    typeof value !== "string"
-    || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
-  ) {
-    throw new TaskValidationError("case_id must be a UUID")
+  return normalizeUuid(value, "case_id")
+}
+
+export function normalizeTrackedCaseTask(input: SetTrackedCaseTaskInput) {
+  return {
+    task_id: normalizeUuid(input.task_id, "task_id"),
+    role: normalizeEnum(input.role, CASE_TASK_ROLES, "role"),
+    reason: normalizeReason(input.reason),
   }
-  return value.toLowerCase()
+}
+
+export function normalizeTrackedCaseTaskRemoval(input: RemoveTrackedCaseTaskInput) {
+  return {
+    task_id: normalizeUuid(input.task_id, "task_id"),
+    reason: normalizeReason(input.reason),
+  }
+}
+
+export function normalizeCaseDependency(input: CreateCaseDependencyInput) {
+  const blockedTaskId = normalizeUuid(input.blocked_task_id, "blocked_task_id")
+  const blockingTaskId = normalizeUuid(input.blocking_task_id, "blocking_task_id")
+  if (blockedTaskId === blockingTaskId) {
+    throw new TaskValidationError("A task cannot depend on itself")
+  }
+  return {
+    blocked_task_id: blockedTaskId,
+    blocking_task_id: blockingTaskId,
+    rationale: normalizeReason(input.rationale),
+  }
+}
+
+export function normalizeCaseDependencyResolution(input: ResolveCaseDependencyInput) {
+  return {
+    state: normalizeEnum(input.state, ["satisfied", "waived"] as const, "state"),
+    reason: normalizeReason(input.reason),
+  }
+}
+
+export function normalizeCaseDependencyUuid(value: unknown): string {
+  return normalizeUuid(value, "dependency_id")
 }
 
 export function normalizeTrackedCaseUpdate(input: TrackedCaseUpdateInput): TrackedCaseUpdate {

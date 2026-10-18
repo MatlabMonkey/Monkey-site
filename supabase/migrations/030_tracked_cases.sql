@@ -218,7 +218,7 @@ BEGIN
       row_data->>'opened_by',
       'system'
     ),
-    event_reason,
+    COALESCE(NULLIF(current_setting('app.case_reason', true), ''), event_reason),
     row_data - 'change_reason'
   );
 
@@ -381,6 +381,7 @@ BEGIN
   END IF;
 
   PERFORM set_config('app.case_actor', p_actor, true);
+  PERFORM set_config('app.case_reason', btrim(p_reason), true);
   UPDATE tracked_cases
   SET
     title = CASE WHEN p_changes ? 'title' THEN p_changes->>'title' ELSE title END,
@@ -414,6 +415,194 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION set_tracked_case_task(
+  p_case_id UUID,
+  p_task_id UUID,
+  p_role TEXT,
+  p_actor TEXT,
+  p_reason TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  linked_task tracked_case_tasks%ROWTYPE;
+BEGIN
+  IF p_role NOT IN ('next_action', 'milestone') THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_case_task_role';
+  END IF;
+  IF p_actor IS NULL OR p_actor !~ '^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,99}$' THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_case_actor';
+  END IF;
+  IF p_reason IS NULL OR char_length(btrim(p_reason)) NOT BETWEEN 1 AND 2000 THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_case_change_reason';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM tracked_cases WHERE id = p_case_id) THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0002', MESSAGE = 'tracked_case_not_found';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM tasks WHERE id = p_task_id) THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0002', MESSAGE = 'task_not_found';
+  END IF;
+
+  PERFORM set_config('app.case_actor', p_actor, true);
+  PERFORM set_config('app.case_reason', btrim(p_reason), true);
+  INSERT INTO tracked_case_tasks(case_id, task_id, role)
+  VALUES (p_case_id, p_task_id, p_role)
+  ON CONFLICT (case_id, task_id) DO UPDATE
+    SET role = EXCLUDED.role
+    WHERE tracked_case_tasks.role <> EXCLUDED.role
+  RETURNING * INTO linked_task;
+
+  IF NOT FOUND THEN
+    SELECT * INTO linked_task
+    FROM tracked_case_tasks
+    WHERE case_id = p_case_id AND task_id = p_task_id;
+  END IF;
+  RETURN to_jsonb(linked_task);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION remove_tracked_case_task(
+  p_case_id UUID,
+  p_task_id UUID,
+  p_actor TEXT,
+  p_reason TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  linked_task tracked_case_tasks%ROWTYPE;
+BEGIN
+  IF p_actor IS NULL OR p_actor !~ '^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,99}$' THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_case_actor';
+  END IF;
+  IF p_reason IS NULL OR char_length(btrim(p_reason)) NOT BETWEEN 1 AND 2000 THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_case_change_reason';
+  END IF;
+
+  SELECT * INTO linked_task
+  FROM tracked_case_tasks
+  WHERE case_id = p_case_id AND task_id = p_task_id
+  FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0002', MESSAGE = 'tracked_case_task_not_found';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM case_dependencies
+    WHERE case_id = p_case_id
+      AND (blocked_task_id = p_task_id OR blocking_task_id = p_task_id)
+  ) THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0001', MESSAGE = 'case_task_has_dependencies';
+  END IF;
+
+  PERFORM set_config('app.case_actor', p_actor, true);
+  PERFORM set_config('app.case_reason', btrim(p_reason), true);
+  DELETE FROM tracked_case_tasks
+  WHERE case_id = p_case_id AND task_id = p_task_id;
+  RETURN to_jsonb(linked_task);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION create_case_dependency(
+  p_case_id UUID,
+  p_blocked_task_id UUID,
+  p_blocking_task_id UUID,
+  p_rationale TEXT,
+  p_actor TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  created_dependency case_dependencies%ROWTYPE;
+BEGIN
+  IF p_blocked_task_id = p_blocking_task_id THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'case_dependency_self_reference';
+  END IF;
+  IF p_rationale IS NULL OR char_length(btrim(p_rationale)) NOT BETWEEN 1 AND 2000 THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_case_dependency_rationale';
+  END IF;
+  IF p_actor IS NULL OR p_actor !~ '^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,99}$' THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_case_actor';
+  END IF;
+  IF (
+    SELECT count(*) FROM tracked_case_tasks
+    WHERE case_id = p_case_id AND task_id IN (p_blocked_task_id, p_blocking_task_id)
+  ) <> 2 THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0002', MESSAGE = 'tracked_case_task_not_found';
+  END IF;
+
+  PERFORM set_config('app.case_actor', p_actor, true);
+  PERFORM set_config('app.case_reason', btrim(p_rationale), true);
+  BEGIN
+    INSERT INTO case_dependencies(case_id, blocked_task_id, blocking_task_id, rationale)
+    VALUES (p_case_id, p_blocked_task_id, p_blocking_task_id, btrim(p_rationale))
+    RETURNING * INTO created_dependency;
+  EXCEPTION WHEN unique_violation THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0001', MESSAGE = 'case_dependency_already_exists';
+  END;
+  RETURN to_jsonb(created_dependency);
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION resolve_case_dependency(
+  p_case_id UUID,
+  p_dependency_id UUID,
+  p_state TEXT,
+  p_actor TEXT,
+  p_reason TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  current_dependency case_dependencies%ROWTYPE;
+  updated_dependency case_dependencies%ROWTYPE;
+BEGIN
+  IF p_state NOT IN ('satisfied', 'waived') THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_case_dependency_resolution';
+  END IF;
+  IF p_actor IS NULL OR p_actor !~ '^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,99}$' THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_case_actor';
+  END IF;
+  IF p_reason IS NULL OR char_length(btrim(p_reason)) NOT BETWEEN 1 AND 2000 THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_case_change_reason';
+  END IF;
+
+  SELECT * INTO current_dependency
+  FROM case_dependencies
+  WHERE id = p_dependency_id AND case_id = p_case_id
+  FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0002', MESSAGE = 'case_dependency_not_found';
+  END IF;
+  IF current_dependency.state <> 'open' THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0001', MESSAGE = 'case_dependency_already_resolved';
+  END IF;
+
+  PERFORM set_config('app.case_actor', p_actor, true);
+  PERFORM set_config('app.case_reason', btrim(p_reason), true);
+  UPDATE case_dependencies
+  SET
+    state = p_state,
+    resolved_by = p_actor,
+    resolved_at = now(),
+    updated_at = now()
+  WHERE id = current_dependency.id
+  RETURNING * INTO updated_dependency;
+  RETURN to_jsonb(updated_dependency);
+END;
+$$;
+
 ALTER TABLE tracked_cases ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tracked_case_tasks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE case_dependencies ENABLE ROW LEVEL SECURITY;
@@ -432,7 +621,23 @@ REVOKE ALL ON FUNCTION create_tracked_case(TEXT, TEXT, DATE, TEXT, TEXT, NUMERIC
   FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION update_tracked_case(UUID, INTEGER, JSONB, TEXT, TEXT)
   FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION set_tracked_case_task(UUID, UUID, TEXT, TEXT, TEXT)
+  FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION remove_tracked_case_task(UUID, UUID, TEXT, TEXT)
+  FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION create_case_dependency(UUID, UUID, UUID, TEXT, TEXT)
+  FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION resolve_case_dependency(UUID, UUID, TEXT, TEXT, TEXT)
+  FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION create_tracked_case(TEXT, TEXT, DATE, TEXT, TEXT, NUMERIC, TEXT)
   TO service_role;
 GRANT EXECUTE ON FUNCTION update_tracked_case(UUID, INTEGER, JSONB, TEXT, TEXT)
+  TO service_role;
+GRANT EXECUTE ON FUNCTION set_tracked_case_task(UUID, UUID, TEXT, TEXT, TEXT)
+  TO service_role;
+GRANT EXECUTE ON FUNCTION remove_tracked_case_task(UUID, UUID, TEXT, TEXT)
+  TO service_role;
+GRANT EXECUTE ON FUNCTION create_case_dependency(UUID, UUID, UUID, TEXT, TEXT)
+  TO service_role;
+GRANT EXECUTE ON FUNCTION resolve_case_dependency(UUID, UUID, TEXT, TEXT, TEXT)
   TO service_role;

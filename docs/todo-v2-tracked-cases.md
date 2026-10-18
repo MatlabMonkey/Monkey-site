@@ -13,10 +13,13 @@ The first tracked-case slice adds a server-owned persistence boundary for work t
 
 - `GET /api/tracked-cases` lists the 200 most recently updated cases.
 - `POST /api/tracked-cases` creates an outcome-first case after enforcing the complete deadline-provenance bundle.
-- `GET /api/tracked-cases/:id` returns one case and its append-only event history.
+- `GET /api/tracked-cases/:id` returns one case, its attached tasks, same-case dependency edges, and append-only event history.
 - `PATCH /api/tracked-cases/:id` explicitly changes case fields, status, automation state, or the complete deadline bundle. Every update requires a human-readable reason and the caller's expected case version; stale updates fail with `409 Conflict`.
+- `POST /api/tracked-cases/:id/tasks` attaches a task or explicitly changes its case role; `DELETE` detaches it. Both require a reason, and detach is rejected while any dependency still references the task.
+- `POST /api/tracked-cases/:id/dependencies` creates an open directed edge between two distinct tasks already attached to that case. Duplicate open edges are rejected.
+- `PATCH /api/tracked-cases/:id/dependencies/:dependencyId` irreversibly resolves an open edge as satisfied or waived with a required reason. Resolved edges remain in history.
 - Creation and updates run through service-role-only database functions so event attribution, row locking, version checks, and mutation happen in one transaction. PIN-authenticated requests are attributed to `user`.
 
-Task attachment/dependency operations, deterministic evidence reconciliation and escalation, and the review UI remain separate bounded work.
+Deterministic evidence reconciliation and escalation, and the review UI remain separate bounded work.
 
 Migration 030 intentionally does not read production data, migrate legacy todos, or run automatically.
