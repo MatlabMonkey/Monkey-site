@@ -63,7 +63,7 @@ export async function listOrganizationProposals(
 ): Promise<TaskOrganizationProposalRecord[]> {
   const { data, error } = await getSupabaseAdmin()
     .from("task_organization_proposals")
-    .select("*")
+    .select("*, task:tasks(id, title, status, version, due_on, waiting_on)")
     .eq("state", state)
     .order("created_at", { ascending: true })
     .limit(200)

@@ -51,6 +51,14 @@ export type TaskOrganizationProposalRecord = TaskOrganizationProposalDraft & {
   reviewed_at: string | null
   created_at: string
   updated_at: string
+  task?: {
+    id: string
+    title: string
+    status: TaskStatus
+    version: number
+    due_on: string | null
+    waiting_on: string | null
+  } | null
 }
 
 export type TaskOrganizationReviewInput = {

@@ -114,3 +114,19 @@ test("organization server routes require authentication and expose conflicts", (
   assert.match(reviewRoute, /reviewOrganizationProposal/)
   assert.match(reviewRoute, /status: 409/)
 })
+
+test("organization review UI shows task context and requires review rationale", () => {
+  const serverSource = readFileSync(
+    new URL("../lib/server/task-organization.ts", import.meta.url),
+    "utf8",
+  )
+  const pageSource = readFileSync(new URL("../app/todos/page.tsx", import.meta.url), "utf8")
+
+  assert.match(serverSource, /task:tasks\(id, title, status, version, due_on, waiting_on\)/)
+  assert.match(pageSource, /Organization review/)
+  assert.match(pageSource, /\/api\/task-organization-proposals\?state=pending/)
+  assert.match(pageSource, /Why are you applying or rejecting this suggestion\?/)
+  assert.match(pageSource, /Boolean\(taskChanged\)/)
+  assert.match(pageSource, /onReview\(proposal, "apply", reason\)/)
+  assert.match(pageSource, /onReview\(proposal, "reject", reason\)/)
+})

@@ -2,16 +2,18 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Archive, ArrowLeft, Check, Circle, Clock3, History, Inbox, Loader2, Plus, RotateCcw, Sun } from "lucide-react"
+import { Archive, ArrowLeft, Check, Circle, Clock3, History, Inbox, Loader2, Plus, RotateCcw, Sparkles, Sun, X } from "lucide-react"
 import PinGate from "../components/PinGate"
 import PrivateSectionNav from "../components/PrivateSectionNav"
+import type { TaskOrganizationProposalRecord } from "../../lib/task-organization"
 import type { TaskEventRecord, TaskRecord, TaskStatus } from "../../lib/tasks"
 
-type TaskView = "today" | "inbox" | "waiting" | "later" | "done" | "history"
+type TaskView = "today" | "inbox" | "review" | "waiting" | "later" | "done" | "history"
 
 const VIEWS: Array<{ id: TaskView; label: string; icon: typeof Sun }> = [
   { id: "today", label: "Today", icon: Sun },
   { id: "inbox", label: "Inbox", icon: Inbox },
+  { id: "review", label: "Review", icon: Sparkles },
   { id: "waiting", label: "Waiting", icon: Clock3 },
   { id: "later", label: "Later", icon: Archive },
   { id: "done", label: "Done", icon: Check },
@@ -21,6 +23,7 @@ const VIEWS: Array<{ id: TaskView; label: string; icon: typeof Sun }> = [
 const VIEW_COPY: Record<TaskView, { title: string; description: string; empty: string }> = {
   today: { title: "Today", description: "Only the commitments you chose for today.", empty: "Today is clear. Pull one useful thing from Inbox when ready." },
   inbox: { title: "Inbox", description: "Captured first. Decide what matters after it is safely recorded.", empty: "Nothing needs organizing." },
+  review: { title: "Organization review", description: "Approve or reject assistant suggestions with a short reason.", empty: "No organization suggestions need review." },
   waiting: { title: "Waiting", description: "Commitments paused on another person or event.", empty: "Nothing is waiting on someone else." },
   later: { title: "Later", description: "Worth keeping, but not competing for attention now.", empty: "No deferred work." },
   done: { title: "Done", description: "Completed work, newest first.", empty: "Completed tasks will collect here." },
@@ -48,6 +51,7 @@ export default function TodosPage() {
   const [view, setView] = useState<TaskView>("today")
   const [tasks, setTasks] = useState<TaskRecord[]>([])
   const [events, setEvents] = useState<TaskEventRecord[]>([])
+  const [proposals, setProposals] = useState<TaskOrganizationProposalRecord[]>([])
   const [capture, setCapture] = useState("")
   const [loading, setLoading] = useState(true)
   const [capturing, setCapturing] = useState(false)
@@ -59,11 +63,21 @@ export default function TodosPage() {
     setLoading(true)
     setError("")
     try {
-      const endpoint = nextView === "history" ? "/api/task-events" : `/api/tasks?view=${nextView}`
+      const endpoint = nextView === "history"
+        ? "/api/task-events"
+        : nextView === "review"
+          ? "/api/task-organization-proposals?state=pending"
+          : `/api/tasks?view=${nextView}`
       const response = await fetch(endpoint, { cache: "no-store" })
-      const data = (await response.json()) as { tasks?: TaskRecord[]; events?: TaskEventRecord[]; error?: string }
+      const data = (await response.json()) as {
+        tasks?: TaskRecord[]
+        events?: TaskEventRecord[]
+        proposals?: TaskOrganizationProposalRecord[]
+        error?: string
+      }
       if (!response.ok) throw new Error(data.error || "Unable to load")
       if (nextView === "history") setEvents(data.events || [])
+      else if (nextView === "review") setProposals(data.proposals || [])
       else setTasks(data.tasks || [])
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : "Unable to load")
@@ -114,6 +128,32 @@ export default function TodosPage() {
       setTasks((current) => current.filter((item) => item.id !== task.id))
     } catch (updateError) {
       setError(updateError instanceof Error ? updateError.message : "Unable to update task")
+    } finally {
+      setUpdatingId(null)
+    }
+  }
+
+  const reviewProposal = async (proposal: TaskOrganizationProposalRecord, action: "apply" | "reject", reason: string) => {
+    setUpdatingId(proposal.id)
+    setError("")
+    setNotice("")
+    try {
+      const response = await fetch(`/api/task-organization-proposals/${proposal.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action, reason }),
+      })
+      const data = (await response.json()) as { proposal?: TaskOrganizationProposalRecord; error?: string }
+      if (!response.ok) {
+        if (data.proposal?.state === "superseded") {
+          setProposals((current) => current.filter((item) => item.id !== proposal.id))
+        }
+        throw new Error(data.error || "Unable to review suggestion")
+      }
+      setProposals((current) => current.filter((item) => item.id !== proposal.id))
+      setNotice(action === "apply" ? "Suggestion applied." : "Suggestion rejected.")
+    } catch (reviewError) {
+      setError(reviewError instanceof Error ? reviewError.message : "Unable to review suggestion")
     } finally {
       setUpdatingId(null)
     }
@@ -184,7 +224,11 @@ export default function TodosPage() {
                 <h2 id="view-heading" className="text-2xl font-semibold">{copy.title}</h2>
                 <p className="mt-1 text-sm text-[rgb(var(--text-muted))]">{copy.description}</p>
               </div>
-              {view !== "history" && !loading && <span className="font-mono text-sm text-[rgb(var(--text-muted))]">{openCount}</span>}
+              {view !== "history" && !loading && (
+                <span className="font-mono text-sm text-[rgb(var(--text-muted))]">
+                  {view === "review" ? proposals.length : openCount}
+                </span>
+              )}
             </div>
 
             {loading ? (
@@ -193,6 +237,10 @@ export default function TodosPage() {
               </div>
             ) : view === "history" ? (
               events.length === 0 ? <EmptyState message={copy.empty} /> : <HistoryList events={events} />
+            ) : view === "review" ? (
+              proposals.length === 0
+                ? <EmptyState message={copy.empty} />
+                : <ProposalList proposals={proposals} busyId={updatingId} onReview={reviewProposal} />
             ) : tasks.length === 0 ? (
               <EmptyState message={copy.empty} />
             ) : (
@@ -214,6 +262,110 @@ function EmptyState({ message }: { message: string }) {
       <p className="text-sm text-[rgb(var(--text-muted))]">{message}</p>
     </div>
   )
+}
+
+function ProposalList({
+  proposals,
+  busyId,
+  onReview,
+}: {
+  proposals: TaskOrganizationProposalRecord[]
+  busyId: string | null
+  onReview: (proposal: TaskOrganizationProposalRecord, action: "apply" | "reject", reason: string) => Promise<void>
+}) {
+  const [reasons, setReasons] = useState<Record<string, string>>({})
+
+  return (
+    <div className="space-y-4">
+      {proposals.map((proposal) => {
+        const reason = reasons[proposal.id] || ""
+        const busy = busyId === proposal.id
+        const taskChanged = proposal.task && proposal.task.version !== proposal.task_version
+
+        return (
+          <article key={proposal.id} className="rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))] p-4 sm:p-5">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-base font-medium leading-relaxed">{proposal.task?.title || "Unavailable task"}</h3>
+                  {taskChanged && (
+                    <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-1 text-xs text-amber-300">
+                      Task changed
+                    </span>
+                  )}
+                </div>
+                <p className="mt-2 text-sm leading-relaxed text-[rgb(var(--text-muted))]">{proposal.rationale}</p>
+              </div>
+              <div className="flex shrink-0 flex-wrap gap-2 text-xs">
+                <span className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-2 py-1 font-mono text-[rgb(var(--text-muted))]">
+                  {Math.round(proposal.confidence * 100)}% confidence
+                </span>
+                <span className="rounded-full border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-2 py-1 text-[rgb(var(--text-muted))]">
+                  Review required
+                </span>
+              </div>
+            </div>
+
+            <dl className="mt-4 grid gap-2 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] p-4 sm:grid-cols-2">
+              {Object.entries(proposal.changes).map(([field, value]) => (
+                <div key={field} className="flex items-baseline justify-between gap-4 text-sm">
+                  <dt className="text-[rgb(var(--text-muted))]">{organizationFieldLabel(field)}</dt>
+                  <dd className="text-right font-medium">{organizationValueLabel(field, value)}</dd>
+                </div>
+              ))}
+            </dl>
+
+            <label htmlFor={`review-reason-${proposal.id}`} className="mt-4 block text-sm font-medium">Review note</label>
+            <textarea
+              id={`review-reason-${proposal.id}`}
+              value={reason}
+              onChange={(event) => setReasons((current) => ({ ...current, [proposal.id]: event.target.value }))}
+              placeholder="Why are you applying or rejecting this suggestion?"
+              rows={2}
+              maxLength={2000}
+              className="mt-2 w-full resize-y rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-4 py-3 text-sm outline-none transition focus:border-[rgb(var(--brand))] focus:ring-2 focus:ring-[rgb(var(--brand)_/_0.2)]"
+            />
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button
+                type="button"
+                disabled={busy || !reason.trim() || Boolean(taskChanged)}
+                onClick={() => void onReview(proposal, "apply", reason)}
+                className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[rgb(var(--brand))] px-4 text-sm font-semibold text-[rgb(var(--bg))] transition hover:bg-[rgb(var(--brand-strong))] focus:outline-none focus:ring-2 focus:ring-[rgb(var(--brand))] focus:ring-offset-2 focus:ring-offset-[rgb(var(--bg))] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />} Apply
+              </button>
+              <button
+                type="button"
+                disabled={busy || !reason.trim()}
+                onClick={() => void onReview(proposal, "reject", reason)}
+                className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[rgb(var(--border))] bg-[rgb(var(--surface-2))] px-4 text-sm text-[rgb(var(--text-muted))] transition hover:border-red-400/60 hover:text-red-300 focus:outline-none focus:ring-2 focus:ring-red-400/50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <X className="h-4 w-4" /> Reject
+              </button>
+            </div>
+          </article>
+        )
+      })}
+    </div>
+  )
+}
+
+function organizationFieldLabel(field: string) {
+  const labels: Record<string, string> = {
+    title: "Title",
+    notes: "Notes",
+    status: "Move to",
+    due_on: "Due date",
+    waiting_on: "Waiting on",
+  }
+  return labels[field] || field
+}
+
+function organizationValueLabel(field: string, value: string | null) {
+  if (value === null) return "Clear"
+  if (field === "status") return value.charAt(0).toUpperCase() + value.slice(1)
+  if (field === "due_on") return formatDay(value) || value
+  return value
 }
 
 function TaskRow({ task, busy, onMove }: { task: TaskRecord; busy: boolean; onMove: (task: TaskRecord, status: TaskStatus) => void }) {
