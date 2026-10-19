@@ -18,8 +18,10 @@ The first tracked-case slice adds a server-owned persistence boundary for work t
 - `POST /api/tracked-cases/:id/tasks` attaches a task or explicitly changes its case role; `DELETE` detaches it. Both require a reason, and detach is rejected while any dependency still references the task.
 - `POST /api/tracked-cases/:id/dependencies` creates an open directed edge between two distinct tasks already attached to that case. Duplicate open edges are rejected.
 - `PATCH /api/tracked-cases/:id/dependencies/:dependencyId` irreversibly resolves an open edge as satisfied or waived with a required reason. Resolved edges remain in history.
+- `POST /api/tracked-cases/:id/evidence` records bounded evidence metadata and an explicit versioned reconciliation rule. The deterministic action is one of: record only, satisfy one open dependency, or raise one evidence-linked exception. Source plus source ID is replay-safe: an exact replay returns the prior result without repeating a side effect, while changed data returns `409 Conflict`.
+- `PATCH /api/tracked-cases/:id/escalations/:escalationId` acknowledges an open exception or resolves an open/acknowledged exception with a required reason. Resolved exceptions cannot be reopened.
 - Creation and updates run through service-role-only database functions so event attribution, row locking, version checks, and mutation happen in one transaction. PIN-authenticated requests are attributed to `user`.
 
-Deterministic evidence reconciliation and escalation, and the review UI remain separate bounded work.
+Evidence deliberately carries no free-text inference or connector-specific parsing. A caller must supply the reconciliation action and immutable rule ID; connector mapping remains item 5 work. The focused review UI remains separate bounded work.
 
 Migration 030 intentionally does not read production data, migrate legacy todos, or run automatically.

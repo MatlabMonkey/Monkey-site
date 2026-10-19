@@ -5,6 +5,7 @@ import test from "node:test"
 import {
   CASE_AUTOMATION_STATES,
   CASE_DEPENDENCY_STATES,
+  CASE_EVIDENCE_ACTIONS,
   CASE_ESCALATION_SEVERITIES,
   CASE_ESCALATION_STATES,
   CASE_EVIDENCE_TYPES,
@@ -13,6 +14,8 @@ import {
   DEADLINE_PROVENANCE_TYPES,
   normalizeCaseDependency,
   normalizeCaseDependencyResolution,
+  normalizeCaseEscalationUpdate,
+  normalizeCaseEvidence,
   normalizeTrackedCase,
   normalizeTrackedCaseTask,
   normalizeTrackedCaseTaskRemoval,
@@ -210,6 +213,83 @@ test("tracked-case task and dependency commands reject unsafe ambiguity", () => 
   )
 })
 
+test("case evidence reconciliation normalizes explicit deterministic actions", () => {
+  const dependencyId = "323e4567-e89b-42d3-a456-426614174000"
+  const shared = {
+    evidence_type: "message",
+    summary: "  Vendor confirmed   shipment. ",
+    source: " EMAIL ",
+    source_id: " message-42 ",
+    observed_at: "2026-10-18T19:30:00-07:00",
+    content_sha256: "A".repeat(64),
+    reconciliation_rule: " email.confirmation.v1 ",
+  }
+
+  assert.deepEqual(normalizeCaseEvidence({
+    ...shared,
+    reconciliation_action: "satisfy_dependency",
+    dependency_id: dependencyId.toUpperCase(),
+  }), {
+    evidence_type: "message",
+    summary: "Vendor confirmed shipment.",
+    source: "email",
+    source_id: "message-42",
+    observed_at: "2026-10-19T02:30:00.000Z",
+    content_sha256: "a".repeat(64),
+    reconciliation_action: "satisfy_dependency",
+    reconciliation_rule: "email.confirmation.v1",
+    dependency_id: dependencyId,
+    escalation_severity: null,
+    escalation_reason: null,
+  })
+  assert.equal(normalizeCaseEvidence({
+    ...shared,
+    reconciliation_action: "raise_exception",
+    escalation_severity: "urgent",
+    escalation_reason: " Delivery failed. ",
+  }).escalation_reason, "Delivery failed.")
+  assert.deepEqual(normalizeCaseEscalationUpdate({
+    state: "acknowledged",
+    reason: " Owner is investigating. ",
+  }), {
+    state: "acknowledged",
+    reason: "Owner is investigating.",
+  })
+})
+
+test("case evidence reconciliation rejects ambiguous side effects", () => {
+  const base = {
+    evidence_type: "status",
+    summary: "No change",
+    source: "monitor",
+    source_id: "poll-1",
+    observed_at: "2026-10-19T02:30:00Z",
+    reconciliation_rule: "monitor.status.v1",
+  }
+
+  assert.throws(
+    () => normalizeCaseEvidence({ ...base, reconciliation_action: "satisfy_dependency" }),
+    /dependency_id is required/,
+  )
+  assert.throws(
+    () => normalizeCaseEvidence({
+      ...base,
+      reconciliation_action: "record_only",
+      escalation_severity: "warning",
+      escalation_reason: "Unexpected",
+    }),
+    /only allowed when raising/,
+  )
+  assert.throws(
+    () => normalizeCaseEvidence({ ...base, reconciliation_action: "raise_exception" }),
+    /are required to raise/,
+  )
+  assert.throws(
+    () => normalizeCaseEscalationUpdate({ state: "open", reason: "Undo" }),
+    /state must be one of/,
+  )
+})
+
 test("tracked-case migration models reviewable outcomes, dependencies, evidence, automation, and escalation", () => {
   const sql = readFileSync(
     new URL("../supabase/migrations/030_tracked_cases.sql", import.meta.url),
@@ -235,6 +315,7 @@ test("tracked-case migration models reviewable outcomes, dependencies, evidence,
     ...CASE_TASK_ROLES,
     ...CASE_DEPENDENCY_STATES,
     ...CASE_EVIDENCE_TYPES,
+    ...CASE_EVIDENCE_ACTIONS,
     ...CASE_ESCALATION_SEVERITIES,
     ...CASE_ESCALATION_STATES,
   ]) {
@@ -257,6 +338,10 @@ test("tracked-case migration models reviewable outcomes, dependencies, evidence,
   assert.match(sql, /CREATE OR REPLACE FUNCTION remove_tracked_case_task/)
   assert.match(sql, /CREATE OR REPLACE FUNCTION create_case_dependency/)
   assert.match(sql, /CREATE OR REPLACE FUNCTION resolve_case_dependency/)
+  assert.match(sql, /CREATE OR REPLACE FUNCTION reconcile_case_evidence/)
+  assert.match(sql, /CREATE OR REPLACE FUNCTION update_case_escalation/)
+  assert.match(sql, /pg_advisory_xact_lock/)
+  assert.match(sql, /case_evidence_idempotency_conflict/)
   assert.match(sql, /current_case\.version <> p_expected_version/)
   assert.match(sql, /set_config\('app\.case_actor', p_actor, true\)/)
   assert.match(sql, /set_config\('app\.case_reason', btrim\(p_reason\), true\)/)
@@ -292,6 +377,17 @@ test("tracked-case lifecycle routes require authentication and expose version co
     new URL("../app/api/tracked-cases/[id]/dependencies/[dependencyId]/route.ts", import.meta.url),
     "utf8",
   )
+  const evidenceRoute = readFileSync(
+    new URL("../app/api/tracked-cases/[id]/evidence/route.ts", import.meta.url),
+    "utf8",
+  )
+  const escalationRoute = readFileSync(
+    new URL(
+      "../app/api/tracked-cases/[id]/escalations/[escalationId]/route.ts",
+      import.meta.url,
+    ),
+    "utf8",
+  )
 
   for (const source of [
     collectionRoute,
@@ -299,6 +395,8 @@ test("tracked-case lifecycle routes require authentication and expose version co
     taskRoute,
     dependencyRoute,
     dependencyDetailRoute,
+    evidenceRoute,
+    escalationRoute,
   ]) {
     assert.match(source, /isRequestAuthenticated\(request\)/)
     assert.match(source, /status: 401/)
@@ -313,7 +411,11 @@ test("tracked-case lifecycle routes require authentication and expose version co
   assert.match(serverSource, /rpc\("remove_tracked_case_task"/)
   assert.match(serverSource, /rpc\("create_case_dependency"/)
   assert.match(serverSource, /rpc\("resolve_case_dependency"/)
+  assert.match(serverSource, /rpc\("reconcile_case_evidence"/)
+  assert.match(serverSource, /rpc\("update_case_escalation"/)
   assert.match(serverSource, /from\("tracked_case_tasks"\)/)
   assert.match(serverSource, /from\("case_dependencies"\)/)
+  assert.match(serverSource, /from\("case_evidence"\)/)
+  assert.match(serverSource, /from\("case_escalations"\)/)
   assert.match(serverSource, /from\("case_events"\)/)
 })

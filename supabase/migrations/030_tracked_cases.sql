@@ -99,14 +99,24 @@ CREATE UNIQUE INDEX case_dependencies_open_edge_unique
 CREATE TABLE case_evidence (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   case_id UUID NOT NULL REFERENCES tracked_cases(id) ON DELETE RESTRICT,
+  dependency_id UUID,
   evidence_type TEXT NOT NULL CHECK (evidence_type IN ('message', 'document', 'receipt', 'status', 'other')),
   summary TEXT NOT NULL CHECK (char_length(btrim(summary)) BETWEEN 1 AND 2000),
   source TEXT NOT NULL CHECK (source ~ '^[a-z][a-z0-9_-]{0,49}$'),
   source_id TEXT NOT NULL CHECK (char_length(btrim(source_id)) BETWEEN 1 AND 500),
   observed_at TIMESTAMPTZ NOT NULL,
   content_sha256 TEXT CHECK (content_sha256 ~ '^[0-9a-f]{64}$'),
+  reconciliation_action TEXT NOT NULL
+    CHECK (reconciliation_action IN ('record_only', 'satisfy_dependency', 'raise_exception')),
+  reconciliation_rule TEXT NOT NULL CHECK (char_length(btrim(reconciliation_rule)) BETWEEN 1 AND 100),
   recorded_by TEXT NOT NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  FOREIGN KEY (dependency_id, case_id)
+    REFERENCES case_dependencies(id, case_id) ON DELETE RESTRICT,
+  CHECK (
+    (reconciliation_action = 'satisfy_dependency' AND dependency_id IS NOT NULL)
+    OR (reconciliation_action <> 'satisfy_dependency' AND dependency_id IS NULL)
+  ),
   UNIQUE (source, source_id),
   UNIQUE (id, case_id)
 );
@@ -146,6 +156,8 @@ CREATE TABLE case_escalations (
 );
 
 CREATE INDEX case_escalations_case_state_idx ON case_escalations(case_id, state, severity, created_at);
+CREATE UNIQUE INDEX case_escalations_evidence_unique
+  ON case_escalations(evidence_id) WHERE evidence_id IS NOT NULL;
 
 CREATE TABLE case_events (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -603,6 +615,222 @@ BEGIN
 END;
 $$;
 
+CREATE OR REPLACE FUNCTION reconcile_case_evidence(
+  p_case_id UUID,
+  p_evidence_type TEXT,
+  p_summary TEXT,
+  p_source TEXT,
+  p_source_id TEXT,
+  p_observed_at TIMESTAMPTZ,
+  p_content_sha256 TEXT,
+  p_reconciliation_action TEXT,
+  p_reconciliation_rule TEXT,
+  p_dependency_id UUID,
+  p_escalation_severity TEXT,
+  p_escalation_reason TEXT,
+  p_actor TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  evidence_row case_evidence%ROWTYPE;
+  dependency_row case_dependencies%ROWTYPE;
+  escalation_row case_escalations%ROWTYPE;
+  was_replayed BOOLEAN := false;
+BEGIN
+  IF p_actor IS NULL OR p_actor !~ '^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,99}$' THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_case_actor';
+  END IF;
+  IF p_reconciliation_action NOT IN ('record_only', 'satisfy_dependency', 'raise_exception') THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_case_evidence_action';
+  END IF;
+  IF char_length(btrim(p_reconciliation_rule)) NOT BETWEEN 1 AND 100 THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_case_evidence_rule';
+  END IF;
+  IF p_reconciliation_action = 'satisfy_dependency' AND p_dependency_id IS NULL THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'case_evidence_dependency_required';
+  END IF;
+  IF p_reconciliation_action <> 'satisfy_dependency' AND p_dependency_id IS NOT NULL THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'case_evidence_dependency_not_allowed';
+  END IF;
+  IF p_reconciliation_action = 'raise_exception'
+    AND (p_escalation_severity IS NULL OR p_escalation_reason IS NULL) THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'case_evidence_escalation_required';
+  END IF;
+  IF p_reconciliation_action <> 'raise_exception'
+    AND (p_escalation_severity IS NOT NULL OR p_escalation_reason IS NOT NULL) THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'case_evidence_escalation_not_allowed';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM tracked_cases WHERE id = p_case_id) THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0002', MESSAGE = 'tracked_case_not_found';
+  END IF;
+
+  -- Serialize a source identity so concurrent replays cannot repeat side effects.
+  PERFORM pg_advisory_xact_lock(hashtextextended(p_source || E'\\x1f' || p_source_id, 0));
+  SELECT * INTO evidence_row
+  FROM case_evidence
+  WHERE source = p_source AND source_id = p_source_id
+  FOR UPDATE;
+
+  IF FOUND THEN
+    was_replayed := true;
+    IF evidence_row.case_id <> p_case_id
+      OR evidence_row.evidence_type <> p_evidence_type
+      OR evidence_row.summary <> btrim(p_summary)
+      OR evidence_row.observed_at <> p_observed_at
+      OR evidence_row.content_sha256 IS DISTINCT FROM p_content_sha256
+      OR evidence_row.reconciliation_action <> p_reconciliation_action
+      OR evidence_row.reconciliation_rule <> btrim(p_reconciliation_rule)
+      OR evidence_row.dependency_id IS DISTINCT FROM p_dependency_id THEN
+      RAISE EXCEPTION USING ERRCODE = 'P0001', MESSAGE = 'case_evidence_idempotency_conflict';
+    END IF;
+  ELSE
+    IF p_reconciliation_action = 'satisfy_dependency' THEN
+      SELECT * INTO dependency_row
+      FROM case_dependencies
+      WHERE id = p_dependency_id AND case_id = p_case_id
+      FOR UPDATE;
+      IF NOT FOUND THEN
+        RAISE EXCEPTION USING ERRCODE = 'P0002', MESSAGE = 'case_dependency_not_found';
+      END IF;
+      IF dependency_row.state <> 'open' THEN
+        RAISE EXCEPTION USING ERRCODE = 'P0001', MESSAGE = 'case_dependency_already_resolved';
+      END IF;
+    END IF;
+
+    PERFORM set_config('app.case_actor', p_actor, true);
+    PERFORM set_config('app.case_reason', btrim(p_reconciliation_rule), true);
+    INSERT INTO case_evidence(
+      case_id,
+      dependency_id,
+      evidence_type,
+      summary,
+      source,
+      source_id,
+      observed_at,
+      content_sha256,
+      reconciliation_action,
+      reconciliation_rule,
+      recorded_by
+    ) VALUES (
+      p_case_id,
+      p_dependency_id,
+      p_evidence_type,
+      btrim(p_summary),
+      p_source,
+      btrim(p_source_id),
+      p_observed_at,
+      p_content_sha256,
+      p_reconciliation_action,
+      btrim(p_reconciliation_rule),
+      p_actor
+    ) RETURNING * INTO evidence_row;
+
+    IF p_reconciliation_action = 'satisfy_dependency' THEN
+      PERFORM set_config(
+        'app.case_reason',
+        'Evidence ' || p_source || ':' || btrim(p_source_id) || ' matched ' || btrim(p_reconciliation_rule),
+        true
+      );
+      UPDATE case_dependencies
+      SET state = 'satisfied', resolved_by = p_actor, resolved_at = now(), updated_at = now()
+      WHERE id = p_dependency_id
+      RETURNING * INTO dependency_row;
+    ELSIF p_reconciliation_action = 'raise_exception' THEN
+      PERFORM set_config('app.case_reason', btrim(p_escalation_reason), true);
+      INSERT INTO case_escalations(
+        case_id,
+        evidence_id,
+        severity,
+        reason,
+        opened_by
+      ) VALUES (
+        p_case_id,
+        evidence_row.id,
+        p_escalation_severity,
+        btrim(p_escalation_reason),
+        p_actor
+      ) RETURNING * INTO escalation_row;
+    END IF;
+  END IF;
+
+  IF was_replayed AND p_reconciliation_action = 'satisfy_dependency' THEN
+    SELECT * INTO dependency_row FROM case_dependencies WHERE id = evidence_row.dependency_id;
+  ELSIF was_replayed AND p_reconciliation_action = 'raise_exception' THEN
+    SELECT * INTO escalation_row FROM case_escalations WHERE evidence_id = evidence_row.id;
+    IF NOT FOUND
+      OR escalation_row.severity <> p_escalation_severity
+      OR escalation_row.reason <> btrim(p_escalation_reason) THEN
+      RAISE EXCEPTION USING ERRCODE = 'P0001', MESSAGE = 'case_evidence_idempotency_conflict';
+    END IF;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'evidence', to_jsonb(evidence_row),
+    'dependency', CASE WHEN dependency_row.id IS NULL THEN NULL ELSE to_jsonb(dependency_row) END,
+    'escalation', CASE WHEN escalation_row.id IS NULL THEN NULL ELSE to_jsonb(escalation_row) END,
+    'replayed', was_replayed
+  );
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION update_case_escalation(
+  p_case_id UUID,
+  p_escalation_id UUID,
+  p_state TEXT,
+  p_actor TEXT,
+  p_reason TEXT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  current_escalation case_escalations%ROWTYPE;
+  updated_escalation case_escalations%ROWTYPE;
+BEGIN
+  IF p_state NOT IN ('acknowledged', 'resolved') THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_case_escalation_state';
+  END IF;
+  IF p_actor IS NULL OR p_actor !~ '^[a-zA-Z0-9][a-zA-Z0-9_.:-]{0,99}$' THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_case_actor';
+  END IF;
+  IF p_reason IS NULL OR char_length(btrim(p_reason)) NOT BETWEEN 1 AND 2000 THEN
+    RAISE EXCEPTION USING ERRCODE = '22023', MESSAGE = 'invalid_case_change_reason';
+  END IF;
+
+  SELECT * INTO current_escalation
+  FROM case_escalations
+  WHERE id = p_escalation_id AND case_id = p_case_id
+  FOR UPDATE;
+  IF NOT FOUND THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0002', MESSAGE = 'case_escalation_not_found';
+  END IF;
+  IF current_escalation.state = 'resolved'
+    OR (p_state = 'acknowledged' AND current_escalation.state <> 'open') THEN
+    RAISE EXCEPTION USING ERRCODE = 'P0001', MESSAGE = 'case_escalation_already_transitioned';
+  END IF;
+
+  PERFORM set_config('app.case_actor', p_actor, true);
+  PERFORM set_config('app.case_reason', btrim(p_reason), true);
+  UPDATE case_escalations
+  SET
+    state = p_state,
+    acknowledged_by = CASE WHEN p_state = 'acknowledged' THEN p_actor ELSE acknowledged_by END,
+    acknowledged_at = CASE WHEN p_state = 'acknowledged' THEN now() ELSE acknowledged_at END,
+    resolved_by = CASE WHEN p_state = 'resolved' THEN p_actor ELSE NULL END,
+    resolved_at = CASE WHEN p_state = 'resolved' THEN now() ELSE NULL END,
+    updated_at = now()
+  WHERE id = current_escalation.id
+  RETURNING * INTO updated_escalation;
+  RETURN to_jsonb(updated_escalation);
+END;
+$$;
+
 ALTER TABLE tracked_cases ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tracked_case_tasks ENABLE ROW LEVEL SECURITY;
 ALTER TABLE case_dependencies ENABLE ROW LEVEL SECURITY;
@@ -629,6 +857,11 @@ REVOKE ALL ON FUNCTION create_case_dependency(UUID, UUID, UUID, TEXT, TEXT)
   FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION resolve_case_dependency(UUID, UUID, TEXT, TEXT, TEXT)
   FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION reconcile_case_evidence(
+  UUID, TEXT, TEXT, TEXT, TEXT, TIMESTAMPTZ, TEXT, TEXT, TEXT, UUID, TEXT, TEXT, TEXT
+) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION update_case_escalation(UUID, UUID, TEXT, TEXT, TEXT)
+  FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION create_tracked_case(TEXT, TEXT, DATE, TEXT, TEXT, NUMERIC, TEXT)
   TO service_role;
 GRANT EXECUTE ON FUNCTION update_tracked_case(UUID, INTEGER, JSONB, TEXT, TEXT)
@@ -640,4 +873,9 @@ GRANT EXECUTE ON FUNCTION remove_tracked_case_task(UUID, UUID, TEXT, TEXT)
 GRANT EXECUTE ON FUNCTION create_case_dependency(UUID, UUID, UUID, TEXT, TEXT)
   TO service_role;
 GRANT EXECUTE ON FUNCTION resolve_case_dependency(UUID, UUID, TEXT, TEXT, TEXT)
+  TO service_role;
+GRANT EXECUTE ON FUNCTION reconcile_case_evidence(
+  UUID, TEXT, TEXT, TEXT, TEXT, TIMESTAMPTZ, TEXT, TEXT, TEXT, UUID, TEXT, TEXT, TEXT
+) TO service_role;
+GRANT EXECUTE ON FUNCTION update_case_escalation(UUID, UUID, TEXT, TEXT, TEXT)
   TO service_role;

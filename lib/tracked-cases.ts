@@ -6,6 +6,7 @@ export const DEADLINE_PROVENANCE_TYPES = ["user", "external", "derived"] as cons
 export const CASE_TASK_ROLES = ["next_action", "milestone"] as const
 export const CASE_DEPENDENCY_STATES = ["open", "satisfied", "waived"] as const
 export const CASE_EVIDENCE_TYPES = ["message", "document", "receipt", "status", "other"] as const
+export const CASE_EVIDENCE_ACTIONS = ["record_only", "satisfy_dependency", "raise_exception"] as const
 export const CASE_ESCALATION_SEVERITIES = ["notice", "warning", "urgent"] as const
 export const CASE_ESCALATION_STATES = ["open", "acknowledged", "resolved"] as const
 
@@ -72,6 +73,72 @@ export type CaseDependencyRecord = {
   resolved_at: string | null
   created_at: string
   updated_at: string
+}
+
+export type CaseEvidenceRecord = {
+  id: string
+  case_id: string
+  dependency_id: string | null
+  evidence_type: (typeof CASE_EVIDENCE_TYPES)[number]
+  summary: string
+  source: string
+  source_id: string
+  observed_at: string
+  content_sha256: string | null
+  reconciliation_action: (typeof CASE_EVIDENCE_ACTIONS)[number]
+  reconciliation_rule: string
+  recorded_by: string
+  created_at: string
+}
+
+export type CaseEscalationRecord = {
+  id: string
+  case_id: string
+  dependency_id: string | null
+  evidence_id: string | null
+  severity: (typeof CASE_ESCALATION_SEVERITIES)[number]
+  state: (typeof CASE_ESCALATION_STATES)[number]
+  reason: string
+  opened_by: string
+  acknowledged_by: string | null
+  acknowledged_at: string | null
+  resolved_by: string | null
+  resolved_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type ReconcileCaseEvidenceInput = {
+  evidence_type: unknown
+  summary: unknown
+  source: unknown
+  source_id: unknown
+  observed_at: unknown
+  content_sha256?: unknown
+  reconciliation_action: unknown
+  reconciliation_rule: unknown
+  dependency_id?: unknown
+  escalation_severity?: unknown
+  escalation_reason?: unknown
+}
+
+export type ReconcileCaseEvidenceCommand = {
+  evidence_type: (typeof CASE_EVIDENCE_TYPES)[number]
+  summary: string
+  source: string
+  source_id: string
+  observed_at: string
+  content_sha256: string | null
+  reconciliation_action: (typeof CASE_EVIDENCE_ACTIONS)[number]
+  reconciliation_rule: string
+  dependency_id: string | null
+  escalation_severity: (typeof CASE_ESCALATION_SEVERITIES)[number] | null
+  escalation_reason: string | null
+}
+
+export type UpdateCaseEscalationInput = {
+  state: unknown
+  reason: unknown
 }
 
 export type SetTrackedCaseTaskInput = {
@@ -176,6 +243,17 @@ function normalizeReason(value: unknown): string {
   return reason
 }
 
+function normalizeBoundedText(value: unknown, field: string, maximum: number): string {
+  if (typeof value !== "string" || !value.trim()) {
+    throw new TaskValidationError(`${field} is required`)
+  }
+  const normalized = value.trim().replace(/\s+/g, " ")
+  if (normalized.length > maximum) {
+    throw new TaskValidationError(`${field} must be ${maximum} characters or fewer`)
+  }
+  return normalized
+}
+
 function normalizeUuid(value: unknown, field: string): string {
   if (
     typeof value !== "string"
@@ -269,6 +347,83 @@ export function normalizeCaseDependencyResolution(input: ResolveCaseDependencyIn
 
 export function normalizeCaseDependencyUuid(value: unknown): string {
   return normalizeUuid(value, "dependency_id")
+}
+
+export function normalizeCaseEscalationUuid(value: unknown): string {
+  return normalizeUuid(value, "escalation_id")
+}
+
+export function normalizeCaseEvidence(input: ReconcileCaseEvidenceInput): ReconcileCaseEvidenceCommand {
+  const action = normalizeEnum(
+    input.reconciliation_action,
+    CASE_EVIDENCE_ACTIONS,
+    "reconciliation_action",
+  )
+  const source = normalizeBoundedText(input.source, "source", 50).toLowerCase()
+  if (!/^[a-z][a-z0-9_-]{0,49}$/.test(source)) {
+    throw new TaskValidationError(
+      "source must start with a letter and contain only lowercase letters, numbers, _ or -",
+    )
+  }
+  const observedAt = typeof input.observed_at === "string" ? new Date(input.observed_at) : null
+  if (!observedAt || Number.isNaN(observedAt.getTime())) {
+    throw new TaskValidationError("observed_at must be a valid timestamp")
+  }
+  const contentSha256 = input.content_sha256 === undefined
+    || input.content_sha256 === null
+    || input.content_sha256 === ""
+    ? null
+    : normalizeBoundedText(input.content_sha256, "content_sha256", 64).toLowerCase()
+  if (contentSha256 !== null && !/^[0-9a-f]{64}$/.test(contentSha256)) {
+    throw new TaskValidationError("content_sha256 must be a lowercase SHA-256 digest")
+  }
+
+  const dependencyId = input.dependency_id === undefined || input.dependency_id === null
+    ? null
+    : normalizeCaseDependencyUuid(input.dependency_id)
+  const escalationSeverity = input.escalation_severity === undefined
+    || input.escalation_severity === null
+    ? null
+    : normalizeEnum(input.escalation_severity, CASE_ESCALATION_SEVERITIES, "escalation_severity")
+  const escalationReason = input.escalation_reason === undefined || input.escalation_reason === null
+    ? null
+    : normalizeReason(input.escalation_reason)
+
+  if (action === "satisfy_dependency" && dependencyId === null) {
+    throw new TaskValidationError("dependency_id is required to satisfy a dependency")
+  }
+  if (action !== "satisfy_dependency" && dependencyId !== null) {
+    throw new TaskValidationError("dependency_id is only allowed when satisfying a dependency")
+  }
+  if (action === "raise_exception" && (escalationSeverity === null || escalationReason === null)) {
+    throw new TaskValidationError(
+      "escalation_severity and escalation_reason are required to raise an exception",
+    )
+  }
+  if (action !== "raise_exception" && (escalationSeverity !== null || escalationReason !== null)) {
+    throw new TaskValidationError("escalation fields are only allowed when raising an exception")
+  }
+
+  return {
+    evidence_type: normalizeEnum(input.evidence_type, CASE_EVIDENCE_TYPES, "evidence_type"),
+    summary: normalizeBoundedText(input.summary, "summary", 2000),
+    source,
+    source_id: normalizeBoundedText(input.source_id, "source_id", 500),
+    observed_at: observedAt.toISOString(),
+    content_sha256: contentSha256,
+    reconciliation_action: action,
+    reconciliation_rule: normalizeBoundedText(input.reconciliation_rule, "reconciliation_rule", 100),
+    dependency_id: dependencyId,
+    escalation_severity: escalationSeverity,
+    escalation_reason: escalationReason,
+  }
+}
+
+export function normalizeCaseEscalationUpdate(input: UpdateCaseEscalationInput) {
+  return {
+    state: normalizeEnum(input.state, ["acknowledged", "resolved"] as const, "state"),
+    reason: normalizeReason(input.reason),
+  }
 }
 
 export function normalizeTrackedCaseUpdate(input: TrackedCaseUpdateInput): TrackedCaseUpdate {
