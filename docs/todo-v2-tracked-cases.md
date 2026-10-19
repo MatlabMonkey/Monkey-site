@@ -22,6 +22,10 @@ The first tracked-case slice adds a server-owned persistence boundary for work t
 - `PATCH /api/tracked-cases/:id/escalations/:escalationId` acknowledges an open exception or resolves an open/acknowledged exception with a required reason. Resolved exceptions cannot be reopened.
 - Creation and updates run through service-role-only database functions so event attribution, row locking, version checks, and mutation happen in one transaction. PIN-authenticated requests are attributed to `user`.
 
-Evidence deliberately carries no free-text inference or connector-specific parsing. A caller must supply the reconciliation action and immutable rule ID; connector mapping remains item 5 work. The focused review UI remains separate bounded work.
+Evidence deliberately carries no free-text inference or connector-specific parsing. A caller must supply the reconciliation action and immutable rule ID; connector mapping remains item 5 work.
+
+## Focused review UI
+
+The authenticated v2 task workspace includes a Cases view that keeps one outcome in focus. It shows deadline provenance and confidence, linked work, dependency direction and state, metadata-only evidence with its reconciliation rule, open exceptions, and immutable case history. A single required review note gates explicit lifecycle changes, dependency satisfaction or waiver, and exception acknowledgement or resolution; stale lifecycle changes retain the API's expected-version conflict protection. Empty, loading, error, and mobile single-column states are explicit.
 
 Migration 030 intentionally does not read production data, migrate legacy todos, or run automatically.

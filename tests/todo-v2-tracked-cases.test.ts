@@ -419,3 +419,26 @@ test("tracked-case lifecycle routes require authentication and expose version co
   assert.match(serverSource, /from\("case_escalations"\)/)
   assert.match(serverSource, /from\("case_events"\)/)
 })
+
+test("tracked-case review UI keeps outcomes and audited actions visible", () => {
+  const pageSource = readFileSync(
+    new URL("../app/todos/page.tsx", import.meta.url),
+    "utf8",
+  )
+  const panelSource = readFileSync(
+    new URL("../app/todos/TrackedCasesPanel.tsx", import.meta.url),
+    "utf8",
+  )
+
+  assert.match(pageSource, /id: "cases", label: "Cases"/)
+  assert.match(pageSource, /<TrackedCasesPanel \/>/)
+  assert.match(panelSource, /fetch\("\/api\/tracked-cases"/)
+  assert.match(panelSource, /fetch\(`\/api\/tracked-cases\/\$\{caseId\}`/)
+  assert.match(panelSource, /expected_version: detail\.case\.version/)
+  assert.match(panelSource, /!reviewNote\.trim\(\)/)
+  assert.match(panelSource, /Exceptions/)
+  assert.match(panelSource, /Dependencies/)
+  assert.match(panelSource, /Linked work/)
+  assert.match(panelSource, /Evidence/)
+  assert.match(panelSource, /Case history/)
+})

@@ -2,20 +2,22 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { Archive, ArrowLeft, CalendarDays, CalendarRange, Check, Circle, Clock3, History, Inbox, Loader2, Plus, RotateCcw, Sparkles, Sun, X } from "lucide-react"
+import { Archive, ArrowLeft, BriefcaseBusiness, CalendarDays, CalendarRange, Check, Circle, Clock3, History, Inbox, Loader2, Plus, RotateCcw, Sparkles, Sun, X } from "lucide-react"
 import PinGate from "../components/PinGate"
 import PrivateSectionNav from "../components/PrivateSectionNav"
+import TrackedCasesPanel from "./TrackedCasesPanel"
 import type { TaskOrganizationProposalRecord } from "../../lib/task-organization"
 import type { DailyReviewSummary, RestartSummary, WeeklyReviewSummary } from "../../lib/task-operating-loops"
 import type { TaskEventRecord, TaskRecord, TaskStatus } from "../../lib/tasks"
 
-type TaskView = "today" | "inbox" | "review" | "waiting" | "later" | "done" | "history"
+type TaskView = "today" | "inbox" | "review" | "cases" | "waiting" | "later" | "done" | "history"
 type OperatingMode = "normal" | "daily" | "weekly" | "restart"
 
 const VIEWS: Array<{ id: TaskView; label: string; icon: typeof Sun }> = [
   { id: "today", label: "Today", icon: Sun },
   { id: "inbox", label: "Inbox", icon: Inbox },
   { id: "review", label: "Review", icon: Sparkles },
+  { id: "cases", label: "Cases", icon: BriefcaseBusiness },
   { id: "waiting", label: "Waiting", icon: Clock3 },
   { id: "later", label: "Later", icon: Archive },
   { id: "done", label: "Done", icon: Check },
@@ -26,6 +28,7 @@ const VIEW_COPY: Record<TaskView, { title: string; description: string; empty: s
   today: { title: "Today", description: "Only the commitments you chose for today.", empty: "Today is clear. Pull one useful thing from Inbox when ready." },
   inbox: { title: "Inbox", description: "Captured first. Decide what matters after it is safely recorded.", empty: "Nothing needs organizing." },
   review: { title: "Organization review", description: "Approve or reject assistant suggestions with a short reason.", empty: "No organization suggestions need review." },
+  cases: { title: "Tracked cases", description: "Review outcomes, dependencies, evidence, exceptions, and immutable history.", empty: "No tracked cases yet." },
   waiting: { title: "Waiting", description: "Commitments paused on another person or event.", empty: "Nothing is waiting on someone else." },
   later: { title: "Later", description: "Worth keeping, but not competing for attention now.", empty: "No deferred work." },
   done: { title: "Done", description: "Completed work, newest first.", empty: "Completed tasks will collect here." },
@@ -74,6 +77,10 @@ export default function TodosPage() {
   const loadView = useCallback(async (nextView: TaskView) => {
     setLoading(true)
     setError("")
+    if (nextView === "cases") {
+      setLoading(false)
+      return
+    }
     try {
       const endpoint = nextView === "history"
         ? "/api/task-events"
@@ -359,7 +366,7 @@ export default function TodosPage() {
                 <h2 id="view-heading" className="text-2xl font-semibold">{copy.title}</h2>
                 <p className="mt-1 text-sm text-[rgb(var(--text-muted))]">{copy.description}</p>
               </div>
-              {view !== "history" && !loading && (
+              {view !== "history" && view !== "cases" && !loading && (
                 <span className="font-mono text-sm text-[rgb(var(--text-muted))]">
                   {view === "review" ? proposals.length : openCount}
                 </span>
@@ -370,6 +377,8 @@ export default function TodosPage() {
               <div className="flex min-h-40 items-center justify-center rounded-2xl border border-[rgb(var(--border))] bg-[rgb(var(--surface))]">
                 <Loader2 className="h-5 w-5 animate-spin text-[rgb(var(--brand))]" aria-label="Loading" />
               </div>
+            ) : view === "cases" ? (
+              <TrackedCasesPanel />
             ) : view === "history" ? (
               events.length === 0 ? <EmptyState message={copy.empty} /> : <HistoryList events={events} />
             ) : view === "review" ? (
