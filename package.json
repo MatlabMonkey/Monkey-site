@@ -10,6 +10,7 @@
     "db:push-todos": "node scripts/push-todos-migration.js",
     "import-legacy": "node scripts/import-legacy-journal.js",
     "test:webhook:todo": "bash scripts/test-todo-webhook.sh",
+    "test:todo-v2-shortcut": "node scripts/test-todo-v2-shortcut-capture.mjs",
     "test:todo-v2": "node --test tests/todo-v2.test.ts tests/todo-v2-organization.test.ts tests/todo-v2-operating-loops.test.ts tests/todo-v2-tracked-cases.test.ts tests/todo-v2-connectors.test.ts",
     "security:check": "node scripts/security-regression.mjs",
     "security:release": "node scripts/security-regression.mjs --release"
