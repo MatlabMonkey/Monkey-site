@@ -30,6 +30,21 @@ export type TaskEventRecord = {
   created_at: string
 }
 
+export type ShortcutCapturePayload = {
+  title?: unknown
+  content?: unknown
+  text?: unknown
+  task?: unknown
+  capture_id?: unknown
+}
+
+export type NormalizedShortcutCapture = {
+  title: string
+  source: "shortcut"
+  source_id: string
+  idempotency_key: string
+}
+
 export class TaskValidationError extends Error {
   constructor(message: string) {
     super(message)
@@ -51,6 +66,23 @@ export function normalizeTaskTitle(value: unknown): string {
     throw new TaskValidationError("Title must be 500 characters or fewer")
   }
   return title
+}
+
+export function normalizeShortcutCapture(payload: ShortcutCapturePayload): NormalizedShortcutCapture {
+  const titleCandidate = [payload.title, payload.content, payload.text, payload.task]
+    .find((value) => typeof value === "string" && value.trim())
+  const captureId = typeof payload.capture_id === "string" ? payload.capture_id.trim() : ""
+
+  if (!captureId || captureId.length > 200 || !/^[A-Za-z0-9._:-]+$/.test(captureId)) {
+    throw new TaskValidationError("capture_id must be a non-empty UUID or other stable identifier")
+  }
+
+  return {
+    title: normalizeTaskTitle(titleCandidate),
+    source: "shortcut",
+    source_id: captureId,
+    idempotency_key: `shortcut:${captureId}`,
+  }
 }
 
 export function normalizeOptionalText(value: unknown, field: string): string | null | undefined {

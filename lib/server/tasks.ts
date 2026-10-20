@@ -29,6 +29,18 @@ export type UpdateTaskInput = {
   reason?: unknown
 }
 
+export class TaskCaptureConflictError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "TaskCaptureConflictError"
+  }
+}
+
+export type TaskCaptureResult = {
+  task: TaskRecord
+  replayed: boolean
+}
+
 function getSupabaseAdmin() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -42,6 +54,26 @@ function normalizeSource(value: unknown): string {
     throw new TaskValidationError("source must be a short machine-readable name")
   }
   return value
+}
+
+function normalizeCreateTaskInput(input: CreateTaskInput) {
+  return {
+    title: normalizeTaskTitle(input.title),
+    notes: normalizeOptionalText(input.notes, "notes") ?? null,
+    due_on: normalizeDateOnly(input.due_on) ?? null,
+    source: normalizeSource(input.source),
+    source_id: normalizeOptionalText(input.source_id, "source_id") ?? null,
+    idempotency_key: normalizeOptionalText(input.idempotency_key, "idempotency_key") ?? null,
+  }
+}
+
+function captureMatches(capturedState: Partial<TaskRecord>, payload: ReturnType<typeof normalizeCreateTaskInput>): boolean {
+  return capturedState.title === payload.title &&
+    capturedState.notes === payload.notes &&
+    capturedState.due_on === payload.due_on &&
+    capturedState.source === payload.source &&
+    capturedState.source_id === payload.source_id &&
+    capturedState.idempotency_key === payload.idempotency_key
 }
 
 export async function listTasks(view: TaskView): Promise<TaskRecord[]> {
@@ -58,18 +90,62 @@ export async function listTasks(view: TaskView): Promise<TaskRecord[]> {
 }
 
 export async function createTask(input: CreateTaskInput): Promise<TaskRecord> {
-  const payload = {
-    title: normalizeTaskTitle(input.title),
-    notes: normalizeOptionalText(input.notes, "notes") ?? null,
-    due_on: normalizeDateOnly(input.due_on) ?? null,
-    source: normalizeSource(input.source),
-    source_id: normalizeOptionalText(input.source_id, "source_id") ?? null,
-    idempotency_key: normalizeOptionalText(input.idempotency_key, "idempotency_key") ?? null,
-  }
+  const payload = normalizeCreateTaskInput(input)
 
   const { data, error } = await getSupabaseAdmin().from("tasks").insert(payload).select("*").single()
   if (error) throw new Error(error.message)
   return data as TaskRecord
+}
+
+export async function captureTaskWithReplay(input: CreateTaskInput): Promise<TaskCaptureResult> {
+  const payload = normalizeCreateTaskInput(input)
+  if (!payload.source_id || !payload.idempotency_key) {
+    throw new TaskValidationError("A capture ID is required")
+  }
+
+  const supabase = getSupabaseAdmin()
+  const { data, error } = await supabase.from("tasks").insert(payload).select("*").single()
+  if (!error) return { task: data as TaskRecord, replayed: false }
+  if (error.code !== "23505") throw new Error(error.message)
+
+  const { data: idempotentTask, error: idempotentError } = await supabase
+    .from("tasks")
+    .select("*")
+    .eq("idempotency_key", payload.idempotency_key)
+    .maybeSingle()
+
+  if (idempotentError) throw new Error(idempotentError.message)
+  if (idempotentTask) {
+    const task = idempotentTask as TaskRecord
+    const { data: captureEvent, error: captureEventError } = await supabase
+      .from("task_events")
+      .select("after_state")
+      .eq("task_id", task.id)
+      .eq("event_type", "captured")
+      .order("id", { ascending: true })
+      .limit(1)
+      .single()
+
+    if (captureEventError) throw new Error(captureEventError.message)
+    if (!captureMatches(captureEvent.after_state as Partial<TaskRecord>, payload)) {
+      throw new TaskCaptureConflictError("Capture ID was already used with different task content")
+    }
+    return { task, replayed: true }
+  }
+
+  const { data: sourceTask, error: sourceError } = await supabase
+    .from("tasks")
+    .select("*")
+    .eq("source", payload.source)
+    .eq("source_id", payload.source_id)
+    .maybeSingle()
+
+  if (sourceError) throw new Error(sourceError.message)
+  if (sourceTask) {
+    throw new TaskCaptureConflictError("Capture ID was already used with a different idempotency key")
+  }
+
+  throw new Error(error.message)
 }
 
 export async function updateTask(id: string, input: UpdateTaskInput): Promise<TaskRecord> {

@@ -1,19 +1,20 @@
 {
   "name": "Quick Todo",
   "method": "POST",
-  "url": "https://YOUR_DOMAIN/api/webhook/todos",
+  "url": "https://YOUR_DOMAIN/api/tasks/capture",
   "headers": {
-    "Authorization": "Bearer TODO_WEBHOOK_SECRET",
+    "Authorization": "Bearer {{CAPTURE_API_KEY}}",
     "Content-Type": "application/json"
   },
   "body": {
-    "content": "{{Shortcut Input}}",
-    "folder": "inbox"
+    "title": "{{Shortcut Input}}",
+    "capture_id": "{{Shortcut UUID}}"
   },
   "notes": [
     "Set YOUR_DOMAIN to your deployed site.",
-    "Set TODO_WEBHOOK_SECRET in your server env and use the same value in the Authorization header (or reuse CAPTURE_API_KEY).",
-    "The endpoint accepts content/text/todo/task keys and also plain-text request bodies.",
-    "Shortcut Input can be dictated text, clipboard text, or a prompt result."
+    "Configure CAPTURE_API_KEY in the server environment and store the same value only in the private Shortcut Authorization header.",
+    "Before Get Contents of URL, add a Generate UUID action and pass its result as Shortcut UUID.",
+    "Shortcut Input can be dictated text, clipboard text, a share-sheet value, or a prompt result.",
+    "A first capture returns 201; retrying the same UUID and title returns 200 without a second task; reusing the UUID with changed content returns 409."
   ]
 }

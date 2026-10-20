@@ -5,6 +5,7 @@ import test from "node:test"
 import {
   normalizeDateOnly,
   normalizeOptionalText,
+  normalizeShortcutCapture,
   normalizeTaskStatus,
   normalizeTaskTitle,
   TASK_STATUSES,
@@ -16,6 +17,26 @@ test("capture accepts messy text but produces a compact title", () => {
   assert.equal(normalizeTaskTitle("  book   dentist\nappointment  "), "book dentist appointment")
   assert.throws(() => normalizeTaskTitle("   "), TaskValidationError)
   assert.throws(() => normalizeTaskTitle("x".repeat(501)), /500 characters/)
+})
+
+test("Shortcut capture requires a stable ID and derives replay-safe identity", () => {
+  assert.deepEqual(
+    normalizeShortcutCapture({
+      content: "  call   the dentist  ",
+      capture_id: "8E744D54-2E09-47A1-B793-28A8D2C4D357",
+    }),
+    {
+      title: "call the dentist",
+      source: "shortcut",
+      source_id: "8E744D54-2E09-47A1-B793-28A8D2C4D357",
+      idempotency_key: "shortcut:8E744D54-2E09-47A1-B793-28A8D2C4D357",
+    },
+  )
+  assert.throws(() => normalizeShortcutCapture({ title: "Call dentist" }), /capture_id/)
+  assert.throws(
+    () => normalizeShortcutCapture({ title: "Call dentist", capture_id: "not safe / value" }),
+    /capture_id/,
+  )
 })
 
 test("optional metadata stays optional and dates are strict", () => {
@@ -56,4 +77,18 @@ test("v2 server routes require an authenticated PIN session", () => {
     assert.match(source, /isRequestAuthenticated\(request\)/)
     assert.match(source, /status: 401/)
   }
+})
+
+test("Shortcut capture uses bearer auth and explicit replay outcomes", () => {
+  const route = readFileSync(new URL("../app/api/tasks/capture/route.ts", import.meta.url), "utf8")
+  const service = readFileSync(new URL("../lib/server/tasks.ts", import.meta.url), "utf8")
+
+  assert.match(route, /CAPTURE_API_KEY/)
+  assert.match(route, /timingSafeEqual/)
+  assert.match(route, /result\.replayed \? 200 : 201/)
+  assert.match(route, /status: 409/)
+  assert.match(service, /error\.code !== "23505"/)
+  assert.match(service, /\.from\("task_events"\)/)
+  assert.match(service, /captureEvent\.after_state/)
+  assert.match(service, /Capture ID was already used with different task content/)
 })
